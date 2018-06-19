@@ -827,6 +827,12 @@ int __stdcall PrintAttackSpeedAndOtherInfo( int addr, float * attackspeed, float
 			else
 				sprintf_s( buffer, sizeof( buffer ), "%.1f/sec (Reload: %.2f sec)|nAttack speed bonus: %.0f|nSpell Damage: %i%% (0%%)|n", AttacksPerSec, AttackReload, AttackSpeedBonus, magicamp );
 
+			if ( fixedattackspeed > *( float* )( GameDll + pAttackSpeedLimit ) )
+				fixedattackspeed = *( float* )( GameDll + pAttackSpeedLimit );
+
+			if ( fixedattackspeed < 0.2f )
+				fixedattackspeed = 0.2f;
+
 			__asm
 			{
 				PUSH 0x200;
@@ -840,8 +846,12 @@ int __stdcall PrintAttackSpeedAndOtherInfo( int addr, float * attackspeed, float
 			bufferaddr = buffer;
 			float oldaddtackspeed = *( float* )attackspeed;
 			float fixedattackspeed = oldaddtackspeed;
+
 			if ( fixedattackspeed > *( float* )( GameDll + pAttackSpeedLimit ) )
 				fixedattackspeed = *( float* )( GameDll + pAttackSpeedLimit );
+
+			if ( fixedattackspeed < 0.2f )
+				fixedattackspeed = 0.2f;
 
 			sprintf_s( buffer, sizeof( buffer ), "%.3f (Reload: %.2f sec)", ( fixedattackspeed / *( float* )BAT ), 1.0f / ( fixedattackspeed / *( float* )BAT ) );
 
@@ -917,7 +927,7 @@ void __declspec( naked )  PrintAttackSpeedAndOtherInfoHook127a( )
 float __stdcall GetMagicProtectionForHero_org( int UnitAddr )
 {
 	float indmg = 100.0;
-	if ( UnitAddr > 0 )
+	if ( IsNotBadUnit( UnitAddr ) )
 	{
 #ifdef DOTA_HELPER_LOG
 		AddNewLineToDotaHelperLog( __func__, __LINE__ );
@@ -934,6 +944,15 @@ float __stdcall GetMagicProtectionForHero_org( int UnitAddr )
 				indmg = indmg * DmgProt;
 			}
 		}
+
+
+		// new 
+		if ( *( int* )( UnitAddr + 0x158 ) )
+		{
+			indmg *= 1.4;
+		}
+
+
 
 	}
 
@@ -1579,6 +1598,18 @@ int __stdcall AddNewOffset( int address, int data )
 	return 0;
 }
 
+int __stdcall RemoveOffset( int address )
+{
+	for ( unsigned int i = 0; i < offsetslist.size( ); i++ )
+	{
+		if ( offsetslist[ i ].offaddr == address )
+		{
+			offsetslist.erase( offsetslist.begin( ) + i );
+		}
+	}
+	return 0;
+}
+
 
 vector<LPVOID> FreeExecutableMemoryList;
 
@@ -2148,13 +2179,13 @@ int __stdcall InitOverlay( int )
 {
 	if ( GameVersion == 0x26a )
 	{
-		InitOpenglHook( );
 		Initd3d8Hook( );
+		InitOpenglHook( );
 	}
 	else if ( GameVersion == 0x27a )
 	{
-		InitOpenglHook( );
 		Initd3d9Hook( );
+		InitOpenglHook( );
 	}
 	return 0;
 }
@@ -2294,7 +2325,7 @@ unsigned int __stdcall InitDotaHelper( int gameversion )
 
 	sprintf_s( MyFpsString, 512, "%s", "|nFPS: %.1f / 64.0 " );
 
-	if (!GlobalTextBuffer )
+	if ( !GlobalTextBuffer )
 		GlobalTextBuffer = new char[ 0x2000 ];
 	memset( GlobalTextBuffer, 0, 0x2000 );
 
@@ -2499,10 +2530,10 @@ unsigned int __stdcall InitDotaHelper( int gameversion )
 
 
 
-		
-		
 
-		
+
+
+
 
 		int pSaveLatestItem = GameDll + 0x369b3d;
 		AddNewOffset_( pSaveLatestItem, *( int* )pSaveLatestItem, Feature_ItemText );

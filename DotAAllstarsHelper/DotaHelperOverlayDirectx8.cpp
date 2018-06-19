@@ -388,7 +388,6 @@ HRESULT __fastcall EndScene_my( int GlobalWc3Data )
 	if ( d != NULL )
 	{
 		deviceglobal = d;
-
 	}
 	OverlayDrawed = FALSE;
 	HRESULT retval = deviceglobal->EndScene( );
@@ -438,7 +437,16 @@ void Uninitd3d8Hook( BOOL cleartextures )
 void Initd3d8Hook( )
 {
 	EndScene_org = ( EndScene_p )( GameDll + 0x52F270 );
-	MH_CreateHook( EndScene_org, &EndScene_my, reinterpret_cast< void** >( &EndScene_ptr ) );
-	MH_EnableHook( EndScene_org );
+	MH_STATUS s = MH_CreateHook( EndScene_org, &EndScene_my, reinterpret_cast< void** >( &EndScene_ptr ) );
+	/*if ( MH_STATUS::MH_OK != s && s != MH_STATUS::MH_ERROR_ALREADY_CREATED )
+	{
+		char temp[ 256 ];
+		sprintf_s( temp, "Can't install directx hook. Error %s", MH_StatusToString( s ) );
+		MessageBoxA( 0, temp, "Error", 0 );
+	}*/
+	/*if ( MH_STATUS::MH_OK !=*/ MH_EnableHook( EndScene_org ); /*)
+	{
+		MessageBoxA( 0, "Can't install directx hook. Error 2", "Error", 0 );
+	}*/
 }
 

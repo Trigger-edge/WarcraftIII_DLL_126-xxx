@@ -149,6 +149,7 @@
     <ClCompile Include="DotaPlayerHelper.cpp" />
     <ClCompile Include="DotaRawImagesDrawApi.cpp" />
     <ClCompile Include="DotaSyncScanner.cpp" />
+    <ClCompile Include="DotaSystemInfo.cpp" />
     <ClCompile Include="DotaViewAllySkill.cpp" />
     <ClCompile Include="DotaWebHelper.cpp" />
     <ClCompile Include="DoteNewDebugSystem.cpp" />

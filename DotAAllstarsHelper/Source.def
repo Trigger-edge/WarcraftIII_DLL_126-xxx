@@ -175,3 +175,5 @@ EnableReplaceHotkeyFlag
 StartTimer
 StopTimer
 SendLatestError
+GetSystemInfo2
+RemoveOffset

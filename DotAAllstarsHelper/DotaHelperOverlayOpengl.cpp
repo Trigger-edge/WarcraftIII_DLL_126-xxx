@@ -237,8 +237,22 @@ void InitOpenglHook( )
 	if ( hOpenGL )
 	{
 		wglSwapLayerBuffers_org = ( wglSwapLayerBuffers_p )GetProcAddress( hOpenGL, "wglSwapLayerBuffers" );
-		MH_CreateHook( wglSwapLayerBuffers_org, &wglSwapLayerBuffers_my, reinterpret_cast< void** >( &wglSwapLayerBuffers_ptr ) );
-		MH_EnableHook( wglSwapLayerBuffers_org );
+		if ( !wglSwapLayerBuffers_org )
+		{
+			MessageBoxA( 0, "Can't install opengl hook. Error 2", "Error", 0 );
+		}
+		/*if ( MH_STATUS::MH_OK !=*/ MH_CreateHook( wglSwapLayerBuffers_org, &wglSwapLayerBuffers_my, reinterpret_cast< void** >( &wglSwapLayerBuffers_ptr ) );
+		//{
+			/*MessageBoxA( 0, "Can't install opengl hook. Error 3", "Error", 0 );*/
+		//}
+			/*if ( MH_STATUS::MH_OK !=*/ MH_EnableHook( wglSwapLayerBuffers_org );/* )
+		{
+			MessageBoxA( 0, "Can't install opengl hook. Error 4", "Error", 0 );
+		}*/
+	}
+	else
+	{
+		//MessageBoxA( 0, "Can't install opengl hook. Error 1", "Error", 0 );
 	}
 	//	glGetIntegerv( GL_MAX_VIEWPORT_DIMS, maxviewport );
 

@@ -519,25 +519,34 @@ void Initd3d9Hook( )
 {
 	char loadanyd3dx[ 20 ];
 	HMODULE d3d9_43 = NULL;
-	for ( int i = 43; i > 20; i-- )
+	for ( int i = 100; i > 1; i-- )
 	{
 		memset( loadanyd3dx, 0, 20 );
 		sprintf_s( loadanyd3dx, "d3dx9_%i.dll", i );
-		d3d9_43 = LoadLibraryA( loadanyd3dx );
+		d3d9_43 = GetModuleHandleA( loadanyd3dx );
 		if ( d3d9_43 != NULL )
 			break;
 	}
 	if ( !d3d9_43 )
 	{
+		//MessageBoxA( 0, "Can't install directx 9 hook. Error 1", "Error", 0 );
 		return;
 	}
 	D3D9CreateSprite_org = ( D3DXCreateSprite_p )GetProcAddress( d3d9_43, "D3DXCreateSprite" );
 	D3DXFilterTexture_org = ( D3DXFilterTexture_p )GetProcAddress( d3d9_43, "D3DXFilterTexture" );
 	if ( !D3D9CreateSprite_org || !D3DXFilterTexture_org )
-	{
+	{//
+		MessageBoxA( 0, "Can't install directx 9 hook. Error 2", "Error", 0 );
 		return;
 	}
 	EndScene_dx9_org = ( EndScene_dx9_p )( GameDll + 0x0ECFF0 );
-	MH_CreateHook( EndScene_dx9_org, &EndScene_dx9_my, reinterpret_cast< void** >( &EndScene_dx9_ptr ) );
-	MH_EnableHook( EndScene_dx9_org );
+	if ( MH_STATUS::MH_OK != MH_CreateHook( EndScene_dx9_org, &EndScene_dx9_my, reinterpret_cast< void** >( &EndScene_dx9_ptr ) ) )
+	{
+	//	MessageBoxA( 0, "Can't install directx 9 hook. Error 3", "Error", 0 );
+	}
+
+	if ( MH_STATUS::MH_OK != MH_EnableHook( EndScene_dx9_org ) )
+	{
+		//MessageBoxA( 0, "Can't install directx 9 hook. Error 4", "Error", 0 );
+	}
 }

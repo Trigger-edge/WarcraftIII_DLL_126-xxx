@@ -124,6 +124,9 @@
     <ClCompile Include="WarcraftFrameHelper.cpp">
       <Filter>Src</Filter>
     </ClCompile>
+    <ClCompile Include="DotaSystemInfo.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="base64.h">

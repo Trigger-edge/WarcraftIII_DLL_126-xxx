@@ -29,13 +29,13 @@ BOOL SkipScaleFactor = FALSE;
 
 double a164A18 = 72; // ds:[00164A18]=72.00000000000000
 double aMPBarSizeX = 0.0005; //ds:[00164A10]=0.0005000000237487257
-double aMPBarSizeY = 0.004;
+double aMPBarSizeY = 0.0025;
 double aMPBarOffsetY = 0.006; //ds:[00164A08]=0.006000000052154064
 double a1649D4 = 0.03; //ds:[004149D4]=0.03000000
 
 double a1649CC = 0.3;
 
-double aMPBarSizeY_default = 0.004;
+double aMPBarSizeY_default = 0.0025;
 double aMPBarSizeX_default = 0.0005; //ds:[00164A10]=0.0005000000237487257
 double aMPBarOffsetY_default = 0.006; //ds:[00164A08]=0.006000000052154064
 
