@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27004.2005
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DotAAllstarsHelper688j", "DotAAllstarsHelper\DotAAllstarsHelper.vcxproj", "{4B94B582-A36C-43FF-AB86-D01CF1299739}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DotAAllstarsHelper688v", "DotAAllstarsHelper\DotAAllstarsHelper.vcxproj", "{4B94B582-A36C-43FF-AB86-D01CF1299739}"
 	ProjectSection(ProjectDependencies) = postProject
-		{A291E0B5-2482-4C9A-AE19-160E26F73B1C} = {A291E0B5-2482-4C9A-AE19-160E26F73B1C}
+		{03EA1767-0B76-4533-9F21-F80FC17F04A7} = {03EA1767-0B76-4533-9F21-F80FC17F04A7}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WarcraftMemHackHelper", "WarcraftMemHackHelper\WarcraftMemHackHelper.vcxproj", "{A291E0B5-2482-4C9A-AE19-160E26F73B1C}"
@@ -15,7 +15,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotaAllstarsExErrorHandler"
 		{D89981A7-1DB5-43F9-9C0D-185750FCC7EB} = {D89981A7-1DB5-43F9-9C0D-185750FCC7EB}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DotAAllstarsHelper688j_debug", "DotAAllstarsHelperDebug\DotAAllstarsHelperDebug.vcxproj", "{D89981A7-1DB5-43F9-9C0D-185750FCC7EB}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DotAAllstarsHelper688v_debug", "DotAAllstarsHelperDebug\DotAAllstarsHelperDebug.vcxproj", "{D89981A7-1DB5-43F9-9C0D-185750FCC7EB}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DreamUI", "DreamUI\DreamUI.vcxproj", "{03EA1767-0B76-4533-9F21-F80FC17F04A7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -30,6 +32,8 @@ Global
 		{23537ED9-B29F-4BCF-91E6-6EDEFAC9C004}.Release|x86.Build.0 = Release|x86
 		{D89981A7-1DB5-43F9-9C0D-185750FCC7EB}.Release|x86.ActiveCfg = Release|Win32
 		{D89981A7-1DB5-43F9-9C0D-185750FCC7EB}.Release|x86.Build.0 = Release|Win32
+		{03EA1767-0B76-4533-9F21-F80FC17F04A7}.Release|x86.ActiveCfg = Release|Win32
+		{03EA1767-0B76-4533-9F21-F80FC17F04A7}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

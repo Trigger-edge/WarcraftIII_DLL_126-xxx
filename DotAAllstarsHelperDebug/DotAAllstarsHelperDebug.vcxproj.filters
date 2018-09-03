@@ -26,9 +26,6 @@
     <ClCompile Include="..\DotAAllstarsHelper\DotaAllstarsHelper.cpp">
       <Filter>Src</Filter>
     </ClCompile>
-    <ClCompile Include="..\DotAAllstarsHelper\DotaAutoFPSlimit.cpp">
-      <Filter>Src</Filter>
-    </ClCompile>
     <ClCompile Include="..\DotAAllstarsHelper\DotaChatHelper.cpp">
       <Filter>Src</Filter>
     </ClCompile>
@@ -74,9 +71,6 @@
     <ClCompile Include="..\DotAAllstarsHelper\DotaHelperOverlayDirectx8.cpp">
       <Filter>Src</Filter>
     </ClCompile>
-    <ClCompile Include="..\DotAAllstarsHelper\DotaHelperOverlayDirectx9.cpp">
-      <Filter>Src</Filter>
-    </ClCompile>
     <ClCompile Include="..\DotAAllstarsHelper\DotaHelperOverlayOpengl.cpp">
       <Filter>Src</Filter>
     </ClCompile>
@@ -114,6 +108,9 @@
       <Filter>Src</Filter>
     </ClCompile>
     <ClCompile Include="..\DotAAllstarsHelper\DotaSystemInfo.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\DotAAllstarsHelper\DotaFPSHelper.cpp">
       <Filter>Src</Filter>
     </ClCompile>
   </ItemGroup>

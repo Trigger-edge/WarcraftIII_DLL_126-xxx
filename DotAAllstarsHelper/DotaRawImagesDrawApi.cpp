@@ -1593,7 +1593,7 @@ int __stdcall RawImage_AddCallback( unsigned int RawImage, const char * MouseAct
 			PrintText( "Error callback disabled" );
 		}
 		tmpRawImage.MouseCallback = FALSE;
-		tmpRawImage.MouseActionCallback = RCString( );
+		tmpRawImage.MouseActionCallback = jRCString( );
 		tmpRawImage.MouserExecuteFuncCallback = FALSE;
 	}
 	else
@@ -1602,7 +1602,7 @@ int __stdcall RawImage_AddCallback( unsigned int RawImage, const char * MouseAct
 		{
 			PrintText( "Ok. Added for function:" + string( MouseActionCallback ) );
 		}
-		tmpRawImage.MouseActionCallback = RCString( );
+		tmpRawImage.MouseActionCallback = jRCString( );
 		str2jstr( &tmpRawImage.MouseActionCallback, MouseActionCallback );
 		tmpRawImage.MouseCallback = TRUE;
 		tmpRawImage.MouserExecuteFuncCallback = TRUE;

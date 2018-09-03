@@ -1,5 +1,5 @@
 #include "Main.h"
-
+#include <Input.h>
 
 
 BOOL SetInfoObjDebugVal = TRUE;
@@ -14,49 +14,52 @@ WarcraftRealWNDProc WarcraftRealWNDProc_org = NULL;
 WarcraftRealWNDProc WarcraftRealWNDProc_ptr;
 
 
-LPARAM lpF1ScanKeyUP = ( LPARAM )( 0xC0000001 | ( LPARAM )( MapVirtualKey( VK_F1, 0 ) << 16 ) );
-LPARAM lpF1ScanKeyDOWN = ( LPARAM )( 0x00000001 | ( LPARAM )( MapVirtualKey( VK_F1, 0 ) << 16 ) );
+LPARAM lpF1ScanKeyUP = (LPARAM)(0xC0000001 | (LPARAM)(MapVirtualKey(VK_F1, 0) << 16));
+LPARAM lpF1ScanKeyDOWN = (LPARAM)(0x00000001 | (LPARAM)(MapVirtualKey(VK_F1, 0) << 16));
 
-LPARAM lpAltScanKeyUP = ( LPARAM )( 0xC0000001 | ( LPARAM )( MapVirtualKey( VK_MENU, 0 ) << 16 ) );
-LPARAM lpAltScanKeyDOWN = ( LPARAM )( 0x00000001 | ( LPARAM )( MapVirtualKey( VK_MENU, 0 ) << 16 ) );
+LPARAM lpAltScanKeyUP = (LPARAM)(0xC0000001 | (LPARAM)(MapVirtualKey(VK_MENU, 0) << 16));
+LPARAM lpAltScanKeyDOWN = (LPARAM)(0x00000001 | (LPARAM)(MapVirtualKey(VK_MENU, 0) << 16));
 
-LPARAM lpCtrlScanKeyUP = ( LPARAM )( 0xC0000001 | ( LPARAM )( MapVirtualKey( VK_CONTROL, 0 ) << 16 ) );
-LPARAM lpCtrlScanKeyDOWN = ( LPARAM )( 0x00000001 | ( LPARAM )( MapVirtualKey( VK_CONTROL, 0 ) << 16 ) );
+LPARAM lpCtrlScanKeyUP = (LPARAM)(0xC0000001 | (LPARAM)(MapVirtualKey(VK_CONTROL, 0) << 16));
+LPARAM lpCtrlScanKeyDOWN = (LPARAM)(0x00000001 | (LPARAM)(MapVirtualKey(VK_CONTROL, 0) << 16));
 
 BOOL EmulateKeyInputForHWND = FALSE;
 
 
 int ShiftPressed = 0;
+DWORD SkipSingleShift = 0;
+DWORD SingleShift = 0;
+
 BOOL SkipAllMessages = FALSE;
 
 
-void PressKeyboard( int VK )
+void PressKeyboard(int VK)
 {
 	BOOL PressedKey = FALSE;
 	INPUT Input = { 0 };
 	Input.type = INPUT_KEYBOARD;
-	Input.ki.wScan = ( WORD )MapVirtualKey( ( unsigned int )VK, 0 );
-	Input.ki.wVk = ( WORD )VK;
-	if ( IsKeyPressed( VK ) )
+	Input.ki.wScan = (WORD)MapVirtualKey((unsigned int)VK, 0);
+	Input.ki.wVk = (WORD)VK;
+	if (IsKeyPressed(VK))
 	{
 		PressedKey = TRUE;
 		Input.ki.dwFlags = KEYEVENTF_KEYUP;
-		SendInput( 1, &Input, sizeof( INPUT ) );
+		SendInput(1, &Input, sizeof(INPUT));
 	}
 
 	Input.ki.dwFlags = 0;
-	SendInput( 1, &Input, sizeof( INPUT ) );
-	if ( !PressedKey )
+	SendInput(1, &Input, sizeof(INPUT));
+	if (!PressedKey)
 	{
 		Input.ki.dwFlags = KEYEVENTF_KEYUP;
-		SendInput( 1, &Input, sizeof( INPUT ) );
+		SendInput(1, &Input, sizeof(INPUT));
 	}
 }
 
 DWORD LastKeyPressedTime = 0;
 DWORD LastKeyPressedKey = 0;
 
-void __fastcall PressCancel( int data )
+void __fastcall PressCancel(int data)
 {
 	__asm
 	{
@@ -69,10 +72,10 @@ void __fastcall PressCancel( int data )
 	}
 }
 
-BOOL IsCursorSelectTarget( )
+BOOL IsCursorSelectTarget()
 {
-	int pOffset1 = GetGlobalClassAddr( );
-	if ( pOffset1 > 0 && *( int* )( pOffset1 + 0x1BC ) == 1 )
+	int pOffset1 = GetGlobalClassAddr();
+	if (pOffset1 > 0 && *(int*)(pOffset1 + 0x1BC) == 1)
 	{
 		/*char tmp[ 100 ];
 		sprintf_s( tmp, 100, "%X", pOffset1 );
@@ -82,40 +85,40 @@ BOOL IsCursorSelectTarget( )
 	return FALSE;
 }
 
-int GetCursorSkillID( )
+int GetCursorSkillID()
 {
-	int pOffset1 = GetGlobalClassAddr( );
-	if ( pOffset1 > 0 && ( pOffset1 = *( int* )( pOffset1 + 0x1B4 ) ) > 0 )
+	int pOffset1 = GetGlobalClassAddr();
+	if (pOffset1 > 0 && (pOffset1 = *(int*)(pOffset1 + 0x1B4)) > 0)
 	{
-		return *( int* )( pOffset1 + 0xC );
+		return *(int*)(pOffset1 + 0xC);
 	}
 	return 0;
 }
 
-int GetCursorOrder( )
+int GetCursorOrder()
 {
-	int pOffset1 = GetGlobalClassAddr( );
-	if ( pOffset1 > 0 && ( pOffset1 = *( int* )( pOffset1 + 0x1B4 ) ) > 0 )
+	int pOffset1 = GetGlobalClassAddr();
+	if (pOffset1 > 0 && (pOffset1 = *(int*)(pOffset1 + 0x1B4)) > 0)
 	{
-		return *( int* )( pOffset1 + 0x10 );
+		return *(int*)(pOffset1 + 0x10);
 	}
 	return 0;
 }
 
 vector<int> doubleclickSkillIDs;
 
-int __stdcall AddDoubleClickSkillID( int skillID )
+int __stdcall AddDoubleClickSkillID(int skillID)
 {
 	/*char addedid[ 100 ];
 	sprintf_s( addedid, "Added new id:%i", skillID );
 	MessageBoxA( 0, addedid, "", 0 );*/
-	if ( skillID == 0 && !doubleclickSkillIDs.empty( ) )
+	if (skillID == 0 && !doubleclickSkillIDs.empty())
 	{
 		//MessageBoxA( 0, "ERROR! IDS CLEARED", "", 0 );
-		doubleclickSkillIDs.clear( );
+		doubleclickSkillIDs.clear();
 	}
 	else
-		doubleclickSkillIDs.push_back( skillID );
+		doubleclickSkillIDs.push_back(skillID);
 
 	return skillID;
 }
@@ -146,32 +149,32 @@ float HeroFrameY_old = 0.0666f;
 
 
 
-void SetHeroFrameXY( )
+void SetHeroFrameXY()
 {
-	HeroFrameX_old = *( float* )( GameFrameAtMouseStructOffset + 0x14 );
-	*( float* )( GameFrameAtMouseStructOffset + 0x14 ) = HeroFrameX;
-	HeroFrameY_old = *( float* )( GameFrameAtMouseStructOffset + 0x18 );
-	*( float* )( GameFrameAtMouseStructOffset + 0x18 ) = HeroFrameY;
+	HeroFrameX_old = *(float*)(GameFrameAtMouseStructOffset + 0x14);
+	*(float*)(GameFrameAtMouseStructOffset + 0x14) = HeroFrameX;
+	HeroFrameY_old = *(float*)(GameFrameAtMouseStructOffset + 0x18);
+	*(float*)(GameFrameAtMouseStructOffset + 0x18) = HeroFrameY;
 }
 
-void SetHeroFrameXY_old( )
+void SetHeroFrameXY_old()
 {
-	if ( *( float* )( GameFrameAtMouseStructOffset + 0x14 ) == HeroFrameX )
+	if (*(float*)(GameFrameAtMouseStructOffset + 0x14) == HeroFrameX)
 	{
-		*( float* )( GameFrameAtMouseStructOffset + 0x14 ) = HeroFrameX_old;
-		*( float* )( GameFrameAtMouseStructOffset + 0x18 ) = HeroFrameY_old;
+		*(float*)(GameFrameAtMouseStructOffset + 0x14) = HeroFrameX_old;
+		*(float*)(GameFrameAtMouseStructOffset + 0x18) = HeroFrameY_old;
 	}
 }
 
 
 
-void MouseClickX( int toX, int toY )
+void MouseClickX(int toX, int toY)
 {
-	Sleep( 5 );
+	Sleep(5);
 	POINT point;
-	GetCursorPos( &point );
-	PostMessage( Warcraft3Window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELONG( point.x, point.y ) );
-	PostMessage( Warcraft3Window, WM_LBUTTONUP, MK_LBUTTON, MAKELONG( point.x, point.y ) );
+	GetCursorPos(&point);
+	PostMessage(Warcraft3Window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELONG(point.x, point.y));
+	PostMessage(Warcraft3Window, WM_LBUTTONUP, MK_LBUTTON, MAKELONG(point.x, point.y));
 
 	/*
 		POINT cursorPos;
@@ -215,79 +218,79 @@ void MouseClickX( int toX, int toY )
 
 
 
-unsigned long __stdcall ThreadTest( void * lpp )
+unsigned long __stdcall ThreadTest(void * lpp)
 {
-	POINT * p = ( POINT * )lpp;
+	POINT * p = (POINT *)lpp;
 	SkipAllMessages = TRUE;
-	MouseClickX( p->x, p->y );
+	MouseClickX(p->x, p->y);
 	SkipAllMessages = FALSE;
 	delete p;
 	return 0;
 }
 
-void MouseClick( int toX, int toY )
+void MouseClick(int toX, int toY)
 {
-	POINT * ClickPoint = new POINT( );
+	POINT * ClickPoint = new POINT();
 	ClickPoint->x = toX;
 	ClickPoint->y = toY;
-	HANDLE thr = CreateThread( 0, 0, ThreadTest, ClickPoint, 0, 0 );
-	if ( thr != NULL )
-		CloseHandle( thr );
+	HANDLE thr = CreateThread(0, 0, ThreadTest, ClickPoint, 0, 0);
+	if (thr != NULL)
+		CloseHandle(thr);
 }
 
-void JustClickMouse( )
+void JustClickMouse()
 {
 	BOOL ButtonDown = FALSE;
-	if ( IsKeyPressed( VK_LBUTTON ) )
+	if (IsKeyPressed(VK_LBUTTON))
 	{
 		ButtonDown = TRUE;
-		SendMessage( Warcraft3Window, WM_LBUTTONUP, 0, oldlParam );
+		SendMessage(Warcraft3Window, WM_LBUTTONUP, 0, oldlParam);
 	}
 
 	INPUT Input = { 0 };
 	Input.type = INPUT_MOUSE;
 	Input.mi.dwFlags = MOUSEEVENTF_LEFTDOWN;
-	SendInput( 1, &Input, sizeof( INPUT ) );
+	SendInput(1, &Input, sizeof(INPUT));
 
 	Input.type = INPUT_MOUSE;
 	Input.mi.dwFlags = MOUSEEVENTF_LEFTUP;
-	SendInput( 1, &Input, sizeof( INPUT ) );
+	SendInput(1, &Input, sizeof(INPUT));
 
 }
-int PressMouseAtSelectedHero( BOOL IsItem )
+int PressMouseAtSelectedHero(BOOL IsItem)
 {
 	int errorvalue = 0;
-	if ( !IsCursorSelectTarget( ) )
+	if (!IsCursorSelectTarget())
 	{
 		errorvalue = 1;
 		//PrintText( "ERROR 1" );
 	}
-	if ( GetCursorOrder( ) == 0xD000F ||
-		GetCursorOrder( ) == 0xD0012 ||
-		GetCursorOrder( ) == 0xD0016 )
+	if (GetCursorOrder() == 0xD000F ||
+		GetCursorOrder() == 0xD0012 ||
+		GetCursorOrder() == 0xD0016)
 	{
 		errorvalue = 2;
 		//	PrintText( "ERROR 2" );
 	}
 
-	if ( IsCursorSelectTarget( ) &&
-		GetCursorOrder( ) != 0xD000F &&
-		GetCursorOrder( ) != 0xD0012 &&
-		GetCursorOrder( ) != 0xD0016 )
+	if (IsCursorSelectTarget() &&
+		GetCursorOrder() != 0xD000F &&
+		GetCursorOrder() != 0xD0012 &&
+		GetCursorOrder() != 0xD0016)
 	{
-		if ( /*!IsItem || */doubleclickSkillIDs.empty( ) ||
-			std::find( doubleclickSkillIDs.begin( ), doubleclickSkillIDs.end( ), GetCursorSkillID( ) ) != doubleclickSkillIDs.end( )
+		if ( /*!IsItem || */doubleclickSkillIDs.empty() ||
+			std::find(doubleclickSkillIDs.begin(), doubleclickSkillIDs.end(), GetCursorSkillID()) != doubleclickSkillIDs.end()
 			)
 		{
-			int PortraitButtonAddr = GetGlobalClassAddr( );
-			if ( PortraitButtonAddr > 0 )
+			int PortraitButtonAddr = GetGlobalClassAddr();
+			if (PortraitButtonAddr > 0)
 			{
-				PortraitButtonAddr = *( int* )( PortraitButtonAddr + 0x3F4 );
+				PortraitButtonAddr = *(int*)(PortraitButtonAddr + 0x3F4);
 			}
-			if ( PortraitButtonAddr > 0 && !IsItem )
+			if (PortraitButtonAddr > 0 && !IsItem)
 			{
 				//PrintText( "NEED CLICK PORTRAIT" );
-				Wc3ControlClickButton_org( PortraitButtonAddr, 1 );
+				Wc3ControlClickButton_org(PortraitButtonAddr, 1);
 			}
 			else
 			{
@@ -334,7 +337,7 @@ int PressMouseAtSelectedHero( BOOL IsItem )
 
 
 
-DWORD LastPressedKeysTime[ 1024 ];
+DWORD LastPressedKeysTime[1024];
 
 
 vector<int> RegisteredKeyCodes;
@@ -356,43 +359,43 @@ vector<mMessage> SkipMessagesList;
 
 WPARAM LastShift = 0;
 
-LPARAM MakeLParamVK( unsigned int VK, BOOL up, BOOL Extended = FALSE )
+LPARAM MakeLParamVK(unsigned int VK, BOOL up, BOOL Extended = FALSE)
 {
-	if ( up ) return ( LPARAM )( 0xC0000001 | ( ( unsigned int )Extended << 24 ) | ( LPARAM )( MapVirtualKey( VK, 0 ) << 16 ) );
-	else return ( LPARAM )( 0x00000001 | ( ( unsigned int )Extended << 24 ) | ( LPARAM )( MapVirtualKey( VK, 0 ) << 16 ) );
+	if (up) return (LPARAM)(0xC0000001 | ((unsigned int)Extended << 24) | (LPARAM)(MapVirtualKey(VK, 0) << 16));
+	else return (LPARAM)(0x00000001 | ((unsigned int)Extended << 24) | (LPARAM)(MapVirtualKey(VK, 0) << 16));
 }
 
 
-int __stdcall TriggerRegisterPlayerKeyboardEvent( int KeyCode )
+int __stdcall TriggerRegisterPlayerKeyboardEvent(int KeyCode)
 {
-	if ( !KeyCode )
+	if (!KeyCode)
 	{
-		if ( !RegisteredKeyCodes.empty( ) )
-			RegisteredKeyCodes.clear( );
+		if (!RegisteredKeyCodes.empty())
+			RegisteredKeyCodes.clear();
 		return 0;
 	}
 
 
-	RegisteredKeyCodes.push_back( KeyCode );
+	RegisteredKeyCodes.push_back(KeyCode);
 	return 0;
 }
 
-int __stdcall BlockKeyAction( int KeyCode )
+int __stdcall BlockKeyAction(int KeyCode)
 {
-	if ( !KeyCode )
+	if (!KeyCode)
 	{
-		if ( !BlockedKeyCodes.empty( ) )
-			BlockedKeyCodes.clear( );
+		if (!BlockedKeyCodes.empty())
+			BlockedKeyCodes.clear();
 		return 0;
 	}
-	BlockedKeyCodes.push_back( KeyCode );
+	BlockedKeyCodes.push_back(KeyCode);
 
 	return 0;
 }
 
-int GetAltBtnID( int btnID )
+int GetAltBtnID(int btnID)
 {
-	switch ( btnID )
+	switch (btnID)
 	{
 	case 2:
 		return 0;
@@ -413,19 +416,19 @@ int GetAltBtnID( int btnID )
 
 BOOL EnabledReplaceHotkeyFlag = TRUE;
 
-void __stdcall EnableReplaceHotkeyFlag( BOOL enabled )
+void __stdcall EnableReplaceHotkeyFlag(BOOL enabled)
 {
 	EnabledReplaceHotkeyFlag = enabled;
 }
 
 std::vector<KeySelectActionStruct> KeySelectActionList;
 
-int __stdcall AddKeySelectAction( int KeyCode, int GroupHandle )
+int __stdcall AddKeySelectAction(int KeyCode, int GroupHandle)
 {
-	if ( !KeyCode )
+	if (!KeyCode)
 	{
-		if ( !KeySelectActionList.empty( ) )
-			KeySelectActionList.clear( );
+		if (!KeySelectActionList.empty())
+			KeySelectActionList.clear();
 		return 0;
 	}
 
@@ -435,30 +438,30 @@ int __stdcall AddKeySelectAction( int KeyCode, int GroupHandle )
 	tmpstr.IsCtrl = KeyCode & 0x20000;
 	tmpstr.IsShift = KeyCode & 0x40000;
 	tmpstr.GroupHandle = GroupHandle;
-	tmpstr.units = GetUnitsFromGroup( GroupHandle );
+	tmpstr.units = GetUnitsFromGroup(GroupHandle);
 	//reverse( tmpstr.units.begin( ), tmpstr.units.end( ) );
 
 
-	if ( !EnabledReplaceHotkeyFlag || KeyCode & 0x100000 )
+	if (!EnabledReplaceHotkeyFlag || KeyCode & 0x100000)
 	{
-		for ( KeySelectActionStruct & curstr : KeySelectActionList )
+		for (KeySelectActionStruct & curstr : KeySelectActionList)
 		{
-			if ( curstr.VK == tmpstr.VK )
+			if (curstr.VK == tmpstr.VK)
 			{
-				if ( curstr.GroupHandle == tmpstr.GroupHandle ||
-					( ( ( !curstr.IsAlt && !curstr.IsCtrl && !curstr.IsShift )
+				if (curstr.GroupHandle == tmpstr.GroupHandle ||
+					(((!curstr.IsAlt && !curstr.IsCtrl && !curstr.IsShift)
 						&&
-						( !tmpstr.IsAlt && !tmpstr.IsCtrl && !tmpstr.IsShift ) )
+						(!tmpstr.IsAlt && !tmpstr.IsCtrl && !tmpstr.IsShift))
 
-						|| ( curstr.IsAlt && tmpstr.IsAlt )
+						|| (curstr.IsAlt && tmpstr.IsAlt)
 
-						|| ( curstr.IsCtrl && tmpstr.IsCtrl )
+						|| (curstr.IsCtrl && tmpstr.IsCtrl)
 
-						|| ( curstr.IsShift && tmpstr.IsShift ) ) )
+						|| (curstr.IsShift && tmpstr.IsShift)))
 				{
-					if ( SetInfoObjDebugVal )
+					if (SetInfoObjDebugVal)
 					{
-						PrintText( "Replace old selection hotkey." );
+						PrintText("Replace old selection hotkey.");
 					}
 
 					curstr = tmpstr;
@@ -467,24 +470,24 @@ int __stdcall AddKeySelectAction( int KeyCode, int GroupHandle )
 			}
 		}
 	}
-	if ( SetInfoObjDebugVal )
+	if (SetInfoObjDebugVal)
 	{
-		PrintText( "Add new selection hotkey." );
+		PrintText("Add new selection hotkey.");
 	}
 
-	KeySelectActionList.push_back( tmpstr );
+	KeySelectActionList.push_back(tmpstr);
 	return 0;
 }
 
 
 std::vector<KeyChatActionStruct> KeyChatActionList;
 
-int __stdcall AddKeyChatAction( int KeyCode, const char * str, BOOL SendToAll )
+int __stdcall AddKeyChatAction(int KeyCode, const char * str, BOOL SendToAll)
 {
-	if ( !KeyCode )
+	if (!KeyCode)
 	{
-		if ( !KeyChatActionList.empty( ) )
-			KeyChatActionList.clear( );
+		if (!KeyChatActionList.empty())
+			KeyChatActionList.clear();
 		return 0;
 	}
 
@@ -494,24 +497,24 @@ int __stdcall AddKeyChatAction( int KeyCode, const char * str, BOOL SendToAll )
 	tmpstr.IsCtrl = KeyCode & 0x20000;
 	tmpstr.IsShift = KeyCode & 0x40000;
 	tmpstr.SendToAll = SendToAll;
-	tmpstr.Message = str && strlen( str ) < 127 ? str : "Bad message length";
+	tmpstr.Message = str && strlen(str) < 127 ? str : "Bad message length";
 
-	if ( !EnabledReplaceHotkeyFlag || KeyCode & 0x100000 )
+	if (!EnabledReplaceHotkeyFlag || KeyCode & 0x100000)
 	{
-		for ( KeyChatActionStruct & curstr : KeyChatActionList )
+		for (KeyChatActionStruct & curstr : KeyChatActionList)
 		{
-			if ( curstr.VK == tmpstr.VK )
+			if (curstr.VK == tmpstr.VK)
 			{
-				if ( ( ( !curstr.IsAlt && !curstr.IsCtrl && !curstr.IsShift ) &&
-					( !tmpstr.IsAlt && !tmpstr.IsCtrl && !tmpstr.IsShift ) )
-					|| ( curstr.IsAlt && tmpstr.IsAlt )
-					|| ( curstr.IsCtrl && tmpstr.IsCtrl )
-					|| ( curstr.IsShift && tmpstr.IsShift )
+				if (((!curstr.IsAlt && !curstr.IsCtrl && !curstr.IsShift) &&
+					(!tmpstr.IsAlt && !tmpstr.IsCtrl && !tmpstr.IsShift))
+					|| (curstr.IsAlt && tmpstr.IsAlt)
+					|| (curstr.IsCtrl && tmpstr.IsCtrl)
+					|| (curstr.IsShift && tmpstr.IsShift)
 					)
 				{
-					if ( SetInfoObjDebugVal )
+					if (SetInfoObjDebugVal)
 					{
-						PrintText( "Replace old chat hotkey." );
+						PrintText("Replace old chat hotkey.");
 					}
 					curstr = tmpstr;
 					return 0;
@@ -519,23 +522,23 @@ int __stdcall AddKeyChatAction( int KeyCode, const char * str, BOOL SendToAll )
 			}
 		}
 	}
-	if ( SetInfoObjDebugVal )
+	if (SetInfoObjDebugVal)
 	{
-		PrintText( "Add new chat hotkey." );
+		PrintText("Add new chat hotkey.");
 	}
-	KeyChatActionList.push_back( tmpstr );
+	KeyChatActionList.push_back(tmpstr);
 
 	return 0;
 }
 
 std::vector<KeyCalbackActionStruct> KeyCalbackActionList;
 
-int __stdcall AddKeyCalbackAction( int KeyCode, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8 )
+int __stdcall AddKeyCalbackAction(int KeyCode, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8)
 {
-	if ( !KeyCode )
+	if (!KeyCode)
 	{
-		if ( !KeyCalbackActionList.empty( ) )
-			KeyCalbackActionList.clear( );
+		if (!KeyCalbackActionList.empty())
+			KeyCalbackActionList.clear();
 		return 0;
 	}
 
@@ -545,33 +548,33 @@ int __stdcall AddKeyCalbackAction( int KeyCode, int arg2, int arg3, int arg4, in
 	tmpstr.IsCtrl = KeyCode & 0x20000;
 	tmpstr.IsShift = KeyCode & 0x40000;
 	// save args safe
-	tmpstr.args[ 0 ] = arg2;
-	tmpstr.args[ 1 ] = arg3;
-	tmpstr.args[ 2 ] = arg4;
-	tmpstr.args[ 3 ] = arg5;
-	tmpstr.args[ 4 ] = arg6;
-	tmpstr.args[ 5 ] = arg7;
-	tmpstr.args[ 6 ] = arg8;
+	tmpstr.args[0] = arg2;
+	tmpstr.args[1] = arg3;
+	tmpstr.args[2] = arg4;
+	tmpstr.args[3] = arg5;
+	tmpstr.args[4] = arg6;
+	tmpstr.args[5] = arg7;
+	tmpstr.args[6] = arg8;
 
-	if ( !EnabledReplaceHotkeyFlag || KeyCode & 0x100000 )
+	if (!EnabledReplaceHotkeyFlag || KeyCode & 0x100000)
 	{
-		for ( KeyCalbackActionStruct & curstr : KeyCalbackActionList )
+		for (KeyCalbackActionStruct & curstr : KeyCalbackActionList)
 		{
-			if ( curstr.VK == tmpstr.VK )
+			if (curstr.VK == tmpstr.VK)
 			{
 				if (
-					( ( !curstr.IsAlt && !curstr.IsCtrl && !curstr.IsShift ) &&
-					( !tmpstr.IsAlt && !tmpstr.IsCtrl && !tmpstr.IsShift ) )
+					((!curstr.IsAlt && !curstr.IsCtrl && !curstr.IsShift) &&
+					(!tmpstr.IsAlt && !tmpstr.IsCtrl && !tmpstr.IsShift))
 
 
-					|| ( curstr.IsAlt && tmpstr.IsAlt )
-					|| ( curstr.IsCtrl && tmpstr.IsCtrl )
-					|| ( curstr.IsShift && tmpstr.IsShift )
+					|| (curstr.IsAlt && tmpstr.IsAlt)
+					|| (curstr.IsCtrl && tmpstr.IsCtrl)
+					|| (curstr.IsShift && tmpstr.IsShift)
 					)
 				{
-					if ( SetInfoObjDebugVal )
+					if (SetInfoObjDebugVal)
 					{
-						PrintText( "Replace old callback hotkey." );
+						PrintText("Replace old callback hotkey.");
 					}
 					curstr = tmpstr;
 					return 0;
@@ -580,26 +583,26 @@ int __stdcall AddKeyCalbackAction( int KeyCode, int arg2, int arg3, int arg4, in
 		}
 	}
 
-	if ( SetInfoObjDebugVal )
+	if (SetInfoObjDebugVal)
 	{
-		char bufka[ 200 ];
-		sprintf_s( bufka, "Add new callback hotkey. VK %X/ALT %X/CTRL %X/SHIFT %X", tmpstr.VK, tmpstr.IsAlt, tmpstr.IsCtrl, tmpstr.IsShift );
+		char bufka[200];
+		sprintf_s(bufka, "Add new callback hotkey. VK %X/ALT %X/CTRL %X/SHIFT %X", tmpstr.VK, tmpstr.IsAlt, tmpstr.IsCtrl, tmpstr.IsShift);
 
-		PrintText( bufka );
+		PrintText(bufka);
 	}
 
-	KeyCalbackActionList.push_back( tmpstr );
+	KeyCalbackActionList.push_back(tmpstr);
 
 	return 0;
 }
 
 
-int __stdcall AddKeyButtonAction( int KeyCode, int btnID, BOOL IsSkill )
+int __stdcall AddKeyButtonAction(int KeyCode, int btnID, BOOL IsSkill)
 {
-	if ( !KeyCode )
+	if (!KeyCode)
 	{
-		if ( !KeyActionList.empty( ) )
-			KeyActionList.clear( );
+		if (!KeyActionList.empty())
+			KeyActionList.clear();
 		return 0;
 	}
 
@@ -608,8 +611,8 @@ int __stdcall AddKeyButtonAction( int KeyCode, int btnID, BOOL IsSkill )
 	tmpstr.btnID = btnID;
 	tmpstr.IsSkill = IsSkill;
 
-	if ( IsSkill )
-		tmpstr.altbtnID = ( GetAltBtnID( btnID ) );
+	if (IsSkill)
+		tmpstr.altbtnID = (GetAltBtnID(btnID));
 	else
 		tmpstr.altbtnID = 0;
 
@@ -619,22 +622,22 @@ int __stdcall AddKeyButtonAction( int KeyCode, int btnID, BOOL IsSkill )
 	tmpstr.IsRightClick = KeyCode & 0x80000;
 	tmpstr.IsQuickCast = KeyCode & 0x200000;
 
-	if ( !EnabledReplaceHotkeyFlag || KeyCode & 0x100000 )
+	if (!EnabledReplaceHotkeyFlag || KeyCode & 0x100000)
 	{
-		for ( KeyActionStruct & curstr : KeyActionList )
+		for (KeyActionStruct & curstr : KeyActionList)
 		{
-			if ( curstr.btnID == tmpstr.btnID )
+			if (curstr.btnID == tmpstr.btnID)
 			{
-				if ( ( ( !curstr.IsAlt && !curstr.IsCtrl && !curstr.IsShift ) &&
-					( !tmpstr.IsAlt && !tmpstr.IsCtrl && !tmpstr.IsShift ) )
-					|| ( curstr.IsAlt && tmpstr.IsAlt )
-					|| ( curstr.IsCtrl && tmpstr.IsCtrl )
-					|| ( curstr.IsShift && tmpstr.IsShift )
+				if (((!curstr.IsAlt && !curstr.IsCtrl && !curstr.IsShift) &&
+					(!tmpstr.IsAlt && !tmpstr.IsCtrl && !tmpstr.IsShift))
+					|| (curstr.IsAlt && tmpstr.IsAlt)
+					|| (curstr.IsCtrl && tmpstr.IsCtrl)
+					|| (curstr.IsShift && tmpstr.IsShift)
 					)
 				{
-					if ( SetInfoObjDebugVal )
+					if (SetInfoObjDebugVal)
 					{
-						PrintText( "Replace hotkey" );
+						PrintText("Replace hotkey");
 					}
 					curstr = tmpstr;
 					return 0;
@@ -642,20 +645,20 @@ int __stdcall AddKeyButtonAction( int KeyCode, int btnID, BOOL IsSkill )
 			}
 		}
 	}
-	if ( SetInfoObjDebugVal )
+	if (SetInfoObjDebugVal)
 	{
-		char debugtext[ 512 ];
-		sprintf_s( debugtext, "%s:%X %s:%s %s:%s %s:%s %s:%s %s:%s",
+		char debugtext[512];
+		sprintf_s(debugtext, "%s:%X %s:%s %s:%s %s:%s %s:%s %s:%s",
 			"added new hotkey", KeyCode,
-			"IsAlt", GetBoolStr( tmpstr.IsAlt ),
-			"IsCtrl", GetBoolStr( tmpstr.IsCtrl ),
-			"IsShift", GetBoolStr( tmpstr.IsShift ),
-			"IsRightClick", GetBoolStr( tmpstr.IsRightClick ),
-			"IsQuickCast", GetBoolStr( tmpstr.IsQuickCast ) );
-		PrintText( debugtext );
+			"IsAlt", GetBoolStr(tmpstr.IsAlt),
+			"IsCtrl", GetBoolStr(tmpstr.IsCtrl),
+			"IsShift", GetBoolStr(tmpstr.IsShift),
+			"IsRightClick", GetBoolStr(tmpstr.IsRightClick),
+			"IsQuickCast", GetBoolStr(tmpstr.IsQuickCast));
+		PrintText(debugtext);
 
 	}
-	KeyActionList.push_back( tmpstr );
+	KeyActionList.push_back(tmpstr);
 
 	return 0;
 }
@@ -663,11 +666,11 @@ int __stdcall AddKeyButtonAction( int KeyCode, int btnID, BOOL IsSkill )
 
 
 
-BOOL IsNULLButtonFound( int pButton )
+BOOL IsNULLButtonFound(int pButton)
 {
-	if ( pButton > 0 && *( int* )( pButton ) > 0 )
+	if (pButton > 0 && *(int*)(pButton) > 0)
 	{
-		if ( *( int* )( pButton + 0x190 ) != 0 && *( int* )( *( int* )( pButton + 0x190 ) + 4 ) == 0 )
+		if (*(int*)(pButton + 0x190) != 0 && *(int*)(*(int*)(pButton + 0x190) + 4) == 0)
 			return TRUE;
 	}
 	return FALSE;
@@ -680,25 +683,25 @@ BOOL IsNULLButtonFound( int pButton )
 #define flagsOffset 0x138
 #define sizeOfCommandButtonObj 0x1c0
 
-int __stdcall GetSkillPanelButton( int idx )
+int __stdcall GetSkillPanelButton(int idx)
 {
 #ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__, __LINE__ );
+	AddNewLineToDotaHelperLog(__func__, __LINE__);
 #endif
 
-	if ( GetSelectedUnit( GetLocalPlayerId( ) ) )
+	if (GetSelectedUnit(GetLocalPlayerId()))
 	{
-		int pclass = GetGlobalClassAddr( );
-		if ( pclass > 0 )
+		int pclass = GetGlobalClassAddr();
+		if (pclass > 0)
 		{
-			int pGamePlayerPanelSkills = *( int* )( pclass + 0x3c8 );
-			if ( pGamePlayerPanelSkills > 0 )
+			int pGamePlayerPanelSkills = *(int*)(pclass + 0x3c8);
+			if (pGamePlayerPanelSkills > 0)
 			{
-				int topLeftCommandButton = *( int* )( pGamePlayerPanelSkills + 0x154 );
-				if ( topLeftCommandButton > 0 )
+				int topLeftCommandButton = *(int*)(pGamePlayerPanelSkills + 0x154);
+				if (topLeftCommandButton > 0)
 				{
-					topLeftCommandButton = **( int** )( topLeftCommandButton + 0x8 );
-					if ( topLeftCommandButton > 0 )
+					topLeftCommandButton = **(int**)(topLeftCommandButton + 0x8);
+					if (topLeftCommandButton > 0)
 						return topLeftCommandButton + sizeOfCommandButtonObj * idx;
 				}
 			}
@@ -711,27 +714,27 @@ int __stdcall GetSkillPanelButton( int idx )
 // | 2 | 3
 // | 4 | 5
 
-int __stdcall GetItemPanelButton( int idx )
+int __stdcall GetItemPanelButton(int idx)
 {
-	if ( GetSelectedUnit( GetLocalPlayerId( ) ) )
+	if (GetSelectedUnit(GetLocalPlayerId()))
 	{
 #ifdef DOTA_HELPER_LOG
-		AddNewLineToDotaHelperLog( __func__, __LINE__ );
+		AddNewLineToDotaHelperLog(__func__, __LINE__);
 #endif
-		int pclass = GetGlobalClassAddr( );
-		if ( pclass > 0 )
+		int pclass = GetGlobalClassAddr();
+		if (pclass > 0)
 		{
-			int pGamePlayerPanelItems = *( int* )( pclass + 0x3c4 );
-			if ( pGamePlayerPanelItems > 0 )
+			int pGamePlayerPanelItems = *(int*)(pclass + 0x3c4);
+			if (pGamePlayerPanelItems > 0)
 			{
-				int topLeftCommandButton = *( int* )( pGamePlayerPanelItems + 0x148 );
-				if ( topLeftCommandButton > 0 )
+				int topLeftCommandButton = *(int*)(pGamePlayerPanelItems + 0x148);
+				if (topLeftCommandButton > 0)
 				{
-					topLeftCommandButton = *( int* )( topLeftCommandButton + 0x130 );
-					if ( topLeftCommandButton > 0 )
+					topLeftCommandButton = *(int*)(topLeftCommandButton + 0x130);
+					if (topLeftCommandButton > 0)
 					{
-						topLeftCommandButton = *( int* )( topLeftCommandButton + 0x4 );
-						if ( topLeftCommandButton > 0 )
+						topLeftCommandButton = *(int*)(topLeftCommandButton + 0x4);
+						if (topLeftCommandButton > 0)
 						{
 							return topLeftCommandButton + sizeOfCommandButtonObj * idx;
 						}
@@ -744,18 +747,18 @@ int __stdcall GetItemPanelButton( int idx )
 }
 
 
-int GetHeroButton( int idx )
+int GetHeroButton(int idx)
 {
-	int pclass = GetGlobalClassAddr( );
-	if ( pclass > 0 )
+	int pclass = GetGlobalClassAddr();
+	if (pclass > 0)
 	{
-		int pGamePlayerHeroBtn = *( int* )( pclass + 0x3c8 );
-		if ( pGamePlayerHeroBtn > 0 )
+		int pGamePlayerHeroBtn = *(int*)(pclass + 0x3c8);
+		if (pGamePlayerHeroBtn > 0)
 		{
-			pGamePlayerHeroBtn = *( int* )( pGamePlayerHeroBtn + 0x40 );
-			if ( pGamePlayerHeroBtn > 0 )
+			pGamePlayerHeroBtn = *(int*)(pGamePlayerHeroBtn + 0x40);
+			if (pGamePlayerHeroBtn > 0)
 			{
-				pGamePlayerHeroBtn = *( int* )( pGamePlayerHeroBtn + 0x20 );
+				pGamePlayerHeroBtn = *(int*)(pGamePlayerHeroBtn + 0x20);
 				return pGamePlayerHeroBtn;
 			}
 		}
@@ -769,13 +772,13 @@ c_SimpleButtonClickEvent SimpleButtonClickEvent_ptr;
 
 int CommandButtonVtable = 0;
 
-BOOL IsCommandButton( int addr )
+BOOL IsCommandButton(int addr)
 {
-	if ( addr > 0 )
+	if (addr > 0)
 	{
-		if ( CommandButtonVtable )
+		if (CommandButtonVtable)
 		{
-			return *( int* )addr == CommandButtonVtable;
+			return *(int*)addr == CommandButtonVtable;
 		}
 
 	}
@@ -784,66 +787,66 @@ BOOL IsCommandButton( int addr )
 
 std::vector<ClickPortrainForId> ClickPortrainForIdList;
 
-BOOL __stdcall AddClickPortrainForId( int abilid, int keycode )
+BOOL __stdcall AddClickPortrainForId(int abilid, int keycode)
 {
-	if ( abilid == 0 || keycode == 0 )
+	if (abilid == 0 || keycode == 0)
 	{
-		ClickPortrainForIdList.clear( );
+		ClickPortrainForIdList.clear();
 		return FALSE;
 	}
 
-	ClickPortrainForId tmpClickPortrainForId = ClickPortrainForId( );
+	ClickPortrainForId tmpClickPortrainForId = ClickPortrainForId();
 	tmpClickPortrainForId.abilid = abilid;
 	tmpClickPortrainForId.keycode = keycode;
 	tmpClickPortrainForId.checkforcd = FALSE;
 
-	ClickPortrainForIdList.push_back( tmpClickPortrainForId );
+	ClickPortrainForIdList.push_back(tmpClickPortrainForId);
 
 	return TRUE;
 }
 
-BOOL __stdcall AddClickPortrainForIdEx( int abilid, int keycode, BOOL checkforcd )
+BOOL __stdcall AddClickPortrainForIdEx(int abilid, int keycode, BOOL checkforcd)
 {
-	if ( abilid == 0 || keycode == 0 )
+	if (abilid == 0 || keycode == 0)
 	{
-		ClickPortrainForIdList.clear( );
+		ClickPortrainForIdList.clear();
 		return FALSE;
 	}
 
-	ClickPortrainForId tmpClickPortrainForId = ClickPortrainForId( );
+	ClickPortrainForId tmpClickPortrainForId = ClickPortrainForId();
 	tmpClickPortrainForId.abilid = abilid;
 	tmpClickPortrainForId.keycode = keycode;
 	tmpClickPortrainForId.checkforcd = checkforcd;
 
-	ClickPortrainForIdList.push_back( tmpClickPortrainForId );
+	ClickPortrainForIdList.push_back(tmpClickPortrainForId);
 
 	return TRUE;
 }
 
-int CheckBtnForClickPortrain( int pButton )
+int CheckBtnForClickPortrain(int pButton)
 {
-	if ( pButton && IsCommandButton( pButton ) )
+	if (pButton && IsCommandButton(pButton))
 	{
 		//PrintText( "SimpleButton IsCommandButton" );
-		int CommandButtonData = *( int* )( pButton + 0x190 );
-		if ( CommandButtonData )
+		int CommandButtonData = *(int*)(pButton + 0x190);
+		if (CommandButtonData)
 		{
 			//	PrintText( "Click command button." );
-			int pAbil = *( int* )( CommandButtonData + 0x6D4 );
-			if ( pAbil )
+			int pAbil = *(int*)(CommandButtonData + 0x6D4);
+			if (pAbil)
 			{
 				//	PrintText( "Abil found." );
-				int pAbilId = *( int* )( pAbil + 0x34 );
-				if ( pAbilId )
+				int pAbilId = *(int*)(pAbil + 0x34);
+				if (pAbilId)
 				{
 					//	PrintText( "Abil id found." );
-					for ( auto tmpClick : ClickPortrainForIdList )
+					for (auto tmpClick : ClickPortrainForIdList)
 					{
-						if ( pAbilId == tmpClick.abilid && !IsKeyPressed( tmpClick.keycode ) )
+						if (pAbilId == tmpClick.abilid && !IsKeyPressed(tmpClick.keycode))
 						{
-							if ( tmpClick.checkforcd )
+							if (tmpClick.checkforcd)
 							{
-								if ( *( unsigned int * )( pAbil + 0x20 ) & 0x200 )
+								if (*(unsigned int *)(pAbil + 0x20) & 0x200)
 									return 2;
 							}
 							//		PrintText( "OK! Need click!" );
@@ -863,24 +866,24 @@ int CheckBtnForClickPortrain( int pButton )
 
 DWORD LatestButtonClickTime = 0;
 
-int __fastcall SimpleButtonClickEvent_my( int pButton, int unused, int ClickEventType )
+int __fastcall SimpleButtonClickEvent_my(int pButton, int unused, int ClickEventType)
 {
 
-	if ( ClickEventType == 1 && CheckBtnForClickPortrain( pButton ) )
+	if (ClickEventType == 1 && CheckBtnForClickPortrain(pButton))
 	{
 		//PrintText( "Abil id found in list." );
-		int retval = SimpleButtonClickEvent_ptr( pButton, unused, ClickEventType );
-		int PortraitButtonAddr = GetGlobalClassAddr( );
-		if ( PortraitButtonAddr > 0 )
+		int retval = SimpleButtonClickEvent_ptr(pButton, unused, ClickEventType);
+		int PortraitButtonAddr = GetGlobalClassAddr();
+		if (PortraitButtonAddr > 0)
 		{
-			PortraitButtonAddr = *( int* )( PortraitButtonAddr + 0x3F4 );
+			PortraitButtonAddr = *(int*)(PortraitButtonAddr + 0x3F4);
 		}
-		if ( PortraitButtonAddr > 0 )
+		if (PortraitButtonAddr > 0)
 		{
 			//PrintText( "Click to portrain." );
-			if ( Wc3ControlClickButton_org( PortraitButtonAddr, 1 ) )
+			if (Wc3ControlClickButton_org(PortraitButtonAddr, 1))
 			{
-				LatestButtonClickTime = GetTickCount( );
+				LatestButtonClickTime = GetTickCount();
 			}
 		}
 		return retval;
@@ -888,45 +891,45 @@ int __fastcall SimpleButtonClickEvent_my( int pButton, int unused, int ClickEven
 
 	bool CheckDoubleOk = false;
 
-	if ( SetInfoObjDebugVal )
+	if (SetInfoObjDebugVal)
 	{
-		PrintText( "Click SimpleButton." );
+		PrintText("Click SimpleButton.");
 	}
 
 	//
-	if ( IsCommandButton( pButton ) )
+	if (IsCommandButton(pButton))
 	{
-		if ( SetInfoObjDebugVal )
+		if (SetInfoObjDebugVal)
 		{
-			PrintText( "SimpleButton IsCommandButton" );
+			PrintText("SimpleButton IsCommandButton");
 		}
 
 		//
-		int CommandButtonData = *( int* )( pButton + 0x190 );
-		if ( CommandButtonData )
+		int CommandButtonData = *(int*)(pButton + 0x190);
+		if (CommandButtonData)
 		{
-			if ( SetInfoObjDebugVal )
+			if (SetInfoObjDebugVal)
 			{
-				PrintText( "Click command button." );
+				PrintText("Click command button.");
 			}
 			//
-			int pAbil = *( int* )( CommandButtonData + 0x6D4 );
-			if ( pAbil )
+			int pAbil = *(int*)(CommandButtonData + 0x6D4);
+			if (pAbil)
 			{
-				if ( SetInfoObjDebugVal )
+				if (SetInfoObjDebugVal)
 				{
-					PrintText( "Abil found." );
+					PrintText("Abil found.");
 				}
 				//
-				int pAbilId = *( int* )( pAbil + 0x34 );
-				if ( pAbilId )
+				int pAbilId = *(int*)(pAbil + 0x34);
+				if (pAbilId)
 				{
-					if ( doubleclickSkillIDs.empty( ) ||
-						std::find( doubleclickSkillIDs.begin( ), doubleclickSkillIDs.end( ), pAbilId ) != doubleclickSkillIDs.end( ) )
+					if (doubleclickSkillIDs.empty() ||
+						std::find(doubleclickSkillIDs.begin(), doubleclickSkillIDs.end(), pAbilId) != doubleclickSkillIDs.end())
 					{
-						if ( SetInfoObjDebugVal )
+						if (SetInfoObjDebugVal)
 						{
-							PrintText( "Abilid found!!!!" );
+							PrintText("Abilid found!!!!");
 						}
 						CheckDoubleOk = true;
 					}
@@ -935,95 +938,95 @@ int __fastcall SimpleButtonClickEvent_my( int pButton, int unused, int ClickEven
 		}
 	}
 
-	int retval = SimpleButtonClickEvent_ptr( pButton, unused, ClickEventType );
-	if ( retval && CheckDoubleOk )
+	int retval = SimpleButtonClickEvent_ptr(pButton, unused, ClickEventType);
+	if (retval && CheckDoubleOk)
 	{
-		if ( SetInfoObjDebugVal )
+		if (SetInfoObjDebugVal)
 		{
-			PrintText( "Button click success" );
+			PrintText("Button click success");
 		}
-		LatestButtonClickTime = GetTickCount( );
+		LatestButtonClickTime = GetTickCount();
 	}
 	return retval;
 }
 
 
-BOOL __stdcall SimpleButtonClick( int simplebtnaddr, BOOL LeftMouse )
+BOOL __stdcall SimpleButtonClick(int simplebtnaddr, BOOL LeftMouse)
 {
-	return SimpleButtonClickEvent_org( simplebtnaddr, simplebtnaddr, LeftMouse ? 1 : 4 );
+	return SimpleButtonClickEvent_org(simplebtnaddr, simplebtnaddr, LeftMouse ? 1 : 4);
 }
 
-BOOL PressSkillPanelButton( int idx, BOOL RightClick )
+BOOL PressSkillPanelButton(int idx, BOOL RightClick)
 {
 #ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__, __LINE__ );
+	AddNewLineToDotaHelperLog(__func__, __LINE__);
 #endif
-	int button = GetSkillPanelButton( idx );
-	if ( button > 0 && IsCommandButton( button ) )
+	int button = GetSkillPanelButton(idx);
+	if (button > 0 && IsCommandButton(button))
 	{
-		UINT oldflag = *( UINT * )( button + flagsOffset );
-		if ( !( oldflag & 2 ) )
-			*( UINT * )( button + flagsOffset ) = oldflag | 2;
-		int retval = SimpleButtonClickEvent_org( button, 0, RightClick ? 4 : 1 );
-		*( UINT * )( button + flagsOffset ) = oldflag;
+		UINT oldflag = *(UINT *)(button + flagsOffset);
+		if (!(oldflag & 2))
+			*(UINT *)(button + flagsOffset) = oldflag | 2;
+		int retval = SimpleButtonClickEvent_org(button, 0, RightClick ? 4 : 1);
+		*(UINT *)(button + flagsOffset) = oldflag;
 		return retval;
 	}
 	return 0;
 }
 
-BOOL PressItemPanelButton( int idx, BOOL RightClick )
+BOOL PressItemPanelButton(int idx, BOOL RightClick)
 {
 #ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__, __LINE__ );
+	AddNewLineToDotaHelperLog(__func__, __LINE__);
 #endif
-	int button = GetItemPanelButton( idx );
-	if ( button > 0 && IsCommandButton( button ) )
+	int button = GetItemPanelButton(idx);
+	if (button > 0 && IsCommandButton(button))
 	{
-		UINT oldflag = *( UINT * )( button + flagsOffset );
-		if ( !( oldflag & 2 ) )
-			*( UINT * )( button + flagsOffset ) = oldflag | 2;
-		int retval = SimpleButtonClickEvent_org( button, 0, RightClick ? 4 : 1 );
-		*( UINT * )( button + flagsOffset ) = oldflag;
+		UINT oldflag = *(UINT *)(button + flagsOffset);
+		if (!(oldflag & 2))
+			*(UINT *)(button + flagsOffset) = oldflag | 2;
+		int retval = SimpleButtonClickEvent_org(button, 0, RightClick ? 4 : 1);
+		*(UINT *)(button + flagsOffset) = oldflag;
 		return retval;
 	}
 	return 0;
 }
 
-BOOL PressHeroPanelButton( int idx, BOOL RightClick )
+BOOL PressHeroPanelButton(int idx, BOOL RightClick)
 {
 #ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__, __LINE__ );
+	AddNewLineToDotaHelperLog(__func__, __LINE__);
 #endif
-	int button = GetHeroButton( idx );
-	if ( button > 0 && IsCommandButton( button ) )
+	int button = GetHeroButton(idx);
+	if (button > 0 && IsCommandButton(button))
 	{
-		UINT oldflag = *( UINT * )( button + flagsOffset );
-		if ( !( oldflag & 2 ) )
-			*( UINT * )( button + flagsOffset ) = oldflag | 2;
-		int retval = SimpleButtonClickEvent_org( button, 0, RightClick ? 4 : 1 );
-		*( UINT * )( button + flagsOffset ) = oldflag;
+		UINT oldflag = *(UINT *)(button + flagsOffset);
+		if (!(oldflag & 2))
+			*(UINT *)(button + flagsOffset) = oldflag | 2;
+		int retval = SimpleButtonClickEvent_org(button, 0, RightClick ? 4 : 1);
+		*(UINT *)(button + flagsOffset) = oldflag;
 		return retval;
 	}
 	return 0;
 }
 
-BOOL IsMouseOverWindow( RECT pwi, POINT cursorPos )
+BOOL IsMouseOverWindow(RECT pwi, POINT cursorPos)
 {
-	return PtInRect( &pwi, cursorPos );
+	return PtInRect(&pwi, cursorPos);
 }
 
 vector<unsigned char> SendKeyEvent;
 
-auto t_start = std::chrono::high_resolution_clock::now( );
+auto t_start = std::chrono::high_resolution_clock::now();
 
 BOOL LOCK_MOUSE_IN_WINDOW = FALSE;
 
-int __stdcall LockMouseInWindow( BOOL enable )
+int __stdcall LockMouseInWindow(BOOL enable)
 {
 	LOCK_MOUSE_IN_WINDOW = enable;
 
-	if ( !LOCK_MOUSE_IN_WINDOW )
-		ClipCursor( 0 );
+	if (!LOCK_MOUSE_IN_WINDOW)
+		ClipCursor(0);
 
 	return enable;
 }
@@ -1031,7 +1034,7 @@ int __stdcall LockMouseInWindow( BOOL enable )
 
 BOOL BlockKeyboardAndMouseWhenTeleport = FALSE;
 
-int __stdcall TeleportHelper( BOOL enabled )
+int __stdcall TeleportHelper(BOOL enabled)
 {
 	BlockKeyboardAndMouseWhenTeleport = enabled;
 	return enabled;
@@ -1042,25 +1045,23 @@ vector<int> WhiteListForTeleport;
 
 BOOL TeleportShiftPress = FALSE;
 
-int __stdcall TeleportShiftKey( BOOL enabled )
+int __stdcall TeleportShiftKey(BOOL enabled)
 {
 	TeleportShiftPress = enabled;
 	return enabled;
 }
 
-int __stdcall TeleportWhiteListKey( int VK )
+int __stdcall TeleportWhiteListKey(int VK)
 {
-	if ( VK == 0 && !WhiteListForTeleport.empty( ) )
-		WhiteListForTeleport.clear( );
-	WhiteListForTeleport.push_back( VK );
+	if (VK == 0 && !WhiteListForTeleport.empty())
+		WhiteListForTeleport.clear();
+	WhiteListForTeleport.push_back(VK);
 	return VK;
 }
 
-BOOL SingleShift = FALSE;
-
 BOOL ShopHelperEnabled = FALSE;
 
-int __stdcall ShopHelper( BOOL enable )
+int __stdcall ShopHelper(BOOL enable)
 {
 	ShopHelperEnabled = enable;
 	return enable;
@@ -1069,19 +1070,20 @@ int __stdcall ShopHelper( BOOL enable )
 int ChatEditBoxVtable = 0;
 
 
-BOOL IsChatActive( )
+BOOL IsChatActive()
 {
-	return  *( int* )pCurrentFrameFocusedAddr  && **( int** )pCurrentFrameFocusedAddr == GameDll + ChatEditBoxVtable;
+	return isChatBoxOn( );
+	//return  *(int*)pCurrentFrameFocusedAddr  && **(int**)pCurrentFrameFocusedAddr == GameDll + ChatEditBoxVtable;
 }
 
-BOOL IsGameFrameActive( )
+BOOL IsGameFrameActive()
 {
 #ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__, __LINE__ );
+	AddNewLineToDotaHelperLog(__func__, __LINE__);
 #endif
 
 
-	if ( IsChatActive( ) )
+	if (IsChatActive())
 	{
 		return FALSE;
 	}
@@ -1089,30 +1091,30 @@ BOOL IsGameFrameActive( )
 	BOOL a1 = TRUE, a2 = TRUE, a3 = FALSE;
 
 
-	int pGlAddr = GetGlobalClassAddr( );
-	if ( pGlAddr > 0 )
+	int pGlAddr = GetGlobalClassAddr();
+	if (pGlAddr > 0)
 	{
-		pGlAddr = *( int* )( pGlAddr + 0x3D0 );
-		if ( pGlAddr > 0 )
+		pGlAddr = *(int*)(pGlAddr + 0x3D0);
+		if (pGlAddr > 0)
 		{
-			pGlAddr = *( int* )( pGlAddr + 0x164 );
+			pGlAddr = *(int*)(pGlAddr + 0x164);
 #ifdef DOTA_HELPER_LOG
-			AddNewLineToDotaHelperLog( __func__, __LINE__ );
+			AddNewLineToDotaHelperLog(__func__, __LINE__);
 #endif
 			a1 = pGlAddr > 0;
 		}
 	}
 
-	pGlAddr = GetGlobalClassAddr( );
-	if ( pGlAddr > 0 )
+	pGlAddr = GetGlobalClassAddr();
+	if (pGlAddr > 0)
 	{
-		pGlAddr = *( int* )( pGlAddr + 0x258 );
+		pGlAddr = *(int*)(pGlAddr + 0x258);
 		a2 = pGlAddr != 1;
 	}
 
 
 
-	if ( *( int* )pCurrentFrameFocusedAddr == 0 )
+	if (*(int*)pCurrentFrameFocusedAddr == 0)
 	{
 		a3 = TRUE;
 	}
@@ -1120,7 +1122,7 @@ BOOL IsGameFrameActive( )
 
 
 #ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__, __LINE__ );
+	AddNewLineToDotaHelperLog(__func__, __LINE__);
 #endif
 	return a3 && a2 && a1;
 }
@@ -1128,7 +1130,7 @@ BOOL IsGameFrameActive( )
 
 BOOL rawimage_skipmouseevent = TRUE;
 
-int __stdcall RawImage_SkipMouseClick( BOOL enabled )
+int __stdcall RawImage_SkipMouseClick(BOOL enabled)
 {
 	rawimage_skipmouseevent = enabled;
 	return rawimage_skipmouseevent;
@@ -1136,7 +1138,7 @@ int __stdcall RawImage_SkipMouseClick( BOOL enabled )
 
 BOOL AutoSelectHero = FALSE;
 
-int __stdcall SetAutoSelectHero( BOOL enabled )
+int __stdcall SetAutoSelectHero(BOOL enabled)
 {
 	AutoSelectHero = TRUE;
 	return AutoSelectHero;
@@ -1147,193 +1149,178 @@ int __stdcall SetAutoSelectHero( BOOL enabled )
 safevector<DelayedPress> DelayedPressList;
 
 
-void DelayedPressList_pushback( DelayedPress & d )
+void DelayedPressList_pushback(DelayedPress & d)
 {
-	for ( unsigned int i = 0; i < DelayedPressList.size( ); i++ )
+	for (unsigned int i = 0; i < DelayedPressList.size(); i++)
 	{
-		if ( DelayedPressList[ i ].IsNull( ) )
+		if (DelayedPressList[i].IsNull())
 		{
-			DelayedPressList[ i ] = d;
-			DelayedPressList[ i ].ISNULL = FALSE;
+			DelayedPressList[i] = d;
+			DelayedPressList[i].ISNULL = FALSE;
 
 			return;
 		}
 	}
-	DelayedPressList.push_back( d );
+	DelayedPressList.push_back(d);
 }
 
-int PRESSRIGHTMOUSEIFCURSORTARGETWORK = 0;
+int DisableTargetCurcorWORK = 0;
+DWORD latDisableTargetCurcor = 0;
 
-DWORD WINAPI PRESSRIGHTMOUSEIFCURSORTARGET( LPVOID )
+void  DisableTargetCurcor()
 {
-	if ( PRESSRIGHTMOUSEIFCURSORTARGETWORK )
+	if (DisableTargetCurcorWORK <= 0)
+		return;
+
+	if (GetTickCount() - latDisableTargetCurcor > 25)
 	{
-		return 0;
-	}
-
-	PRESSRIGHTMOUSEIFCURSORTARGETWORK++;
-
-
-	int MaxWaitTime = 25;
-
-	while ( !IsCursorSelectTarget( ) && MaxWaitTime )
-	{
-		Sleep( 1 );
-		MaxWaitTime--;
-	}
-
-
-	if ( IsCursorSelectTarget( ) && MaxWaitTime )
-	{
-		//	SetTlsForMe( );
-		Sleep( 3 );
-
-		POINT cursorhwnd;
-		GetCursorPos( &cursorhwnd );
-		ScreenToClient( Warcraft3Window, &cursorhwnd );
-
-		WarcraftRealWNDProc_ptr( Warcraft3Window, WM_RBUTTONDOWN, MK_RBUTTON, MAKELPARAM( cursorhwnd.x, cursorhwnd.y ) );
-		WarcraftRealWNDProc_ptr( Warcraft3Window, WM_RBUTTONUP, 0, MAKELPARAM( cursorhwnd.x, cursorhwnd.y ) );
-
-		//__asm
-		//{
-		//	mov ecx, GameDll;
-		//	add ecx, 0xAB4F80;
-		//	mov ecx, [ ecx ];
-		//	mov edi, GameDll;
-		//	add edi, 0x2FB920; //  clear cursor
-		//	call edi;
-		//}
-	}
-
-	PRESSRIGHTMOUSEIFCURSORTARGETWORK--;
-	return 0;
-}
-
-void PressKeyWithDelay_timed( )
-{
-	if ( IsGame( ) && *IsWindowActive )
-	{
-		for ( unsigned int i = 0; i < DelayedPressList.size( ); i++ )
+		latDisableTargetCurcor = GetTickCount();
+		DisableTargetCurcorWORK--;
+		if (SetInfoObjDebugVal)
 		{
-			if ( DelayedPressList[ i ].IsNull( ) )
+			PrintText("w1");
+		}
+		if (IsCursorSelectTarget())
+		{
+			if (SetInfoObjDebugVal)
+			{
+				PrintText("w2");
+			}
+			POINT cursorhwnd;
+			GetCursorPos(&cursorhwnd);
+			ScreenToClient(Warcraft3Window, &cursorhwnd);
+
+			WarcraftRealWNDProc_ptr(Warcraft3Window, WM_RBUTTONDOWN, MK_RBUTTON, MAKELPARAM(cursorhwnd.x, cursorhwnd.y));
+			WarcraftRealWNDProc_ptr(Warcraft3Window, WM_RBUTTONUP, 0, MAKELPARAM(cursorhwnd.x, cursorhwnd.y));
+			DisableTargetCurcorWORK = 0;
+			//__asm
+			//{
+			//	mov ecx, GameDll;
+			//	add ecx, 0xAB4F80;
+			//	mov ecx, [ ecx ];
+			//	mov edi, GameDll;
+			//	add edi, 0x2FB920; //  clear cursor
+			//	call edi;
+			//}
+		}
+	}
+
+}
+
+void PressKeyWithDelay_timed()
+{
+	if (IsGame() && *IsWindowActive)
+	{
+		for (unsigned int i = 0; i < DelayedPressList.size(); i++)
+		{
+			if (DelayedPressList[i].IsNull())
 				continue;
 
-			if ( DelayedPressList[ i ].TimeOut >= 20 )
+			if (DelayedPressList[i].TimeOut >= 20)
 			{
-				DelayedPressList[ i ].TimeOut -= 20;
+				DelayedPressList[i].TimeOut -= 20;
 			}
-			else if ( DelayedPressList[ i ].TimeOut > 0 )
+			else if (DelayedPressList[i].TimeOut > 0)
 			{
-				DelayedPressList[ i ].TimeOut = 0;
+				DelayedPressList[i].TimeOut = 0;
 			}
 			else
 			{
-				if ( !DelayedPressList[ i ].IsCustom )
+				if (!DelayedPressList[i].IsCustom)
 				{
-					if ( DelayedPressList[ i ].NeedPressMsg == 0 )
+					if (DelayedPressList[i].NeedPressMsg == 0)
 					{
-						WarcraftRealWNDProc_ptr( Warcraft3Window, WM_KEYDOWN, DelayedPressList[ i ].NeedPresswParam, DelayedPressList[ i ].NeedPresslParam );
-						WarcraftRealWNDProc_ptr( Warcraft3Window, WM_KEYUP, DelayedPressList[ i ].NeedPresswParam, ( LPARAM )( 0xC0000000 | DelayedPressList[ i ].NeedPresslParam ) );
+						WarcraftRealWNDProc_ptr(Warcraft3Window, WM_KEYDOWN, DelayedPressList[i].NeedPresswParam, DelayedPressList[i].NeedPresslParam);
+						WarcraftRealWNDProc_ptr(Warcraft3Window, WM_KEYUP, DelayedPressList[i].NeedPresswParam, (LPARAM)(0xC0000000 | DelayedPressList[i].NeedPresslParam));
 					}
 					else
 					{
-						WarcraftRealWNDProc_ptr( Warcraft3Window, DelayedPressList[ i ].NeedPressMsg, DelayedPressList[ i ].NeedPresswParam, DelayedPressList[ i ].NeedPresslParam );
+						WarcraftRealWNDProc_ptr(Warcraft3Window, DelayedPressList[i].NeedPressMsg, DelayedPressList[i].NeedPresswParam, DelayedPressList[i].NeedPresslParam);
 					}
 
 				}
 				else
 				{
 
-					for ( KeyActionStruct & keyAction : KeyActionList )
+					for (KeyActionStruct & keyAction : KeyActionList)
 					{
-						if ( keyAction.VK == ( int )DelayedPressList[ i ].NeedPresswParam && IsGameFrameActive( ) )
+						if (keyAction.VK == (int)DelayedPressList[i].NeedPresswParam && IsGameFrameActive())
 						{
 
-							if ( ( !keyAction.IsAlt && !keyAction.IsCtrl && !keyAction.IsShift )
-								|| ( keyAction.IsAlt && DelayedPressList[ i ].IsAlt )
-								|| ( keyAction.IsCtrl && DelayedPressList[ i ].IsCtrl )
-								|| ( keyAction.IsShift && DelayedPressList[ i ].IsCustom )
+							if ((!keyAction.IsAlt && !keyAction.IsCtrl && !keyAction.IsShift)
+								|| (keyAction.IsAlt && DelayedPressList[i].IsAlt)
+								|| (keyAction.IsCtrl && DelayedPressList[i].IsCtrl)
+								|| (keyAction.IsShift && DelayedPressList[i].IsCustom)
 								)
 							{
-								int selectedunits = GetSelectedUnitCountBigger( GetLocalPlayerId( ) );
+								int selectedunits = GetSelectedUnitCountBigger(GetLocalPlayerId());
 								BOOL itempressed = !keyAction.IsSkill;
 
-								if ( itempressed || ( keyAction.IsSkill && !IsCursorSelectTarget( ) ) )
+								if (itempressed || (keyAction.IsSkill && !IsCursorSelectTarget()))
 								{
-									int selectedunit = GetSelectedUnit( GetLocalPlayerId( ) );
-									if ( selectedunit > 0 && selectedunits > 0 )
+									int selectedunit = GetSelectedUnit(GetLocalPlayerId());
+									if (selectedunit > 0 && selectedunits > 0)
 									{
-										int unitowner = GetUnitOwnerSlot( selectedunit );
-										if ( unitowner != 15 )
+										int unitowner = GetUnitOwnerSlot(selectedunit);
+										if (unitowner != 15)
 										{
 											BOOL PressedButton = FALSE;
 
-											if ( IsNULLButtonFound( GetSkillPanelButton( 11 ) ) )
+											if (IsNULLButtonFound(GetSkillPanelButton(11)))
 											{
-												if ( keyAction.altbtnID >= 0 )
+												if (keyAction.altbtnID >= 0)
 												{
-													if ( !( DelayedPressList[ i ].NeedPresslParam & 0x40000000 ) )
+													if (!(DelayedPressList[i].NeedPresslParam & 0x40000000))
 													{
-														if ( keyAction.IsSkill )
-															PressedButton = PressSkillPanelButton( keyAction.altbtnID, keyAction.IsRightClick );
+														if (keyAction.IsSkill)
+															PressedButton = PressSkillPanelButton(keyAction.altbtnID, keyAction.IsRightClick);
 														else
-															PressedButton = PressItemPanelButton( keyAction.btnID, keyAction.IsRightClick );
+															PressedButton = PressItemPanelButton(keyAction.btnID, keyAction.IsRightClick);
 													}
 
 												}
 											}
 											else
 											{
-												if ( !( DelayedPressList[ i ].NeedPresslParam & 0x40000000 ) )
+												if (!(DelayedPressList[i].NeedPresslParam & 0x40000000))
 												{
-													if ( keyAction.IsSkill )
-														PressedButton = PressSkillPanelButton( keyAction.btnID, keyAction.IsRightClick );
+													if (keyAction.IsSkill)
+														PressedButton = PressSkillPanelButton(keyAction.btnID, keyAction.IsRightClick);
 													else
-														PressedButton = PressItemPanelButton( keyAction.btnID, keyAction.IsRightClick );
+														PressedButton = PressItemPanelButton(keyAction.btnID, keyAction.IsRightClick);
 													//PressedButton = TRUE;
 												}
 
 											}
 
-										/*	if ( !PressedButton )
-											{
-												if ( SetInfoObjDebugVal )
+											/*	if ( !PressedButton )
 												{
-													PrintText( "NO ButtonPressed!" );
+													if ( SetInfoObjDebugVal )
+													{
+														PrintText( "NO ButtonPressed!" );
+													}
 												}
-											}
 
-*/
-											if ( keyAction.IsQuickCast && PressedButton && IsCursorSelectTarget( ) )
+	*/
+											if (keyAction.IsQuickCast && PressedButton && IsCursorSelectTarget())
 											{
-												if ( SetInfoObjDebugVal )
+												if (SetInfoObjDebugVal)
 												{
-													int button = GetSkillPanelButton( 11 );
-													PrintText( "QuickCast called: ButtonAddr:" + to_string( button ) + ". IsCursorSelectTarget: " + to_string( IsCursorSelectTarget( ) ) );
+													int button = GetSkillPanelButton(11);
+													PrintText("QuickCast called: ButtonAddr:" + to_string(button) + ". IsCursorSelectTarget: " + to_string(IsCursorSelectTarget()));
 												}
 
 												/*int x = ( int )( *GetWindowXoffset );
 												int y = ( int )( *GetWindowYoffset );
 												*/
 												POINT cursorhwnd;
-												GetCursorPos( &cursorhwnd );
-												ScreenToClient( Warcraft3Window, &cursorhwnd );
+												GetCursorPos(&cursorhwnd);
+												ScreenToClient(Warcraft3Window, &cursorhwnd);
 
-												WarcraftRealWNDProc_ptr( Warcraft3Window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM( cursorhwnd.x, cursorhwnd.y ) );
-												WarcraftRealWNDProc_ptr( Warcraft3Window, WM_LBUTTONUP, 0, MAKELPARAM( cursorhwnd.x, cursorhwnd.y ) );
+												WarcraftRealWNDProc_ptr(Warcraft3Window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(cursorhwnd.x, cursorhwnd.y));
+												WarcraftRealWNDProc_ptr(Warcraft3Window, WM_LBUTTONUP, 0, MAKELPARAM(cursorhwnd.x, cursorhwnd.y));
 
-												HANDLE thr = CreateThread( 0, 0, PRESSRIGHTMOUSEIFCURSORTARGET, 0, 0, 0 );
-												if ( thr != NULL )
-													CloseHandle( thr );
-												else
-												{
-													if ( SetInfoObjDebugVal )
-													{
-														PrintText( "CreateThread QuickCast error!" );
-													}
-												}
-
+												DisableTargetCurcorWORK = 3;
 
 
 												/*	if ( IsCursorSelectTarget( ) )
@@ -1353,23 +1340,23 @@ void PressKeyWithDelay_timed( )
 
 												//MouseClick( cursor.x, cursor.y );
 											}
-											else if ( !keyAction.IsQuickCast )
+											else if (!keyAction.IsQuickCast)
 											{
-												if ( SetInfoObjDebugVal )
+												if (SetInfoObjDebugVal)
 												{
-													PrintText( "Skip quick cast: no flag!" );
+													PrintText("Skip quick cast: no flag!");
 												}
 											}
-											else if ( !PressedButton )
+											else if (!PressedButton)
 											{
-												if ( SetInfoObjDebugVal )
+												if (SetInfoObjDebugVal)
 												{
-													PrintText( "Skip quick cast: Button not pressed!" );
+													PrintText("Skip quick cast: Button not pressed!");
 												}
 											}
 
 
-											if ( PressedButton )
+											if (PressedButton)
 												break;
 										}
 
@@ -1381,7 +1368,7 @@ void PressKeyWithDelay_timed( )
 					}
 
 				}
-				DelayedPressList[ i ].ISNULL = TRUE;
+				DelayedPressList[i].ISNULL = TRUE;
 
 			}
 
@@ -1393,7 +1380,7 @@ void PressKeyWithDelay_timed( )
 }
 
 
-BOOL IsNumpadPressed( int VK )
+BOOL IsNumpadPressed(int VK)
 {
 	return VK == VK_NUMPAD1 ||
 		VK == VK_NUMPAD2 ||
@@ -1409,9 +1396,9 @@ BOOL IsNumpadPressed( int VK )
 
 //int __stdcall GetItemPanelButton( int idx )
 
-int GetBtnIdByNumpad( int VK )
+int GetBtnIdByNumpad(int VK)
 {
-	switch ( VK )
+	switch (VK)
 	{
 	case VK_NUMPAD1:
 		return  4;
@@ -1431,13 +1418,13 @@ int GetBtnIdByNumpad( int VK )
 
 	return -1;
 }
-int GetBtnAddrByNumpad( int VK )
+int GetBtnAddrByNumpad(int VK)
 {
-	int btnid = GetBtnIdByNumpad( VK );
-	if ( btnid == -1 )
+	int btnid = GetBtnIdByNumpad(VK);
+	if (btnid == -1)
 		return 0;
 
-	return GetItemPanelButton( GetBtnIdByNumpad( VK ) );
+	return GetItemPanelButton(GetBtnIdByNumpad(VK));
 }
 
 WPARAM LatestPressedKey = NULL;
@@ -1447,15 +1434,86 @@ POINTS GlobalMousePos = { 0,0 };
 //BOOL DebugMsgShow = FALSE;
 
 bool InitTestValues = false;
-unsigned int TestValues[ 10 ];
+unsigned int TestValues[10];
 
 
-
-unsigned int __stdcall GetTestValue( int id )
+int _stdcall GetMouseX(int)
 {
-	if ( id >= 0 && id <= 7 )
+	return GlobalMousePos.x;
+}
+int _stdcall GetMouseY(int)
+{
+	return GlobalMousePos.y;
+}
+
+
+void GetMousePosition(float * x, float * y, float * z)
+{
+#ifdef BOTDEBUG
+	PrintDebugInfo("Mouse info");
+#endif
+	int globalclass = GetGlobalClassAddr();
+
+	int offset1 = globalclass + 0x3BC;
+
+	if (globalclass > 0)
 	{
-		return TestValues[ id ];
+
+
+		if (IsOkayPtr((void*)offset1))
+		{
+			offset1 = *(int *)offset1;
+			if (IsOkayPtr((void*)offset1))
+			{
+				*x = *(float*)(offset1 + 0x310);
+				*y = *(float*)(offset1 + 0x310 + 4);
+				*z = *(float*)(offset1 + 0x310 + 4 + 4);
+			}
+			else
+			{
+				*x = 0.0f;
+				*y = 0.0f;
+				*z = 0.0f;
+			}
+		}
+		else
+		{
+			*x = 0.0f;
+			*y = 0.0f;
+			*z = 0.0f;
+		}
+
+	}
+}
+
+
+float __stdcall GetMouseIngameX(int)
+{
+	float x, y, z;
+	GetMousePosition(&x, &y, &z);
+	return x;
+}
+
+float __stdcall GetMouseIngameY(int)
+{
+	float x, y, z;
+	GetMousePosition(&x, &y, &z);
+	return y;
+}
+
+float __stdcall GetMouseIngameZ(int)
+{
+	float x, y, z;
+	GetMousePosition(&x, &y, &z);
+	return z;
+}
+
+
+unsigned int __stdcall GetTestValue(int id)
+{
+	if (id >= 0 && id <= 7)
+	{
+		return TestValues[id];
 	}
 	return 0;
 }
@@ -1464,51 +1522,50 @@ BOOL ForceLvl1 = FALSE;
 BOOL ForceLvl2 = FALSE;
 BOOL ForceLvl3 = FALSE;
 
-void __stdcall SetForceHotkeyProcess( BOOL lvl1, BOOL lvl2, BOOL lvl3 )
+void __stdcall SetForceHotkeyProcess(BOOL lvl1, BOOL lvl2, BOOL lvl3)
 {
 	ForceLvl1 = lvl1;
 	ForceLvl2 = lvl2;
 	ForceLvl3 = lvl3;
-
 }
 
 // Заменяет текст в строке 
-bool replaceAll( std::string& str, const std::string& from, const std::string& to, int addtofrom = 0 )
+bool replaceAll(std::string& str, const std::string& from, const std::string& to, int addtofrom = 0)
 {
-	if ( from.empty( ) )
+	if (from.empty())
 		return false;
 	bool replaced = false;
 	size_t start_pos = 0;
-	while ( ( start_pos = str.find( from, start_pos ) ) != std::string::npos ) {
+	while ((start_pos = str.find(from, start_pos)) != std::string::npos) {
 		replaced = true;
-		str.replace( start_pos, from.length( ) + addtofrom, to );
-		start_pos += to.length( ); // In case 'to' contains 'from', like replacing 'x' with 'yx'
+		str.replace(start_pos, from.length() + addtofrom, to);
+		start_pos += to.length(); // In case 'to' contains 'from', like replacing 'x' with 'yx'
 	}
 	return replaced;
 }
 
 
-std::string ReturnStringWithoutWarcraftTags( std::string str )
+std::string ReturnStringWithoutWarcraftTags(std::string str)
 {
-	if ( str.length( ) <= 1 )
+	if (str.length() <= 1)
 		return str;
-	replaceAll( str, "|c", "", 8 );
-	replaceAll( str, "|n", "" );
-	replaceAll( str, "|r", "" );
-	replaceAll( str, "|", "" );
-	replaceAll( str, "- [Level ", "[" );
+	replaceAll(str, "|c", "", 8);
+	replaceAll(str, "|n", "");
+	replaceAll(str, "|r", "");
+	replaceAll(str, "|", "");
+	replaceAll(str, "- [Level ", "[");
 	return str;
 }
 
 
-std::string ReturnStringBeforeFirstChar( std::string str, char crepl )
+std::string ReturnStringBeforeFirstChar(std::string str, char crepl)
 {
-	if ( str.length( ) <= 1 )
+	if (str.length() <= 1)
 		return str;
 
-	for ( auto & c : str )
+	for (auto & c : str)
 	{
-		if ( c == crepl )
+		if (c == crepl)
 		{
 			c = '\0';
 			break;
@@ -1517,14 +1574,14 @@ std::string ReturnStringBeforeFirstChar( std::string str, char crepl )
 	return str;
 }
 
-std::string ReturnStringBeforeFirstString( std::string str, char crepl )
+std::string ReturnStringBeforeFirstString(std::string str, char crepl)
 {
-	if ( str.length( ) <= 1 )
+	if (str.length() <= 1)
 		return str;
 
-	for ( auto & c : str )
+	for (auto & c : str)
 	{
-		if ( c == crepl )
+		if (c == crepl)
 		{
 			c = '\0';
 			break;
@@ -1533,18 +1590,18 @@ std::string ReturnStringBeforeFirstString( std::string str, char crepl )
 	return str;
 }
 
-std::string GetObjectNameByID( int clid )
+std::string GetObjectNameByID(int clid)
 {
-	if ( clid > 0 )
+	if (clid > 0)
 	{
-		int tInfo = GetTypeInfo( clid, 0 );
+		int tInfo = GetTypeInfo(clid, 0);
 		int tInfo_1d, tInfo_2id;
-		if ( tInfo && ( tInfo_1d = *( int * )( tInfo + 40 ) ) != 0 )
+		if (tInfo && (tInfo_1d = *(int *)(tInfo + 40)) != 0)
 		{
 			tInfo_2id = tInfo_1d - 1;
-			if ( tInfo_2id >= ( unsigned int )0 )
+			if (tInfo_2id >= (unsigned int)0)
 				tInfo_2id = 0;
-			return ( const char * )*( int * )( *( int * )( tInfo + 44 ) + 4 * tInfo_2id );
+			return (const char *)*(int *)(*(int *)(tInfo + 44) + 4 * tInfo_2id);
 		}
 		else
 		{
@@ -1571,16 +1628,16 @@ std::string NeedMoreMana = "Need %i mana for > %s";
 std::string IgotSilence = "Can't use %s while silenced";
 
 
-int ignorelist[ ] = { 1,2,3 };
+int ignorelist[] = { 1,2,3 };
 
 std::vector<ObjInfoAction> IgnoreObjInfo;
 
-void __stdcall SetCustomDefaultMessage( int id, const char * message )
+void __stdcall SetCustomDefaultMessage(int id, const char * message)
 {
-	if ( id < 1 || id > 10 || message == NULL )
+	if (id < 1 || id > 10 || message == NULL)
 		return;
 
-	switch ( id )
+	switch (id)
 	{
 	case 1:
 		IsCooldownMessage = message;
@@ -1644,61 +1701,57 @@ OrderId
 AbilId
 ItemId
 */
-void __stdcall AddInfoObjCodeCustomAction( int ObjId, int ObjId2, int action, const char * custommessage )
+void __stdcall AddInfoObjCodeCustomAction(int ObjId, int ObjId2, int action, const char * custommessage)
 {
-	if ( ObjId == 0 && ObjId2 == 0 && action == 0 )
+	if (ObjId == 0 && ObjId2 == 0 && action == 0)
 	{
-		IgnoreObjInfo.clear( );
+		IgnoreObjInfo.clear();
 	}
 
-	for ( auto & s : IgnoreObjInfo )
+	for (auto & s : IgnoreObjInfo)
 	{
-		if ( s.ObjId == ObjId && s.ObjId2 == ObjId2 )
+		if (s.ObjId == ObjId && s.ObjId2 == ObjId2)
 		{
 			s.Action = action;
 			s.CustomMessage = custommessage ? custommessage : "";
 			return;
 		}
 	}
-	IgnoreObjInfo.push_back( ObjInfoAction( ObjId, ObjId2, action, custommessage ? custommessage : "" ) );
+	IgnoreObjInfo.push_back(ObjInfoAction(ObjId, ObjId2, action, custommessage ? custommessage : ""));
 
 }
 
 
 std::vector< int > InfoWhitelistedObj;
 
-void __stdcall AddInfoWhiteListedObj( int ObjId )
+void __stdcall AddInfoWhiteListedObj(int ObjId)
 {
-	if ( ObjId == 0 )
+	if (ObjId == 0)
 	{
-		InfoWhitelistedObj.clear( );
+		InfoWhitelistedObj.clear();
 	}
 
-	InfoWhitelistedObj.push_back( ObjId );
+	InfoWhitelistedObj.push_back(ObjId);
 
 }
 
-
-
-
-
-void __stdcall SetInfoObjDebug( BOOL debug )
+void __stdcall SetInfoObjDebug(BOOL debug)
 {
 	SetInfoObjDebugVal = debug;
 }
 
-int GetAbilityManacost( int pAbil )
+int GetAbilityManacost(int pAbil)
 {
-	if ( pAbil )
+	if (pAbil)
 	{
-		int vtable = *( int * )pAbil;
-		if ( vtable )
+		int vtable = *(int *)pAbil;
+		if (vtable)
 		{
-			int GetAbilMPcostAddr = *( int* )( vtable + 0x3d4 );
-			if ( GetAbilMPcostAddr )
+			int GetAbilMPcostAddr = *(int*)(vtable + 0x3d4);
+			if (GetAbilMPcostAddr)
 			{
-				auto GetAbilMPcost = ( int( __thiscall * )( int ) )( GetAbilMPcostAddr );
-				return GetAbilMPcost( pAbil );
+				auto GetAbilMPcost = (int(__thiscall *)(int))(GetAbilMPcostAddr);
+				return GetAbilMPcost(pAbil);
 			}
 		}
 	}
@@ -1709,7 +1762,7 @@ int GetAbilityManacost( int pAbil )
 
 pSimpleButtonPreClickEvent SimpleButtonPreClickEvent_org;
 pSimpleButtonPreClickEvent SimpleButtonPreClickEvent_ptr;
-int __fastcall SimpleButtonPreClickEvent_my( int pButton, int unused, int a2 )
+int __fastcall SimpleButtonPreClickEvent_my(int pButton, int unused, int a2)
 {
 
 	/*__try
@@ -1718,93 +1771,93 @@ int __fastcall SimpleButtonPreClickEvent_my( int pButton, int unused, int a2 )
 	std::string incooldownmessage = "";
 
 	int selectedunit = 0;
-	char PrintAbilState[ 2048 ];
-	PrintAbilState[ 0 ] = '\0';
-	if ( pButton && ( IsKeyPressed( VK_LMENU ) || ( IsKeyPressed( VK_LMENU ) && IsKeyPressed( VK_LCONTROL ) ) ) && IsCommandButton( pButton ) && ( selectedunit = GetSelectedUnit( GetLocalPlayerId( ) ) ) )
+	char PrintAbilState[2048];
+	PrintAbilState[0] = '\0';
+	if (pButton && (IsKeyPressed(VK_LMENU) || (IsKeyPressed(VK_LMENU) && IsKeyPressed(VK_LCONTROL))) && IsCommandButton(pButton) && (selectedunit = GetSelectedUnit(GetLocalPlayerId())))
 	{
-		int CommandButtonData = *( int* )( pButton + 0x190 );
-		if ( CommandButtonData )
+		int CommandButtonData = *(int*)(pButton + 0x190);
+		if (CommandButtonData)
 		{
 			//CONSOLE_Print( "Command button" );
-			int pObjId = *( int* )( CommandButtonData + 4 );
-			int pItemUnitID = *( int* )( CommandButtonData + 8 );
-			const char * pAbilTitle = ( const char * )( CommandButtonData + 0x2C );
-			std::string AbilName = /*ReturnStringBeforeFirstChar(*/ ReturnStringWithoutWarcraftTags( pAbilTitle ? pAbilTitle : "" )/*, '(' )*/;
+			int pObjId = *(int*)(CommandButtonData + 4);
+			int pItemUnitID = *(int*)(CommandButtonData + 8);
+			const char * pAbilTitle = (const char *)(CommandButtonData + 0x2C);
+			std::string AbilName = /*ReturnStringBeforeFirstChar(*/ ReturnStringWithoutWarcraftTags(pAbilTitle ? pAbilTitle : "")/*, '(' )*/;
 			//	AbilName = ReturnStringBeforeFirstChar( AbilName, '[' );
-			if ( !pObjId )
+			if (!pObjId)
 			{
-				AbilName = ReturnStringBeforeFirstChar( AbilName, '(' );
+				AbilName = ReturnStringBeforeFirstChar(AbilName, '(');
 			}
-			int pAbil = *( int* )( CommandButtonData + 0x6D4 );
+			int pAbil = *(int*)(CommandButtonData + 0x6D4);
 			//bool AbilFound = pAbil > 0 ;
-			int pObjId_1 = *( int* )( CommandButtonData + 0x6F8 );
-			int pObjId_2 = *( int* )( CommandButtonData + 0x6FC );
-			int pBtnFlag = *( int* )( CommandButtonData + 0x5BC );
+			int pObjId_1 = *(int*)(CommandButtonData + 0x6F8);
+			int pObjId_2 = *(int*)(CommandButtonData + 0x6FC);
+			int pBtnFlag = *(int*)(CommandButtonData + 0x5BC);
 
 
-			int unitownerslot = GetUnitOwnerSlot( ( int )selectedunit );
-			int localplayeridslot = GetLocalPlayerId( );
+			int unitownerslot = GetUnitOwnerSlot((int)selectedunit);
+			int localplayeridslot = GetLocalPlayerId();
 
 
 			int UnitMana = 0;
 			int AbilManacost = 0;
 
-			if ( SetInfoObjDebugVal )
+			if (SetInfoObjDebugVal)
 			{
-				char buttoninfo[ 256 ];
+				char buttoninfo[256];
 
-				sprintf_s( buttoninfo, " Command button %X data -> %X\n Object id: %X \nObject id2: %X \nObject id2: %X \n Abil addr: %X \n Title :%s \n Manacost: %i \n Unit Mana: %i", pButton, CommandButtonData, pObjId, pItemUnitID, pObjId_1, pAbil, ( pAbilTitle ? pAbilTitle : " no " ), AbilManacost, UnitMana );
+				sprintf_s(buttoninfo, " Command button %X data -> %X\n Object id: %X \nObject id2: %X \nObject id2: %X \n Abil addr: %X \n Title :%s \n Manacost: %i \n Unit Mana: %i", pButton, CommandButtonData, pObjId, pItemUnitID, pObjId_1, pAbil, (pAbilTitle ? pAbilTitle : " no "), AbilManacost, UnitMana);
 
 
-				PrintText( buttoninfo );
+				PrintText(buttoninfo);
 			}
 
-			if ( pObjId && !pAbil )
+			if (pObjId && !pAbil)
 			{
 				unsigned int abilscount = 0;
-				int * abils = FindUnitAbils( selectedunit, &abilscount, pObjId );
-				if ( abilscount > 0 )
+				int * abils = FindUnitAbils(selectedunit, &abilscount, pObjId);
+				if (abilscount > 0)
 				{
-					pAbil = abils[ 0 ];
+					pAbil = abils[0];
 				}
 			}
 
-			if ( pAbil )
+			if (pAbil)
 			{
-				int pAbilId = *( int* )( pAbil + 0x34 );
-				if ( pAbilId )
+				int pAbilId = *(int*)(pAbil + 0x34);
+				if (pAbilId)
 				{
-					if ( AbilName.length( ) <= 2 )
+					if (AbilName.length() <= 2)
 					{
-						AbilName = ReturnStringWithoutWarcraftTags( GetObjectNameByID( pAbilId ) );
+						AbilName = ReturnStringWithoutWarcraftTags(GetObjectNameByID(pAbilId));
 					}
 				}
 			}
 
 
-			if ( *( unsigned int * )( pButton + 0x140 ) & 16 || ( std::find( InfoWhitelistedObj.begin( ), InfoWhitelistedObj.end( ), pObjId ) != InfoWhitelistedObj.end( ) ) )
+			if (*(unsigned int *)(pButton + 0x140) & 16 || (std::find(InfoWhitelistedObj.begin(), InfoWhitelistedObj.end(), pObjId) != InfoWhitelistedObj.end()))
 			{
-				if ( pObjId != 'AHer' && pObjId != 'Asel'&& pObjId != 'Asud'&& pObjId != 'Asid' && pObjId != 'Aneu'
-					&& pObjId != 0x77123477 && pObjId != 0x07123407 && pObjId != 0x77000077 )
+				if (pObjId != 'AHer' && pObjId != 'Asel'&& pObjId != 'Asud'&& pObjId != 'Asid' && pObjId != 'Aneu'
+					&& pObjId != 0x77123477 && pObjId != 0x07123407 && pObjId != 0x77000077)
 				{
-					if ( pAbil || pObjId )
+					if (pAbil || pObjId)
 					{
-						if ( localplayeridslot == unitownerslot )
+						if (localplayeridslot == unitownerslot)
 						{
-							if ( pAbil && *( int* )( pAbil + 0x54 ) )
+							if (pAbil && *(int*)(pAbil + 0x54))
 							{
-								pObjId = *( int* )( pAbil + 0x54 );
-								pObjId = *( int* )( pObjId + 0x34 );
+								pObjId = *(int*)(pAbil + 0x54);
+								pObjId = *(int*)(pObjId + 0x34);
 							}
-							if ( ( std::find( InfoWhitelistedObj.begin( ), InfoWhitelistedObj.end( ), pObjId ) != InfoWhitelistedObj.end( ) )
-								|| ( pObjId != 'AHer' && pObjId != 'Asel'&& pObjId != 'Asud'&& pObjId != 'Asid'&& pObjId != 'Aneu' ) )
+							if ((std::find(InfoWhitelistedObj.begin(), InfoWhitelistedObj.end(), pObjId) != InfoWhitelistedObj.end())
+								|| (pObjId != 'AHer' && pObjId != 'Asel'&& pObjId != 'Asud'&& pObjId != 'Asid'&& pObjId != 'Aneu'))
 							{
 
 								unsigned int abilscount = 0;
-								int * abils = FindUnitAbils( selectedunit, &abilscount, pObjId );
-								if ( abilscount > 0 )
+								int * abils = FindUnitAbils(selectedunit, &abilscount, pObjId);
+								if (abilscount > 0)
 								{
-									AbilManacost = GetAbilityManacost( abils[ 0 ] );
+									AbilManacost = GetAbilityManacost(abils[0]);
 								}
 							}
 						}
@@ -1813,251 +1866,251 @@ int __fastcall SimpleButtonPreClickEvent_my( int pButton, int unused, int a2 )
 			}
 
 
-			if ( AbilManacost )
+			if (AbilManacost)
 			{
 				float fUnitMana = 0.0f;
-				GetUnitFloatState( selectedunit, &fUnitMana, 2 );
-				UnitMana = ( int )fUnitMana;
+				GetUnitFloatState(selectedunit, &fUnitMana, 2);
+				UnitMana = (int)fUnitMana;
 			}
 
 
-			if ( SetInfoObjDebugVal && AbilManacost == 0 )
+			if (SetInfoObjDebugVal && AbilManacost == 0)
 			{
-				PrintText( "Ignore mana request for button" );
+				PrintText("Ignore mana request for button");
 			}
 
 
-			for ( auto & s : IgnoreObjInfo )
+			for (auto & s : IgnoreObjInfo)
 			{
 				int tmpObj1 = 0;
-				if ( pAbil && *( int* )( pAbil + 0x54 ) )
+				if (pAbil && *(int*)(pAbil + 0x54))
 				{
-					tmpObj1 = *( int* )( pAbil + 0x54 );
-					tmpObj1 = *( int* )( tmpObj1 + 0x30 );
+					tmpObj1 = *(int*)(pAbil + 0x54);
+					tmpObj1 = *(int*)(tmpObj1 + 0x30);
 				}
-				if ( ( s.ObjId == pObjId || s.ObjId == tmpObj1 || s.ObjId == 0 ) && ( s.ObjId2 == pObjId || s.ObjId2 == pObjId_1 || s.ObjId2 == pItemUnitID || s.ObjId2 == 0 ) )
+				if ((s.ObjId == pObjId || s.ObjId == tmpObj1 || s.ObjId == 0) && (s.ObjId2 == pObjId || s.ObjId2 == pObjId_1 || s.ObjId2 == pItemUnitID || s.ObjId2 == 0))
 				{
-					switch ( s.Action )
+					switch (s.Action)
 					{
 					case -1:
 						return 0;
 					case 1:
-						sprintf_s( PrintAbilState, IsCooldownMessage.c_str( ), AbilName.c_str( ) );
-						SendMessageToChat( PrintAbilState, 0 );
+						sprintf_s(PrintAbilState, IsCooldownMessage.c_str(), AbilName.c_str());
+						SendMessageToChat(PrintAbilState, 0);
 						return 0;
 					case 2:
-						sprintf_s( PrintAbilState, IsReadyMessage.c_str( ), AbilName.c_str( ) );
-						SendMessageToChat( PrintAbilState, 0 );
+						sprintf_s(PrintAbilState, IsReadyMessage.c_str(), AbilName.c_str());
+						SendMessageToChat(PrintAbilState, 0);
 						return 0;
 					case 3:
-						sprintf_s( PrintAbilState, WantToLearnMessage.c_str( ), AbilName.c_str( ) );
-						SendMessageToChat( PrintAbilState, 0 );
+						sprintf_s(PrintAbilState, WantToLearnMessage.c_str(), AbilName.c_str());
+						SendMessageToChat(PrintAbilState, 0);
 						return 0;
 					case 4:
-						if ( !IsKeyPressed( VK_LCONTROL ) )
-							sprintf_s( PrintAbilState, WantToPickMessage.c_str( ), AbilName.c_str( ) );
+						if (!IsKeyPressed(VK_LCONTROL))
+							sprintf_s(PrintAbilState, WantToPickMessage.c_str(), AbilName.c_str());
 						else
-							sprintf_s( PrintAbilState, NeedToChooseMessage.c_str( ), AbilName.c_str( ) );
-						SendMessageToChat( PrintAbilState, 0 );
+							sprintf_s(PrintAbilState, NeedToChooseMessage.c_str(), AbilName.c_str());
+						SendMessageToChat(PrintAbilState, 0);
 						return 0;
 					case 5:
-						if ( !IsKeyPressed( VK_LCONTROL ) )
-							sprintf_s( PrintAbilState, WantToBuyMessage.c_str( ), AbilName.c_str( ) );
+						if (!IsKeyPressed(VK_LCONTROL))
+							sprintf_s(PrintAbilState, WantToBuyMessage.c_str(), AbilName.c_str());
 						else
-							sprintf_s( PrintAbilState, NeedToBuyMessage.c_str( ), AbilName.c_str( ) );
+							sprintf_s(PrintAbilState, NeedToBuyMessage.c_str(), AbilName.c_str());
 
-						SendMessageToChat( PrintAbilState, 0 );
+						SendMessageToChat(PrintAbilState, 0);
 						return 0;
 					case 6:
-						sprintf_s( PrintAbilState, ItemAbiltPlayerHasItem.c_str( ), GetPlayerName( unitownerslot, 1 ), AbilName.c_str( ) );
-						SendMessageToChat( PrintAbilState, 0 );
+						sprintf_s(PrintAbilState, ItemAbiltPlayerHasItem.c_str(), GetPlayerName(unitownerslot, 1), AbilName.c_str());
+						SendMessageToChat(PrintAbilState, 0);
 						return 0;
 					case 7:
-						sprintf_s( PrintAbilState, ( s.CustomMessage.length( ) > 0 ? s.CustomMessage.c_str( ) : AbilName.c_str( ) ), AbilName.c_str( ) );
-						SendMessageToChat( PrintAbilState, 0 );
+						sprintf_s(PrintAbilState, (s.CustomMessage.length() > 0 ? s.CustomMessage.c_str() : AbilName.c_str()), AbilName.c_str());
+						SendMessageToChat(PrintAbilState, 0);
 						return 0;
 					case 8:
-						PrintText( ( s.CustomMessage.length( ) > 0 ? s.CustomMessage.c_str( ) : AbilName.c_str( ) ) );
+						PrintText((s.CustomMessage.length() > 0 ? s.CustomMessage.c_str() : AbilName.c_str()));
 						return 0;
 					default:
-						return SimpleButtonPreClickEvent_ptr( pButton, unused, a2 );
+						return SimpleButtonPreClickEvent_ptr(pButton, unused, a2);
 					}
 				}
 			}
 
 
-			if ( AbilName.length( ) > 1 &&
-				( pItemUnitID == 0xD0142
+			if (AbilName.length() > 1 &&
+				(pItemUnitID == 0xD0142
 					||
-					( ( pBtnFlag != 2 && ( pObjId != 'AHer' || pObjId_1 != 0 ) ) && ( pAbil || pObjId || ( pAbilTitle[ 0 ] != '\0' && localplayeridslot != unitownerslot ) ) )
+					((pBtnFlag != 2 && (pObjId != 'AHer' || pObjId_1 != 0)) && (pAbil || pObjId || (pAbilTitle[0] != '\0' && localplayeridslot != unitownerslot)))
 					||
-					( std::find( InfoWhitelistedObj.begin( ), InfoWhitelistedObj.end( ), pObjId ) != InfoWhitelistedObj.end( ) ) ) )
+					(std::find(InfoWhitelistedObj.begin(), InfoWhitelistedObj.end(), pObjId) != InfoWhitelistedObj.end())))
 			{
-				if ( SetInfoObjDebugVal )
+				if (SetInfoObjDebugVal)
 				{
-					PrintText( "Click Button 1" );
+					PrintText("Click Button 1");
 				}
 
 
-				if ( unitownerslot != localplayeridslot && unitownerslot != 15 )
+				if (unitownerslot != localplayeridslot && unitownerslot != 15)
 				{
-					sprintf_s( PrintAbilState, ItemAbiltPlayerHasItem.c_str( ), GetPlayerName( unitownerslot, 1 ), AbilName.c_str( ) );
+					sprintf_s(PrintAbilState, ItemAbiltPlayerHasItem.c_str(), GetPlayerName(unitownerslot, 1), AbilName.c_str());
 				}
 				else
 				{
-					sprintf_s( PrintAbilState, IsReadyMessage.c_str( ), AbilName.c_str( ) );
+					sprintf_s(PrintAbilState, IsReadyMessage.c_str(), AbilName.c_str());
 				}
 
-				if ( unitownerslot == localplayeridslot )
+				if (unitownerslot == localplayeridslot)
 				{
-					if ( pBtnFlag != 2 && pObjId == 'AHer' )
+					if (pBtnFlag != 2 && pObjId == 'AHer')
 					{
-						sprintf_s( PrintAbilState, WantToLearnMessage.c_str( ), AbilName.c_str( ) );
-						SendMessageToChat( PrintAbilState, 0 );
+						sprintf_s(PrintAbilState, WantToLearnMessage.c_str(), AbilName.c_str());
+						SendMessageToChat(PrintAbilState, 0);
 						return 0;
 					}
 
 				}
 
-				if ( pObjId == 'Asel' )
+				if (pObjId == 'Asel')
 				{
 					//PrintText( "Sell Button" );
-					char * pObjectIdToStr = ( char * )&pItemUnitID;
-					if ( isupper( pObjectIdToStr[ 3 ] ) )
+					char * pObjectIdToStr = (char *)&pItemUnitID;
+					if (isupper(pObjectIdToStr[3]))
 					{
 						//	PrintText( "Sell hero" );
-						if ( !IsKeyPressed( VK_LCONTROL ) )
-							sprintf_s( PrintAbilState, WantToPickMessage.c_str( ), AbilName.c_str( ) );
+						if (!IsKeyPressed(VK_LCONTROL))
+							sprintf_s(PrintAbilState, WantToPickMessage.c_str(), AbilName.c_str());
 						else
-							sprintf_s( PrintAbilState, NeedToChooseMessage.c_str( ), AbilName.c_str( ) );
+							sprintf_s(PrintAbilState, NeedToChooseMessage.c_str(), AbilName.c_str());
 					}
 					else
 					{
 						//PrintText( "Sell item" );
-						if ( !IsKeyPressed( VK_LCONTROL ) )
-							sprintf_s( PrintAbilState, WantToBuyMessage.c_str( ), AbilName.c_str( ) );
+						if (!IsKeyPressed(VK_LCONTROL))
+							sprintf_s(PrintAbilState, WantToBuyMessage.c_str(), AbilName.c_str());
 						else
-							sprintf_s( PrintAbilState, NeedToBuyMessage.c_str( ), AbilName.c_str( ) );
+							sprintf_s(PrintAbilState, NeedToBuyMessage.c_str(), AbilName.c_str());
 
 					}
 
 
-					if ( AbilManacost > UnitMana )
+					if (AbilManacost > UnitMana)
 					{
-						sprintf_s( PrintAbilState, NeedMoreMana.c_str( ), ( AbilManacost - UnitMana ), AbilName.c_str( ) );
+						sprintf_s(PrintAbilState, NeedMoreMana.c_str(), (AbilManacost - UnitMana), AbilName.c_str());
 						/*SendMessageToChat( PrintAbilState, 0 );
 						return 0;*/
 					}
 
-					SendMessageToChat( PrintAbilState, 0 );
+					SendMessageToChat(PrintAbilState, 0);
 					return 0;
 				}
 
 
-				if ( pAbil && unitownerslot == localplayeridslot )
+				if (pAbil && unitownerslot == localplayeridslot)
 				{
 					//CONSOLE_Print( 
-					if ( SetInfoObjDebugVal )
+					if (SetInfoObjDebugVal)
 					{
-						PrintText( "Click Button owner ability!" );
+						PrintText("Click Button owner ability!");
 					}
 
-					int pAbilId = *( int* )( pAbil + 0x34 );
-					if ( pAbilId && ( *( unsigned int * )( pButton + 0x140 ) & 16 || ( std::find( InfoWhitelistedObj.begin( ), InfoWhitelistedObj.end( ), pObjId ) != InfoWhitelistedObj.end( ) ) ) )
+					int pAbilId = *(int*)(pAbil + 0x34);
+					if (pAbilId && (*(unsigned int *)(pButton + 0x140) & 16 || (std::find(InfoWhitelistedObj.begin(), InfoWhitelistedObj.end(), pObjId) != InfoWhitelistedObj.end())))
 					{
-						if ( pObjId != 'AHer' && pObjId != 'Asel'&& pObjId != 'Asud'&& pObjId != 'Asid' && pObjId != 'Aneu' )
+						if (pObjId != 'AHer' && pObjId != 'Asel'&& pObjId != 'Asud'&& pObjId != 'Asid' && pObjId != 'Aneu')
 						{
 							//if ( !pObjId )
 							//	AbilName = ReturnStringBeforeFirstChar( ReturnStringWithoutWarcraftTags( pAbilTitle ), '(' );
 							//else
 
 
-							if ( SetInfoObjDebugVal )
+							if (SetInfoObjDebugVal)
 							{
-								PrintText( "Search cooldown " );
+								PrintText("Search cooldown ");
 							}
 
 
-							int pAbilData = *( int* )( pAbil + 0xDC );
-							if ( pAbilData )
+							int pAbilData = *(int*)(pAbil + 0xDC);
+							if (pAbilData)
 							{
-								if ( SetInfoObjDebugVal )
+								if (SetInfoObjDebugVal)
 								{
-									PrintText( "Found 1" );
+									PrintText("Found 1");
 								}
 
 
-								float pAbilDataVal1 = *( float* )( pAbilData + 0x4 );
-								int pAbilDataVal2tmp = *( int* )( pAbilData + 0xC );
-								if ( pAbilDataVal1 > 0.0f && pAbilDataVal2tmp )
+								float pAbilDataVal1 = *(float*)(pAbilData + 0x4);
+								int pAbilDataVal2tmp = *(int*)(pAbilData + 0xC);
+								if (pAbilDataVal1 > 0.0f && pAbilDataVal2tmp)
 								{
-									if ( SetInfoObjDebugVal )
+									if (SetInfoObjDebugVal)
 									{
-										PrintText( "Found 2" );
+										PrintText("Found 2");
 									}
-									float pAbilDataVal2 = *( float* )( pAbilDataVal2tmp + 0x40 );
+									float pAbilDataVal2 = *(float*)(pAbilDataVal2tmp + 0x40);
 									float AbilCooldown = pAbilDataVal1 - pAbilDataVal2;
-									int AbilCooldownMinutes = ( int )( AbilCooldown / 60.0f );
-									int AbilCooldownSeconds = ( int )( ( int )AbilCooldown % 60 );
+									int AbilCooldownMinutes = (int)(AbilCooldown / 60.0f);
+									int AbilCooldownSeconds = (int)((int)AbilCooldown % 60);
 
 									incooldown = true;
-									sprintf_s( PrintAbilState, IsCooldownMessage.c_str( ), AbilName.c_str( ), AbilCooldownMinutes, AbilCooldownSeconds );
+									sprintf_s(PrintAbilState, IsCooldownMessage.c_str(), AbilName.c_str(), AbilCooldownMinutes, AbilCooldownSeconds);
 									incooldownmessage = PrintAbilState;
 
 								}
 								else
 								{
-									if ( SetInfoObjDebugVal )
+									if (SetInfoObjDebugVal)
 									{
-										PrintText( "No cooldown Button 1.1" );
+										PrintText("No cooldown Button 1.1");
 									}
-									sprintf_s( PrintAbilState, IsReadyMessage.c_str( ), AbilName.c_str( ) );
+									sprintf_s(PrintAbilState, IsReadyMessage.c_str(), AbilName.c_str());
 								}
 							}
 							else
 							{
-								if ( SetInfoObjDebugVal )
+								if (SetInfoObjDebugVal)
 								{
-									PrintText( "No cooldown Button 1.2" );
+									PrintText("No cooldown Button 1.2");
 								}
-								sprintf_s( PrintAbilState, IsReadyMessage.c_str( ), AbilName.c_str( ) );
+								sprintf_s(PrintAbilState, IsReadyMessage.c_str(), AbilName.c_str());
 							}
 						}
 					}
-					if ( *( int* )( pAbil + 0x3C ) > 0 )
+					if (*(int*)(pAbil + 0x3C) > 0)
 					{
-						sprintf_s( PrintAbilState, IgotSilence.c_str( ), AbilName.c_str( ) );
-						SendMessageToChat( PrintAbilState, 0 );
+						sprintf_s(PrintAbilState, IgotSilence.c_str(), AbilName.c_str());
+						SendMessageToChat(PrintAbilState, 0);
 						return 0;
 					}
 
 				}
-				if ( AbilManacost > UnitMana )
+				if (AbilManacost > UnitMana)
 				{
-					if ( incooldown )
-						sprintf_s( PrintAbilState, IsCooldownAndNoMana.c_str( ), AbilName.c_str( ) );
+					if (incooldown)
+						sprintf_s(PrintAbilState, IsCooldownAndNoMana.c_str(), AbilName.c_str());
 					else
-						sprintf_s( PrintAbilState, NeedMoreMana.c_str( ), ( AbilManacost - UnitMana ), AbilName.c_str( ) );
+						sprintf_s(PrintAbilState, NeedMoreMana.c_str(), (AbilManacost - UnitMana), AbilName.c_str());
 				}
-				else if ( incooldown )
+				else if (incooldown)
 				{
-					sprintf_s( PrintAbilState, "%s", incooldownmessage.c_str( ) );
+					sprintf_s(PrintAbilState, "%s", incooldownmessage.c_str());
 				}
-				SendMessageToChat( PrintAbilState, 0 );
+				SendMessageToChat(PrintAbilState, 0);
 				return 0;
 			}
-			else if ( pAbil )
+			else if (pAbil)
 			{
-				if ( SetInfoObjDebugVal )
+				if (SetInfoObjDebugVal)
 				{
-					PrintText( "Click Button 2" );
+					PrintText("Click Button 2");
 				}
 
-				if ( *( int* )( pAbil + 0x3C ) > 0 )
+				if (*(int*)(pAbil + 0x3C) > 0)
 				{
-					sprintf_s( PrintAbilState, IgotSilence.c_str( ), AbilName.c_str( ) );
+					sprintf_s(PrintAbilState, IgotSilence.c_str(), AbilName.c_str());
 				}
-				SendMessageToChat( PrintAbilState, 0 );
+				SendMessageToChat(PrintAbilState, 0);
 				return 0;
 			}
 
@@ -2071,73 +2124,923 @@ int __fastcall SimpleButtonPreClickEvent_my( int pButton, int unused, int a2 )
 	//	::ExitProcess( 0 ); // It is better to stop the process here or else corrupted data may incomprehensibly crash it later.
 	//	return 0;
 	//}
-	return SimpleButtonPreClickEvent_ptr( pButton, unused, a2 );
+	return SimpleButtonPreClickEvent_ptr(pButton, unused, a2);
 }
 
 
 
-typedef float( __fastcall * pGetCameraHeight/*sub_6F3019A0*/ )( unsigned int a1 );
+typedef float(__fastcall * pGetCameraHeight/*sub_6F3019A0*/)(unsigned int a1);
 pGetCameraHeight GetCameraHeight_org;
 pGetCameraHeight GetCameraHeight_ptr;
 
 float cameraoffset = 0;
 
 
-void IncreaseCameraOffset( float offset = 50 )
+void IncreaseCameraOffset(float offset = 50)
 {
-	if ( cameraoffset > 3000 )
+	if (cameraoffset > 3000)
 		return;
 	cameraoffset += offset;
 }
 
-void DecreaseCameraOffset( float offset = 50 )
+void DecreaseCameraOffset(float offset = 50)
 {
-	if ( cameraoffset < -1000 )
+	if (cameraoffset < -1000)
 		return;
 	cameraoffset -= offset;
 }
 
-void ResetCameraOffset( )
+void ResetCameraOffset()
 {
 	cameraoffset = 0;
 }
 
-float __fastcall GetCameraHeight_my( unsigned int a1 )
+float __fastcall GetCameraHeight_my(unsigned int a1)
 {
-	return GetCameraHeight_ptr( a1 ) + cameraoffset;
+	return GetCameraHeight_ptr(a1) + cameraoffset;
 }
 
 
-DWORD GroupSelectLastTime = GetTickCount( );
+DWORD GroupSelectLastTime = GetTickCount();
 int LastSelectedGroupHandle = 0;
 
-LRESULT __fastcall BeforeWarcraftWNDProc( HWND hWnd, unsigned int _Msg, WPARAM _wParam, LPARAM lParam )
+BOOL ProcessHotkeys(HWND & hWnd, unsigned int & Msg, WPARAM & wParam, LPARAM & lParam, BOOL & _IsAltPressed,
+	BOOL & _IsCtrlPressed, BOOL & _IsShiftPressed, BOOL & itempressed, BOOL & ClickHelperWork, BOOL WithModifiers)
 {
-	if ( !InitTestValues )
+	for (KeyActionStruct & keyAction : KeyActionList)
+	{
+		if (keyAction.VK == (int)wParam)
+		{
+			if (SetInfoObjDebugVal)
+			{
+				PrintText("Hotkey vk code found.");
+			}
+			TestValues[6]++;
+			if (Msg == WM_SYSKEYDOWN)
+				Msg = WM_KEYDOWN;
+
+			if ((!keyAction.IsAlt && !keyAction.IsCtrl && !keyAction.IsShift && !WithModifiers)
+				||
+				(WithModifiers && ((keyAction.IsAlt && _IsAltPressed)
+					|| (keyAction.IsCtrl && _IsCtrlPressed)
+					|| (keyAction.IsShift && _IsShiftPressed)))
+				)
+			{
+				BOOL DoubleClicked = FALSE;
+
+
+				if (!keyAction.IsQuickCast)
+				{
+					if (GetTickCount() - keyAction.LastPressTime < 200)
+					{
+						itempressed = !keyAction.IsSkill;
+						if (SetInfoObjDebugVal)
+						{
+							PrintText("need doubleclick!");
+						}
+						int selectedunits = GetSelectedUnitCountBigger(GetLocalPlayerId());
+						int selectedunit = GetSelectedUnit(GetLocalPlayerId());
+						if (selectedunit > 0 && selectedunits > 0)
+						{
+							int unitowner = GetUnitOwnerSlot(selectedunit);
+							if (SetInfoObjDebugVal)
+							{
+								if (!DoubleClickHelper)
+								{
+									PrintText("doubleclick disabled (!");
+								}
+							}
+
+							if (DoubleClickHelper && unitowner != 15)
+							{
+								if (IsCursorSelectTarget())
+								{
+									if (SetInfoObjDebugVal)
+									{
+										PrintText("Select hero!");
+									}
+
+									if (keyAction.IsShift)
+									{
+										SkipSingleShift = GetTickCount();
+									}
+
+									if (PressMouseAtSelectedHero(itempressed) == 0)
+									{
+										ClickHelperWork = TRUE;
+										if (SetInfoObjDebugVal)
+										{
+											PrintText("Success double click.");
+										}
+										DisableTargetCurcorWORK = 3;
+										DoubleClicked = TRUE;
+									}
+								}
+							}
+						}
+						else
+						{
+							if (SetInfoObjDebugVal)
+							{
+								PrintText("no doubleclick! no units");
+							}
+						}
+
+					}
+				}
+
+				if (DoubleClicked)
+				{
+					keyAction.LastPressTime = 0;
+					return TRUE;
+				}
+
+				if (SetInfoObjDebugVal)
+				{
+					PrintText("Hotkey availabled!");
+				}
+
+				//if (itempressed || (keyAction.IsSkill && !IsCursorSelectTarget()))
+				{
+					int selectedunits = GetSelectedUnitCountBigger(GetLocalPlayerId());
+
+					int selectedunit = GetSelectedUnit(GetLocalPlayerId());
+					if (selectedunit > 0 && selectedunits > 0)
+					{
+						int unitowner = GetUnitOwnerSlot(selectedunit);
+
+						if (unitowner != 15 && !ClickHelperWork)
+						{
+							if (EnableSelectHelper)
+							{
+								if (unitowner != GetLocalPlayerId() && !GetPlayerAlliance(Player(unitowner), Player(GetLocalPlayerId()), 6))
+								{
+									//	sprintf_s( keystateprint, 200, "Start emulate #2..." );
+									//	PrintText( keystateprint );
+									//PressHeroPanelButton( 0, FALSE );
+									WarcraftRealWNDProc_ptr(hWnd, WM_KEYDOWN, VK_F1, lpF1ScanKeyDOWN);
+									WarcraftRealWNDProc_ptr(hWnd, WM_KEYUP, VK_F1, lpF1ScanKeyUP);
+									if (SetInfoObjDebugVal)
+									{
+										PrintText("Hotkey delay press start!!");
+									}
+
+									DelayedPress tmpDelayPress = DelayedPress();
+									tmpDelayPress.IsCustom = TRUE;
+									tmpDelayPress.IsAlt = _IsAltPressed;
+									tmpDelayPress.IsCtrl = _IsCtrlPressed;
+									tmpDelayPress.IsShift = _IsShiftPressed;
+									tmpDelayPress.NeedPresslParam = lParam;
+									tmpDelayPress.NeedPresswParam = wParam;
+									tmpDelayPress.NeedPressMsg = Msg;
+									tmpDelayPress.TimeOut = 140;
+									DelayedPressList_pushback(tmpDelayPress);
+
+									return TRUE;
+								}
+							}
+
+							BOOL PressedButton = FALSE;
+
+							if (IsNULLButtonFound(GetSkillPanelButton(11)))
+							{
+								if (keyAction.altbtnID >= 0)
+								{
+									if (keyAction.IsSkill)
+										PressedButton = PressSkillPanelButton(keyAction.altbtnID, keyAction.IsRightClick);
+									else
+										PressedButton = PressItemPanelButton(keyAction.btnID, keyAction.IsRightClick);
+									//PressedButton = TRUE;
+								}
+							}
+							else
+							{
+								if (keyAction.IsSkill)
+									PressedButton = PressSkillPanelButton(keyAction.btnID, keyAction.IsRightClick);
+								else
+									PressedButton = PressItemPanelButton(keyAction.btnID, keyAction.IsRightClick);
+								//PressedButton = TRUE;
+							}
+
+							/*	if ( !PressedButton )
+							{
+							if ( SetInfoObjDebugVal )
+							{
+							PrintText( "NO ButtonPressed!" );
+							}
+							}*/
+
+							if (keyAction.IsQuickCast && PressedButton && IsCursorSelectTarget())
+							{
+								if (SetInfoObjDebugVal)
+								{
+									int button = GetSkillPanelButton(11);
+									PrintText("QuickCast called: ButtonAddr:" + to_string(button) + ". IsCursorSelectTarget: " + to_string(IsCursorSelectTarget()));
+								}
+
+								if (keyAction.IsShift)
+								{
+									SkipSingleShift = GetTickCount();
+								}
+
+								/*int x = ( int )( *GetWindowXoffset );
+								int y = ( int )( *GetWindowYoffset );
+								*/
+								POINT cursorhwnd;
+								GetCursorPos(&cursorhwnd);
+								ScreenToClient(Warcraft3Window, &cursorhwnd);
+
+								WarcraftRealWNDProc_ptr(Warcraft3Window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(cursorhwnd.x, cursorhwnd.y));
+								WarcraftRealWNDProc_ptr(Warcraft3Window, WM_LBUTTONUP, 0, MAKELPARAM(cursorhwnd.x, cursorhwnd.y));
+
+								DisableTargetCurcorWORK = 3;
+
+
+								/*	if ( IsCursorSelectTarget( ) )
+								{
+								PressSkillPanelButton( 11, FALSE );
+								}*/
+
+								//POINT cursor;
+								//GetCursorPos( &cursor );
+
+								//x = x - cursorhwnd.x;
+								//y = y - cursorhwnd.y;
+
+								//cursor.x = cursor.x + x;
+								//cursor.y = cursor.y + y;
+								////( toXX, toYY );
+
+								//MouseClick( cursor.x, cursor.y );
+							}
+							else if (!keyAction.IsQuickCast)
+							{
+								if (SetInfoObjDebugVal)
+								{
+									PrintText("Skip quick cast: no flag!");
+								}
+							}
+							else if (!PressedButton)
+							{
+								if (SetInfoObjDebugVal)
+								{
+									PrintText("Skip quick cast: Button not pressed!");
+								}
+							}
+
+
+							//if ( IsNULLButtonFound( GetSkillPanelButton( 11 ) ) )
+							//{
+							//	if ( keyAction.altbtnID >= 0 )
+							//	{
+							//		if ( SetInfoObjDebugVal )
+							//		{
+							//			PrintText( "OK. Now press panel button." );
+							//		}
+							//		//if ( !( lParam & 0x40000000 ) )
+							//	//	{
+							//		if ( keyAction.IsSkill )
+							//			PressSkillPanelButton( keyAction.altbtnID, keyAction.IsRightClick );
+							//		else
+							//			PressItemPanelButton( keyAction.btnID, keyAction.IsRightClick );
+							//		//	}
+
+							//	}
+							//	else
+							//	{
+							//		if ( SetInfoObjDebugVal )
+							//		{
+							//			PrintText( "ERROR. NO ACTION FOUND!" );
+							//		}
+							//	}
+							//}
+							//else
+							//{
+							//	if ( SetInfoObjDebugVal )
+							//	{
+							//		PrintText( "OK. Now press panel button." );
+							//	}
+							//	//if ( !( lParam & 0x40000000 ) )
+							////	{
+							//	if ( keyAction.IsSkill )
+							//		PressSkillPanelButton( keyAction.btnID, keyAction.IsRightClick );
+							//	else
+							//		PressItemPanelButton( keyAction.btnID, keyAction.IsRightClick );
+							//	//	}
+
+							//}
+						}
+						else
+						{
+							if (SetInfoObjDebugVal)
+							{
+								PrintText("Bad selected unit( player 15 ) or hotkey disabled.");
+							}
+						}
+					}
+				}
+				/*else
+				{
+					if (SetInfoObjDebugVal)
+					{
+						PrintText("No selected unit!");
+					}
+
+				}*/
+				keyAction.LastPressTime = GetTickCount();
+				return TRUE;
+			}
+			else
+			{
+				if (SetInfoObjDebugVal)
+				{
+					PrintText("Hotkey not equal skip...");
+				}
+
+			}
+		}
+	}
+
+	return FALSE;
+}
+BOOL ProcessSelectActionHotkeys(HWND & hWnd, unsigned int & Msg, WPARAM & wParam, LPARAM & lParam, BOOL & _IsAltPressed,
+	BOOL & _IsCtrlPressed, BOOL & _IsShiftPressed, BOOL WithModifiers)
+{
+	for (auto keyAction : KeySelectActionList)
+	{
+		if (keyAction.VK == (int)wParam)
+		{
+			if ((!keyAction.IsAlt && !keyAction.IsCtrl && !keyAction.IsShift && !WithModifiers)
+				||
+				(WithModifiers && ((keyAction.IsAlt && _IsAltPressed)
+					|| (keyAction.IsCtrl && _IsCtrlPressed)
+					|| (keyAction.IsShift && _IsShiftPressed)))
+				)
+			{
+
+				if ((keyAction.IsAlt && _IsAltPressed)
+					|| (keyAction.IsCtrl && _IsCtrlPressed)
+					|| (keyAction.IsShift && _IsShiftPressed)
+					)
+				{
+					if (Msg == WM_SYSKEYDOWN)
+						Msg = WM_KEYDOWN;
+				}
+				else
+				{
+					if (_IsAltPressed
+						|| _IsCtrlPressed)
+					{
+
+					}
+				}
+
+				if (SetInfoObjDebugVal)
+				{
+					PrintText("Clear selection");
+				}
+
+				vector<int> units = GetUnitsFromGroup(keyAction.GroupHandle);
+				//reverse( units.begin( ), units.end( ) );
+
+
+				if (SetInfoObjDebugVal)
+				{
+					PrintText(("Select units:" + uint_to_hex(units.size())).c_str());
+				}
+
+
+				if (units.size() > 0)
+				{
+					ClearSelection();
+
+					for (int unit : units)
+					{
+						if (SetInfoObjDebugVal)
+						{
+							PrintText(("Select unit:" + uint_to_hex(unit)).c_str());
+						}
+						SelectUnit(unit);
+					}
+
+
+					if (GetTickCount() - GroupSelectLastTime < 450 &&
+						LastSelectedGroupHandle == keyAction.GroupHandle)
+					{
+						int PortraitButtonAddr = GetGlobalClassAddr();
+						if (PortraitButtonAddr > 0)
+						{
+							PortraitButtonAddr = *(int*)(PortraitButtonAddr + 0x3F4);
+						}
+						if (PortraitButtonAddr > 0)
+						{
+							if (SetInfoObjDebugVal)
+							{
+								PrintText("double click to portrain.");
+							}
+							Wc3ControlClickButton_org(PortraitButtonAddr, 1);
+							Wc3ControlClickButton_org(PortraitButtonAddr, 1);
+						}
+					}
+
+
+				}
+
+				LastSelectedGroupHandle = keyAction.GroupHandle;
+				GroupSelectLastTime = GetTickCount();
+
+				return TRUE;
+			}
+		}
+	}
+	return FALSE;
+}
+BOOL ProcessCallbackHotkeys(HWND & hWnd, unsigned int & Msg, WPARAM & wParam, LPARAM & lParam, BOOL & _IsAltPressed,
+	BOOL & _IsCtrlPressed, BOOL & _IsShiftPressed, BOOL WithModifiers)
+{
+	int selectedunits = GetSelectedUnitCountBigger(GetLocalPlayerId());
+
+	int selectedunit = GetSelectedUnit(GetLocalPlayerId());
+	if (selectedunit > 0 && selectedunits > 0)
+	{
+		int unitowner = GetUnitOwnerSlot(selectedunit);
+		if (unitowner != 15)
+		{
+			for (auto keyAction : KeyCalbackActionList)
+			{
+				if (keyAction.VK == (int)wParam)
+				{
+					if ((!keyAction.IsAlt && !keyAction.IsCtrl && !keyAction.IsShift && !WithModifiers)
+						||
+						(WithModifiers && ((keyAction.IsAlt && _IsAltPressed)
+							|| (keyAction.IsCtrl && _IsCtrlPressed)
+							|| (keyAction.IsShift && _IsShiftPressed)))
+						)
+					{
+						if (SetInfoObjDebugVal)
+						{
+							PrintText("Need keyAction!");
+						}
+
+						if ((keyAction.IsAlt && _IsAltPressed)
+							|| (keyAction.IsCtrl && _IsCtrlPressed)
+							|| (keyAction.IsShift && _IsShiftPressed)
+							)
+						{
+							if (Msg == WM_SYSKEYDOWN)
+								Msg = WM_KEYDOWN;
+						}
+						else
+						{
+							if (_IsAltPressed
+								|| _IsCtrlPressed)
+							{
+
+							}
+						}
+
+
+						__asm
+						{
+							push eax;
+							mov eax, GameDll;
+							add eax, 0x3309F0;
+							call eax;
+							pop eax;
+						}
+
+
+						((int(__thiscall *)(int, int, int, int, int, int, int))(GameDll + 0x37C420))
+							(keyAction.args[0], keyAction.args[1], keyAction.args[2],
+								keyAction.args[3], keyAction.args[4], keyAction.args[5], keyAction.args[6]);
+
+						return TRUE;
+					}
+				}
+			}
+
+		}
+	}
+	return FALSE;
+}
+BOOL ProcessChatHotkeys(HWND & hWnd, unsigned int & Msg, WPARAM & wParam, LPARAM & lParam, BOOL & _IsAltPressed,
+	BOOL & _IsCtrlPressed, BOOL & _IsShiftPressed, BOOL WithModifiers)
+{
+	for (auto keyAction : KeyChatActionList)
+	{
+		if (keyAction.VK == (int)wParam)
+		{
+			if ((!keyAction.IsAlt && !keyAction.IsCtrl && !keyAction.IsShift && !WithModifiers) ||
+
+				(WithModifiers && ((keyAction.IsAlt && _IsAltPressed)
+					|| (keyAction.IsCtrl && _IsCtrlPressed)
+					|| (keyAction.IsShift && _IsShiftPressed)))
+
+
+				)
+			{
+				if ((keyAction.IsAlt && _IsAltPressed)
+					|| (keyAction.IsCtrl && _IsCtrlPressed)
+					|| (keyAction.IsShift && _IsShiftPressed)
+					)
+				{
+					if (Msg == WM_SYSKEYDOWN)
+						Msg = WM_KEYDOWN;
+				}
+				else
+				{
+					if (_IsAltPressed
+						|| _IsCtrlPressed)
+					{
+
+					}
+				}
+
+
+				SendMessageToChat(keyAction.Message.c_str(), keyAction.SendToAll);
+				return TRUE;
+			}
+		}
+	}
+	return FALSE;
+
+}
+BOOL ProcessShopHelper(HWND & hWnd, unsigned int & Msg, WPARAM & wParam, LPARAM & lParam)
+{
+	if (ShopHelperEnabled  && IsGameFrameActive() && /*(*/ Msg == WM_KEYDOWN /*|| Msg == WM_KEYUP ) */)
+	{
+
+		if (
+			wParam == 'Q' ||
+			wParam == 'W' ||
+			wParam == 'E' ||
+			wParam == 'R' ||
+			wParam == 'A' ||
+			wParam == 'S' ||
+			wParam == 'D' ||
+			wParam == 'F' ||
+			wParam == 'Z' ||
+			wParam == 'X' ||
+			wParam == 'C' ||
+			wParam == 'V'
+			)
+		{
+			int selectedunit = GetSelectedUnit(GetLocalPlayerId());
+			if (selectedunit > 0 && GetSelectedUnitCountBigger(GetLocalPlayerId()) > 0)
+			{
+				if (GetUnitOwnerSlot(selectedunit) == 15)
+				{
+					// | 0 | 3 | 6 | 9  |
+					// | 1 | 4 | 7 | 10 | 
+					// | 2 | 5 | 8 | 11 |
+
+					/*	if ( Msg == WM_KEYDOWN && !( lParam & 0x40000000 ) )
+					{*/
+
+					if (wParam == 'Q')
+						PressSkillPanelButton(0, FALSE);
+					else if (wParam == 'W')
+						PressSkillPanelButton(3, FALSE);
+					else if (wParam == 'E')
+						PressSkillPanelButton(6, FALSE);
+					else if (wParam == 'R')
+						PressSkillPanelButton(9, FALSE);
+					else if (wParam == 'A')
+						PressSkillPanelButton(1, FALSE);
+					else if (wParam == 'S')
+						PressSkillPanelButton(4, FALSE);
+					else if (wParam == 'D')
+						PressSkillPanelButton(7, FALSE);
+					else if (wParam == 'F')
+						PressSkillPanelButton(10, FALSE);
+					else if (wParam == 'Z')
+						PressSkillPanelButton(2, FALSE);
+					else if (wParam == 'X')
+						PressSkillPanelButton(5, FALSE);
+					else if (wParam == 'C')
+						PressSkillPanelButton(8, FALSE);
+					else if (wParam == 'V')
+						PressSkillPanelButton(11, FALSE);
+					else
+						return FALSE;
+					//}
+					return TRUE;
+				}
+			}
+		}
+	}
+	return FALSE;
+}
+BOOL SkipKeyboardAndMouseWhenTeleport(HWND & hWnd, unsigned int & Msg, WPARAM & wParam, LPARAM & lParam)
+{
+	if (BlockKeyboardAndMouseWhenTeleport)
+	{
+		if (Msg == WM_KEYDOWN ||/* Msg == WM_KEYUP || */Msg == WM_RBUTTONDOWN)
+		{
+			if (Msg == WM_RBUTTONDOWN)
+			{
+				int selectedunit = GetSelectedUnit(GetLocalPlayerId());
+				if (selectedunit > 0)
+				{
+					unsigned int abilscount = 0;
+					FindUnitAbils(selectedunit, &abilscount, 'A3VO');
+					if (abilscount > 0)
+					{
+						if (TeleportShiftPress)
+						{
+							if (ShiftPressed == 0 && !ShiftPressed)
+							{
+								SingleShift = GetTickCount();
+								ShiftPressed = 1;
+							}
+						}
+						else
+							return TRUE;
+					}
+				}
+			}
+
+
+
+			if ((wParam >= 0x41 && wParam <= 0x5A) || (wParam >= VK_NUMPAD1 && wParam <= VK_NUMPAD8))
+			{
+				BOOL NeedSkipForTP = TRUE;
+
+				for (int & VK : WhiteListForTeleport)
+				{
+					if (wParam == VK)
+					{
+						NeedSkipForTP = FALSE;
+						break;
+					}
+				}
+
+				if (NeedSkipForTP)
+				{
+					int selectedunit = GetSelectedUnit(GetLocalPlayerId());
+					if (selectedunit > 0)
+					{
+						unsigned int abilscount = 0;
+						FindUnitAbils(selectedunit, &abilscount, 'A3VO');
+						if (abilscount > 0)
+						{
+							if (TeleportShiftPress)
+							{
+								if (!ShiftPressed)
+								{
+									SingleShift = GetTickCount();
+									ShiftPressed = 1;
+								}
+							}
+							else
+								return TRUE;
+						}
+					}
+				}
+
+			}
+
+		}
+	}
+
+	return FALSE;
+}
+
+
+BOOL ProcessRegisteredHotkeys(HWND & hWnd, unsigned int & Msg, WPARAM & wParam, LPARAM & lParam)
+{
+
+
+	if (Msg == WM_KEYDOWN || Msg == WM_KEYUP || Msg == WM_RBUTTONDOWN || Msg == WM_RBUTTONUP)
+	{
+		for (int & keyCode : RegisteredKeyCodes)
+		{
+			if (keyCode == (int)wParam)
+			{
+				if (Msg == WM_KEYDOWN /*&& !( lParam & 0x40000000 )*/)
+				{
+
+#ifdef DOTA_HELPER_LOG
+					AddNewLineToDotaHelperLog(__func__, __LINE__);
+#endif
+					//BytesToSend.push_back( 0x50 );
+					//// packet header
+					//BytesToSend.push_back( 0xFF );
+					//// packet size
+					//BytesToSend.push_back( 0 );
+					//BytesToSend.push_back( 0 );
+					//BytesToSend.push_back( 0 );
+					//BytesToSend.push_back( 0 );
+					SendKeyEvent.push_back(0x50);
+					// header custom packets
+					SendKeyEvent.push_back(0xFF);
+					// size custom packets 
+					SendKeyEvent.push_back(0);
+					SendKeyEvent.push_back(0);
+					SendKeyEvent.push_back(0);
+					SendKeyEvent.push_back(0);
+					// packet type
+					int packettype = 'IKEY';
+					SendKeyEvent.insert(SendKeyEvent.end(), (unsigned char *)&packettype, ((unsigned char *)&packettype) + 4);
+					*(int*)&SendKeyEvent[2] += 4;
+					// data
+					int locpid = GetLocalPlayerId();
+					SendKeyEvent.insert(SendKeyEvent.end(), (unsigned char *)&locpid, ((unsigned char *)&locpid) + 4);
+					*(int*)&SendKeyEvent[2] += 4;
+					SendKeyEvent.insert(SendKeyEvent.end(), (unsigned char *)&Msg, ((unsigned char *)&Msg) + 4);
+					*(int*)&SendKeyEvent[2] += 4;
+					SendKeyEvent.insert(SendKeyEvent.end(), (unsigned char *)&wParam, ((unsigned char *)&wParam) + 4);
+					*(int*)&SendKeyEvent[2] += 4;
+					SendPacket((BYTE*)&SendKeyEvent[0], SendKeyEvent.size());
+					SendKeyEvent.clear();
+#ifdef DOTA_HELPER_LOG
+					AddNewLineToDotaHelperLog(__func__, __LINE__);
+#endif
+					//*KeyboardAddrForKey = ( int ) wParam;
+					//*KeyboardAddrForKeyEvent = ( int ) Msg;
+					//	TriggerExecute( KeyboardTriggerHandle );
+				}
+				else if (Msg == WM_KEYUP)
+				{
+#ifdef DOTA_HELPER_LOG
+					AddNewLineToDotaHelperLog(__func__, __LINE__);
+#endif
+					SendKeyEvent.push_back(0x50);
+					// header custom packets
+					SendKeyEvent.push_back(0xFF);
+					// size custom packets 
+					SendKeyEvent.push_back(0);
+					SendKeyEvent.push_back(0);
+					SendKeyEvent.push_back(0);
+					SendKeyEvent.push_back(0);
+					// packet type
+					int packettype = 'IKEY';
+					SendKeyEvent.insert(SendKeyEvent.end(), (unsigned char *)&packettype, ((unsigned char *)&packettype) + 4);
+					*(int*)&SendKeyEvent[2] += 4;
+					// data
+					int locpid = GetLocalPlayerId();
+					SendKeyEvent.insert(SendKeyEvent.end(), (unsigned char *)&locpid, ((unsigned char *)&locpid) + 4);
+					*(int*)&SendKeyEvent[2] += 4;
+					SendKeyEvent.insert(SendKeyEvent.end(), (unsigned char *)&Msg, ((unsigned char *)&Msg) + 4);
+					*(int*)&SendKeyEvent[2] += 4;
+					SendKeyEvent.insert(SendKeyEvent.end(), (unsigned char *)&wParam, ((unsigned char *)&wParam) + 4);
+					*(int*)&SendKeyEvent[2] += 4;
+					SendPacket((BYTE*)&SendKeyEvent[0], SendKeyEvent.size());
+					SendKeyEvent.clear();
+#ifdef DOTA_HELPER_LOG
+					AddNewLineToDotaHelperLog(__func__, __LINE__);
+#endif
+					//*KeyboardAddrForKey = ( int ) wParam;
+					//*KeyboardAddrForKeyEvent = ( int ) Msg;
+					//TriggerExecute( KeyboardTriggerHandle );
+				}
+#ifdef DOTA_HELPER_LOG
+				AddNewLineToDotaHelperLog(__func__, __LINE__);
+#endif
+				return TRUE;
+			}
+
+		}
+	}
+
+	return FALSE;
+}
+
+BOOL FixNumpad(HWND & hWnd, unsigned int & Msg, WPARAM & wParam, WPARAM & _wParam, LPARAM & lParam, BOOL & _IsShiftPressed)
+{
+	// SHIFT+NUMPAD TRICK
+	if (IsGameFrameActive() && (Msg == WM_KEYDOWN || Msg == WM_KEYUP) && (
+		wParam == 0xC ||
+		wParam == 0x23 ||
+		wParam == 0x24 ||
+		wParam == 0x25 ||
+		wParam == 0x26 ||
+		wParam == 0x28
+		))
+	{
+		int  scanCode = (int)((lParam >> 24) & 0x1);
+
+		if (scanCode != 1)
+		{
+			switch (wParam)
+			{
+			case 0x23:
+				wParam = VK_NUMPAD1;
+				break;
+			case 0x28:
+				wParam = VK_NUMPAD2;
+				break;
+			case 0x25:
+				wParam = VK_NUMPAD4;
+				break;
+			case 0xC:
+				wParam = VK_NUMPAD5;
+				break;
+			case 0x24:
+				wParam = VK_NUMPAD7;
+				break;
+			case 0x26:
+				wParam = VK_NUMPAD8;
+				break;
+			default:
+				break;
+			}
+			if (wParam != _wParam)
+			{
+				if (!_IsShiftPressed)
+				{
+					BOOL NumLock = (((unsigned short)GetKeyState(VK_NUMLOCK)) & 0xffff) != 0;
+					if (NumLock)
+						ShiftPressed = 0x1;
+					else
+						ShiftPressed = 0x0;
+				}
+
+
+				//if (Msg == WM_KEYDOWN && IsNumpadPressed(wParam))
+				//{
+				//	bool NotFoundInHotKeys = true;
+				//	for (KeyActionStruct & keyAction : KeyActionList)
+				//	{
+				//		if (keyAction.VK == wParam)
+				//		{
+				//			NotFoundInHotKeys = false;
+				//		}
+				//	}
+
+				//	if (NotFoundInHotKeys)
+				//	{
+				//		int btnaddr = GetBtnAddrByNumpad(wParam);
+				//		if (btnaddr)
+				//		{
+				//			SimpleButtonClickEvent_my(btnaddr, 0, 1);
+				//			/*if ( CheckBtnForClickPortrain( btnaddr ) )
+				//			{
+				//			SimpleButtonClickEvent_my( btnaddr, 0, 1 );*/
+				//			return TRUE;
+
+				//			//int PortraitButtonAddr = GetGlobalClassAddr( );
+				//			//if ( PortraitButtonAddr > 0 )
+				//			//{
+				//			//	PortraitButtonAddr = *( int* )( PortraitButtonAddr + 0x3F4 );
+				//			//}
+				//			//if ( PortraitButtonAddr > 0 )
+				//			//{
+				//			//	//PrintText( "Click to portrain." );
+				//			//	Wc3ControlClickButton_org( PortraitButtonAddr, 1 );
+				//			//}
+				//			//}
+				//		}
+				//	}
+				//}
+				//LRESULT retval1 = WarcraftRealWNDProc_ptr(hWnd, Msg, wParam, lParam);
+
+
+
+				//return FALSE;
+			}
+
+		}
+		else
+		{
+			if (!_IsShiftPressed)
+			{
+				ShiftPressed = 0;
+			}
+		}
+	}
+
+
+	return FALSE;
+}
+
+LRESULT __fastcall WarcraftWindowProcHooked(HWND hWnd, unsigned int _Msg, WPARAM _wParam, LPARAM lParam)
+{
+
+	if (!InitTestValues)
 	{
 		InitTestValues = true;
-		memset( TestValues, 0, sizeof( TestValues ) );
+		memset(TestValues, 0, sizeof(TestValues));
 	}
-	TestValues[ 0 ]++;
+	TestValues[0]++;
 
 
 	unsigned int Msg = _Msg;
-	BOOL NeedSkipThisKey = FALSE;
 	BOOL ClickHelperWork = FALSE;
 	WPARAM wParam = _wParam;
 
-	BOOL _IsCtrlPressed = HIBYTE( GetKeyState( VK_CONTROL ) ) & 0x80;
-	BOOL _IsShiftPressed = HIBYTE( GetKeyState( VK_SHIFT ) ) & 0x80;
-	BOOL _IsAltPressed = HIBYTE( GetKeyState( VK_MENU ) ) & 0x80;
+	BOOL _IsCtrlPressed = IsKeyPressed(VK_CONTROL);
+	BOOL _IsShiftPressed = IsKeyPressed(VK_SHIFT);
+	BOOL _IsAltPressed = IsKeyPressed(VK_MENU);
 
-	if ( _Msg == WM_KEYDOWN )
+	if (_Msg == WM_KEYDOWN)
 	{
 		LatestPressedKey = 0;
 	}
 
-	if ( _Msg == WM_SIZE )
+	if (_Msg == WM_SIZE)
 	{
-		for ( auto & v : ListOfRawImages )
+		for (auto & v : ListOfRawImages)
 			v.needResetTexture = TRUE;
 	}
 
@@ -2147,11 +3050,30 @@ LRESULT __fastcall BeforeWarcraftWNDProc( HWND hWnd, unsigned int _Msg, WPARAM _
 	//	ShowConfigWindow( ".\\config.dota" );
 	//}
 
-	if ( SkipAllMessages || TerminateStarted )
+	if (SkipAllMessages || TerminateStarted)
 	{
-		return DefWindowProc( hWnd, Msg, wParam, lParam );// WarcraftRealWNDProc_ptr( hWnd, Msg, wParam, lParam );
+		if (SetInfoObjDebugVal)
+		{
+			PrintText("SkipAllMessages");
+		}
+		return DefWindowProc(hWnd, Msg, wParam, lParam);
 	}
 
+
+	if (IfNeedSkipAllKeyMessages())
+	{
+		if (_Msg == WM_KEYDOWN || _Msg == WM_KEYUP || _Msg == WM_SYSKEYDOWN || _Msg == WM_SYSKEYUP ||
+			_Msg == WM_LBUTTONUP || _Msg == WM_LBUTTONDOWN || _Msg == WM_RBUTTONUP || _Msg == WM_RBUTTONDOWN ||
+			_Msg == WM_MBUTTONDOWN || _Msg == WM_MBUTTONUP)
+		{
+			return DefWindowProc(hWnd, Msg, wParam, lParam);
+		}
+	}
+
+	if (SetInfoObjDebugVal && _Msg == WM_KEYDOWN)
+	{
+		PrintText("!");
+	}
 
 	//if ( Msg == WM_KEYDOWN && wParam == VK_ESCAPE )
 	//{
@@ -2181,23 +3103,43 @@ LRESULT __fastcall BeforeWarcraftWNDProc( HWND hWnd, unsigned int _Msg, WPARAM _
 	//	DebugMsgShow = FALSE;
 	//}
 #ifdef DOTA_HELPER_LOG
-	if ( wParam == '0' && Msg == WM_KEYUP )
+	if (wParam == '0' && Msg == WM_KEYUP)
 	{
-		Storm::ShowAllLeaks( );
+		Storm::ShowAllLeaks();
 	}
 #endif
 
-	if ( !( IsGame( ) ) )
-		return WarcraftRealWNDProc_ptr( hWnd, Msg, wParam, lParam );
-
-
-	if ( usedcustomframes && *( int* )ChatFound == 0 && IsGameFrameActive( ) )
+	if (!IsGame())
 	{
-		*( int* )pCurrentFrameFocusedAddr = 0;
+		return WarcraftRealWNDProc_ptr(hWnd, Msg, wParam, lParam);
+	}
+	if (SetInfoObjDebugVal && _Msg == WM_KEYDOWN)
+	{
+		PrintText("@");
+	}
+	else
+	{
+		if (SetInfoObjDebugVal && Msg == WM_KEYDOWN)
+		{
+			PrintText("@2");
+		}
+	}
+	if (usedcustomframes && *(int*)ChatFound == 0 && IsGameFrameActive())
+	{
+		*(int*)pCurrentFrameFocusedAddr = 0;
 	}
 
-	if ( !IsGameFrameActive( ) )
-		return WarcraftRealWNDProc_ptr( hWnd, Msg, wParam, lParam );
+	if (!IsGameFrameActive())
+	{
+		if (SetInfoObjDebugVal && Msg == WM_KEYDOWN)
+		{
+			PrintText("!IsGameFrameActive");
+		}
+		return WarcraftRealWNDProc_ptr(hWnd, Msg, wParam, lParam);
+	}
+
+	DisableTargetCurcor();
+
 
 	//if ( _Msg == WM_LBUTTONDOWN )
 	//{
@@ -2211,58 +3153,69 @@ LRESULT __fastcall BeforeWarcraftWNDProc( HWND hWnd, unsigned int _Msg, WPARAM _
 
 
 
-	TestValues[ 1 ]++;
+	TestValues[1]++;
 
-	if ( GameVersion == 0x26a )
+	if (_Msg == WM_MOUSEWHEEL && IsKeyPressed(VK_LCONTROL))
 	{
-		if ( _Msg == WM_MOUSEWHEEL && IsKeyPressed( VK_LCONTROL ) )
+		short wheeltarg = HIWORD(_wParam);
+		if (wheeltarg > 0)
 		{
-			short wheeltarg = HIWORD( _wParam );
-			if ( wheeltarg > 0 )
-			{
-				DecreaseCameraOffset( );
-			}
-			else
-			{
-				IncreaseCameraOffset( );
-			}
-
-			WarcraftRealWNDProc_ptr( hWnd, WM_SYSKEYDOWN, VK_PRIOR, NULL );
-			WarcraftRealWNDProc_ptr( hWnd, WM_SYSKEYDOWN, VK_NEXT, NULL );
-
-			return DefWindowProc( hWnd, Msg, wParam, lParam );
+			DecreaseCameraOffset();
+		}
+		else
+		{
+			IncreaseCameraOffset();
 		}
 
-		if ( _Msg == WM_MBUTTONDOWN && IsKeyPressed( VK_LCONTROL ) )
-		{
-			ResetCameraOffset( );
+		WarcraftRealWNDProc_ptr(hWnd, WM_SYSKEYDOWN, VK_PRIOR, NULL);
+		WarcraftRealWNDProc_ptr(hWnd, WM_SYSKEYDOWN, VK_NEXT, NULL);
 
-			WarcraftRealWNDProc_ptr( hWnd, WM_SYSKEYDOWN, VK_PRIOR, NULL );
-			WarcraftRealWNDProc_ptr( hWnd, WM_SYSKEYDOWN, VK_NEXT, NULL );
-
-			return DefWindowProc( hWnd, Msg, wParam, lParam );
-		}
+		return DefWindowProc(hWnd, Msg, wParam, lParam);
 	}
 
-	if ( ( lParam & 0x40000000 ) && Msg == WM_KEYDOWN && !*( int* )ChatFound )
+	if (_Msg == WM_MBUTTONDOWN && IsKeyPressed(VK_LCONTROL))
 	{
-		return WarcraftRealWNDProc_ptr( hWnd, Msg, wParam, lParam );
+		ResetCameraOffset();
+
+		WarcraftRealWNDProc_ptr(hWnd, WM_SYSKEYDOWN, VK_PRIOR, NULL);
+		WarcraftRealWNDProc_ptr(hWnd, WM_SYSKEYDOWN, VK_NEXT, NULL);
+
+		return DefWindowProc(hWnd, Msg, wParam, lParam);
+	}
+
+	if ((lParam & 0x40000000) && Msg == WM_KEYDOWN && !*(int*)ChatFound)
+	{
+		if (SetInfoObjDebugVal)
+		{
+			PrintText("Skip1");
+		}
+
+		return DefWindowProc(hWnd, Msg, wParam, lParam);
 	}
 
 
-	TestValues[ 2 ]++;
+	TestValues[2]++;
+
+	//if (wParam == VK_ESCAPE && Msg == WM_KEYUP)
+	//{
+	//	if (ConfigWindowCreated)
+	//	{
+	//		ShowConfigWindow("");
+
+	//	}
+	//}
 
 
 
 #ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__, __LINE__ );
+	AddNewLineToDotaHelperLog(__func__, __LINE__);
 #endif
 
 
 
-	if ( Msg == WM_MOUSEMOVE )
+	if (Msg == WM_MOUSEMOVE)
 	{
-		GlobalMousePos = MAKEPOINTS( lParam );
+		GlobalMousePos = MAKEPOINTS(lParam);
 	}
 
 
@@ -2300,1064 +3253,338 @@ LRESULT __fastcall BeforeWarcraftWNDProc( HWND hWnd, unsigned int _Msg, WPARAM _
 	//#endif
 
 
-	if ( *IsWindowActive || ForceLvl2 )
+	if (*IsWindowActive || ForceLvl2)
 	{
-		TestValues[ 3 ]++;
+		TestValues[3]++;
 
 
-		if ( WM_TIMER )
+		if (WM_TIMER)
 		{
-			switch ( wParam )
+			switch (wParam)
 			{
 			case 'atod':
-				PressKeyWithDelay_timed( );
+				PressKeyWithDelay_timed();
 				break;
 			}
 		}
 
-		if ( Msg == WM_LBUTTONUP )
+		if (Msg == WM_LBUTTONUP)
 		{
-			ProcessClickAtCustomFrames( );
+			ProcessClickAtCustomFrames();
 		}
-		if ( GlobalRawImageCallbackData )
+
+		if (GlobalRawImageCallbackData)
 		{
-			if ( Msg == WM_LBUTTONUP )
+			if (Msg == WM_LBUTTONUP)
 			{
 				GlobalRawImageCallbackData->IsLeftButton = TRUE;
-				RawImageGlobalCallbackFunc( RawImageEventType::MouseUp, ( float )GlobalMousePos.x, ( float )GlobalMousePos.y );
+				RawImageGlobalCallbackFunc(RawImageEventType::MouseUp, (float)GlobalMousePos.x, (float)GlobalMousePos.y);
 			}
 
-			if ( Msg == WM_LBUTTONDOWN )
+			if (Msg == WM_LBUTTONDOWN)
 			{
 				GlobalRawImageCallbackData->IsLeftButton = TRUE;
-				if ( RawImageGlobalCallbackFunc( RawImageEventType::MouseDown, ( float )GlobalMousePos.x, ( float )GlobalMousePos.y ) )
+				if (RawImageGlobalCallbackFunc(RawImageEventType::MouseDown, (float)GlobalMousePos.x, (float)GlobalMousePos.y))
 				{
-					if ( SetInfoObjDebugVal )
+					if (SetInfoObjDebugVal)
 					{
-						PrintText( "Skip WM_LBUTTONDOWN" );
+						PrintText("Skip WM_LBUTTONDOWN");
 					}
-					return DefWindowProc( hWnd, Msg, wParam, lParam );
+					return DefWindowProc(hWnd, Msg, wParam, lParam);
 				}
 				else
 				{
-					if ( SetInfoObjDebugVal )
+					if (SetInfoObjDebugVal)
 					{
-						PrintText( "No Skip WM_LBUTTONDOWN" );
+						PrintText("No Skip WM_LBUTTONDOWN");
 					}
 				}
 			}
 
-			if ( Msg == WM_RBUTTONUP )
+			if (Msg == WM_RBUTTONUP)
 			{
 				GlobalRawImageCallbackData->IsLeftButton = FALSE;
-				RawImageGlobalCallbackFunc( RawImageEventType::MouseUp, ( float )GlobalMousePos.x, ( float )GlobalMousePos.y );
+				RawImageGlobalCallbackFunc(RawImageEventType::MouseUp, (float)GlobalMousePos.x, (float)GlobalMousePos.y);
 			}
 
-			if ( Msg == WM_RBUTTONDOWN )
+			if (Msg == WM_RBUTTONDOWN)
 			{
 				GlobalRawImageCallbackData->IsLeftButton = FALSE;
-				if ( RawImageGlobalCallbackFunc( RawImageEventType::MouseDown, ( float )GlobalMousePos.x, ( float )GlobalMousePos.y ) )
-					return DefWindowProc( hWnd, Msg, wParam, lParam );
+				if (RawImageGlobalCallbackFunc(RawImageEventType::MouseDown, (float)GlobalMousePos.x, (float)GlobalMousePos.y))
+					return DefWindowProc(hWnd, Msg, wParam, lParam);
 			}
 
-			if ( Msg == WM_MOUSEMOVE )
+			if (Msg == WM_MOUSEMOVE)
 			{
-				RawImageGlobalCallbackFunc( RawImageEventType::MouseMove, ( float )GlobalMousePos.x, ( float )GlobalMousePos.y );
+				RawImageGlobalCallbackFunc(RawImageEventType::MouseMove, (float)GlobalMousePos.x, (float)GlobalMousePos.y);
 			}
 		}
 
-		if ( LOCK_MOUSE_IN_WINDOW )
+		if (LOCK_MOUSE_IN_WINDOW)
 		{
 			POINT p;
 			tagWINDOWINFO pwi;
-			if ( Warcraft3Window && GetCursorPos( &p ) && GetWindowInfo( Warcraft3Window, &pwi ) && IsMouseOverWindow( pwi.rcClient, p ) )
+			if (Warcraft3Window && GetCursorPos(&p) && GetWindowInfo(Warcraft3Window, &pwi) && IsMouseOverWindow(pwi.rcClient, p))
 			{
-				ClipCursor( &pwi.rcClient );
+				ClipCursor(&pwi.rcClient);
 			}
 			else
 			{
-				ClipCursor( 0 );
+				ClipCursor(0);
 			}
 		}
 
 
-		if ( FPS_LIMIT_ENABLED )
+		if (FPS_LIMIT_ENABLED)
 		{
-			auto t_end = std::chrono::high_resolution_clock::now( );
-			if ( std::chrono::duration<float, std::milli>( t_end - t_start ).count( ) > 250.0 )
+			auto t_end = std::chrono::high_resolution_clock::now();
+			if (std::chrono::duration<float, std::milli>(t_end - t_start).count() > 250.0)
 			{
 				t_start = t_end;
-				UpdateFPS( );
+				UpdateFPS();
 			}
 		}
 
-		if ( AutoSelectHero )
-			if ( Msg == WM_KEYDOWN && wParam >= VK_F1 && wParam <= VK_F5 )
+		if (AutoSelectHero)
+			if (Msg == WM_KEYDOWN && wParam >= VK_F1 && wParam <= VK_F5)
 			{
-				LPARAM lpFKEYScanKeyUP = ( LPARAM )( 0xC0000001 | ( LPARAM )( MapVirtualKey( wParam, 0 ) << 16 ) );
-				LPARAM lpFKEYScanKeyDOWN = ( LPARAM )( 0x00000001 | ( LPARAM )( MapVirtualKey( wParam, 0 ) << 16 ) );
+				LPARAM lpFKEYScanKeyUP = (LPARAM)(0xC0000001 | (LPARAM)(MapVirtualKey(wParam, 0) << 16));
+				LPARAM lpFKEYScanKeyDOWN = (LPARAM)(0x00000001 | (LPARAM)(MapVirtualKey(wParam, 0) << 16));
 
-				WarcraftRealWNDProc_ptr( hWnd, WM_KEYDOWN, wParam, lpFKEYScanKeyDOWN );
-				WarcraftRealWNDProc_ptr( hWnd, WM_KEYUP, wParam, lpFKEYScanKeyUP );
+				WarcraftRealWNDProc_ptr(hWnd, WM_KEYDOWN, wParam, lpFKEYScanKeyDOWN);
+				WarcraftRealWNDProc_ptr(hWnd, WM_KEYUP, wParam, lpFKEYScanKeyUP);
 			}
 
 
-		if ( ( Msg == WM_KEYDOWN || Msg == WM_KEYUP ) && ( _wParam == VK_SHIFT || _wParam == VK_LSHIFT || _wParam == VK_RSHIFT ) )
+		if ((Msg == WM_KEYDOWN || Msg == WM_KEYUP) && (_wParam == VK_SHIFT || _wParam == VK_LSHIFT || _wParam == VK_RSHIFT))
 		{
-			ShiftPressed = ( unsigned char )( Msg == WM_KEYDOWN ? 0x1u : 0x0u );
+			ShiftPressed = (unsigned char)(Msg == WM_KEYDOWN ? 0x1u : 0x0u);
 		}
 
-		if ( Msg == WM_RBUTTONDOWN )
+		if (Msg == WM_RBUTTONDOWN)
 		{
-			ShiftPressed = ( unsigned char )( _IsShiftPressed ? 0x1u : 0x0u );
+			ShiftPressed = (unsigned char)(_IsShiftPressed ? 0x1u : 0x0u);
 		}
 
-		// SHIFT+NUMPAD TRICK
-		if ( IsGameFrameActive( ) && ( Msg == WM_KEYDOWN || Msg == WM_KEYUP ) && (
-			wParam == 0xC ||
-			wParam == 0x23 ||
-			wParam == 0x24 ||
-			wParam == 0x25 ||
-			wParam == 0x26 ||
-			wParam == 0x28
-			) )
-		{
-			int  scanCode = ( int )( ( lParam >> 24 ) & 0x1 );
 
-			if ( scanCode != 1 )
+
+		for (unsigned int i = 0; i < SkipMessagesList.size(); i++)
+		{
+			if (SkipMessagesList[i].Msg == Msg && SkipMessagesList[i].wParam == wParam)
 			{
-				switch ( wParam )
+				SkipMessagesList.erase(SkipMessagesList.begin() + (int)i);
+				if (SetInfoObjDebugVal)
 				{
-				case 0x23:
-					wParam = VK_NUMPAD1;
-					break;
-				case 0x28:
-					wParam = VK_NUMPAD2;
-					break;
-				case 0x25:
-					wParam = VK_NUMPAD4;
-					break;
-				case 0xC:
-					wParam = VK_NUMPAD5;
-					break;
-				case 0x24:
-					wParam = VK_NUMPAD7;
-					break;
-				case 0x26:
-					wParam = VK_NUMPAD8;
-					break;
-				default:
-					break;
+					PrintText("SKIP SINGLE MSG");
 				}
-				if ( wParam != _wParam )
-				{
-					if ( !_IsShiftPressed )
-					{
-						BOOL NumLock = ( ( ( unsigned short )GetKeyState( VK_NUMLOCK ) ) & 0xffff ) != 0;
-						if ( NumLock )
-							ShiftPressed = 0x1;
-						else
-							ShiftPressed = 0x0;
-					}
-
-
-					if ( Msg == WM_KEYDOWN && IsNumpadPressed( wParam ) )
-					{
-						bool NotFoundInHotKeys = true;
-						for ( KeyActionStruct & keyAction : KeyActionList )
-						{
-							if ( keyAction.VK == wParam )
-							{
-								NotFoundInHotKeys = false;
-							}
-						}
-
-						if ( NotFoundInHotKeys )
-						{
-							int btnaddr = GetBtnAddrByNumpad( wParam );
-							if ( btnaddr )
-							{
-								SimpleButtonClickEvent_my( btnaddr, 0, 1 );
-								/*if ( CheckBtnForClickPortrain( btnaddr ) )
-								{
-									SimpleButtonClickEvent_my( btnaddr, 0, 1 );*/
-								return DefWindowProc( hWnd, Msg, wParam, lParam );
-
-								//int PortraitButtonAddr = GetGlobalClassAddr( );
-								//if ( PortraitButtonAddr > 0 )
-								//{
-								//	PortraitButtonAddr = *( int* )( PortraitButtonAddr + 0x3F4 );
-								//}
-								//if ( PortraitButtonAddr > 0 )
-								//{
-								//	//PrintText( "Click to portrain." );
-								//	Wc3ControlClickButton_org( PortraitButtonAddr, 1 );
-								//}
-							//}
-							}
-						}
-					}
-					LRESULT retval1 = WarcraftRealWNDProc_ptr( hWnd, Msg, wParam, lParam );
-
-
-
-					return retval1;
-				}
-
-			}
-			else
-			{
-				if ( !_IsShiftPressed )
-				{
-					ShiftPressed = 0;
-				}
+				return DefWindowProc(hWnd, Msg, wParam, lParam);
 			}
 		}
 
-
-		if ( Msg == WM_KEYDOWN && IsNumpadPressed( wParam ) && IsGameFrameActive( ) )
+		if (Msg == WM_MOUSEMOVE && BLOCKMOUSEMOVING)
 		{
-			bool NotFoundInHotKeys = true;
-			for ( KeyActionStruct & keyAction : KeyActionList )
+			if (SetInfoObjDebugVal)
 			{
-				if ( keyAction.VK == wParam )
-				{
-					NotFoundInHotKeys = false;
-				}
+				PrintText("MOUSE MOVING BLOCKED");
 			}
-
-			if ( NotFoundInHotKeys )
-			{
-				int btnaddr = GetBtnAddrByNumpad( wParam );
-				if ( btnaddr )
-				{
-					SimpleButtonClickEvent_my( btnaddr, 0, 1 );
-					return DefWindowProc( hWnd, Msg, wParam, lParam );
-				}
-			}
+			return DefWindowProc(hWnd, Msg, wParam, lParam);
 		}
 
+		TestValues[4]++;
 
 
-		for ( unsigned int i = 0; i < SkipMessagesList.size( ); i++ )
+		if ((*(int*)ChatFound == 0 || ForceLvl3) && (IsGameFrameActive() || ForceLvl1))
 		{
-			if ( SkipMessagesList[ i ].Msg == Msg && SkipMessagesList[ i ].wParam == wParam )
-			{
-				SkipMessagesList.erase( SkipMessagesList.begin( ) + ( int )i );
-				return DefWindowProc( hWnd, Msg, wParam, lParam );
-			}
-		}
+			TestValues[5]++;
 
-		if ( Msg == WM_MOUSEMOVE && BLOCKMOUSEMOVING )
-		{
-			return DefWindowProc( hWnd, Msg, wParam, lParam );
-		}
-
-		TestValues[ 4 ]++;
-
-
-
-		if ( ( *( int* )ChatFound == 0 || ForceLvl3 ) && ( IsGameFrameActive( ) || ForceLvl1 ) )
-		{
-			TestValues[ 5 ]++;
-
-			if ( Msg == WM_KEYDOWN || Msg == WM_KEYUP || Msg == WM_RBUTTONDOWN || Msg == WM_RBUTTONUP )
-			{
-				for ( int & keyCode : RegisteredKeyCodes )
-				{
-					if ( keyCode == ( int )wParam )
-					{
-
-						if ( Msg == WM_KEYDOWN /*&& !( lParam & 0x40000000 )*/ )
-						{
-
-#ifdef DOTA_HELPER_LOG
-							AddNewLineToDotaHelperLog( __func__, __LINE__ );
-#endif
-							//BytesToSend.push_back( 0x50 );
-							//// packet header
-							//BytesToSend.push_back( 0xFF );
-							//// packet size
-							//BytesToSend.push_back( 0 );
-							//BytesToSend.push_back( 0 );
-							//BytesToSend.push_back( 0 );
-							//BytesToSend.push_back( 0 );
-							SendKeyEvent.push_back( 0x50 );
-							// header custom packets
-							SendKeyEvent.push_back( 0xFF );
-							// size custom packets 
-							SendKeyEvent.push_back( 0 );
-							SendKeyEvent.push_back( 0 );
-							SendKeyEvent.push_back( 0 );
-							SendKeyEvent.push_back( 0 );
-							// packet type
-							int packettype = 'IKEY';
-							SendKeyEvent.insert( SendKeyEvent.end( ), ( unsigned char * )&packettype, ( ( unsigned char * )&packettype ) + 4 );
-							*( int* )&SendKeyEvent[ 2 ] += 4;
-							// data
-							int locpid = GetLocalPlayerId( );
-							SendKeyEvent.insert( SendKeyEvent.end( ), ( unsigned char * )&locpid, ( ( unsigned char * )&locpid ) + 4 );
-							*( int* )&SendKeyEvent[ 2 ] += 4;
-							SendKeyEvent.insert( SendKeyEvent.end( ), ( unsigned char * )&Msg, ( ( unsigned char * )&Msg ) + 4 );
-							*( int* )&SendKeyEvent[ 2 ] += 4;
-							SendKeyEvent.insert( SendKeyEvent.end( ), ( unsigned char * )&wParam, ( ( unsigned char * )&wParam ) + 4 );
-							*( int* )&SendKeyEvent[ 2 ] += 4;
-							SendPacket( ( BYTE* )&SendKeyEvent[ 0 ], SendKeyEvent.size( ) );
-							SendKeyEvent.clear( );
-#ifdef DOTA_HELPER_LOG
-							AddNewLineToDotaHelperLog( __func__, __LINE__ );
-#endif
-							//*KeyboardAddrForKey = ( int ) wParam;
-							//*KeyboardAddrForKeyEvent = ( int ) Msg;
-							//	TriggerExecute( KeyboardTriggerHandle );
-						}
-						else if ( Msg == WM_KEYUP )
-						{
-#ifdef DOTA_HELPER_LOG
-							AddNewLineToDotaHelperLog( __func__, __LINE__ );
-#endif
-							SendKeyEvent.push_back( 0x50 );
-							// header custom packets
-							SendKeyEvent.push_back( 0xFF );
-							// size custom packets 
-							SendKeyEvent.push_back( 0 );
-							SendKeyEvent.push_back( 0 );
-							SendKeyEvent.push_back( 0 );
-							SendKeyEvent.push_back( 0 );
-							// packet type
-							int packettype = 'IKEY';
-							SendKeyEvent.insert( SendKeyEvent.end( ), ( unsigned char * )&packettype, ( ( unsigned char * )&packettype ) + 4 );
-							*( int* )&SendKeyEvent[ 2 ] += 4;
-							// data
-							int locpid = GetLocalPlayerId( );
-							SendKeyEvent.insert( SendKeyEvent.end( ), ( unsigned char * )&locpid, ( ( unsigned char * )&locpid ) + 4 );
-							*( int* )&SendKeyEvent[ 2 ] += 4;
-							SendKeyEvent.insert( SendKeyEvent.end( ), ( unsigned char * )&Msg, ( ( unsigned char * )&Msg ) + 4 );
-							*( int* )&SendKeyEvent[ 2 ] += 4;
-							SendKeyEvent.insert( SendKeyEvent.end( ), ( unsigned char * )&wParam, ( ( unsigned char * )&wParam ) + 4 );
-							*( int* )&SendKeyEvent[ 2 ] += 4;
-							SendPacket( ( BYTE* )&SendKeyEvent[ 0 ], SendKeyEvent.size( ) );
-							SendKeyEvent.clear( );
-#ifdef DOTA_HELPER_LOG
-							AddNewLineToDotaHelperLog( __func__, __LINE__ );
-#endif
-							//*KeyboardAddrForKey = ( int ) wParam;
-							//*KeyboardAddrForKeyEvent = ( int ) Msg;
-							//TriggerExecute( KeyboardTriggerHandle );
-						}
-#ifdef DOTA_HELPER_LOG
-						AddNewLineToDotaHelperLog( __func__, __LINE__ );
-#endif
-						return DefWindowProc( hWnd, Msg, wParam, lParam );
-					}
-
-				}
-			}
 			//char keystateprint[ 200 ];
-			if ( Msg == WM_KEYDOWN ||/* Msg == WM_KEYUP || */Msg == WM_RBUTTONDOWN )
+
+			if (SetInfoObjDebugVal && (Msg == WM_KEYUP || Msg == WM_KEYDOWN))
 			{
-				if ( BlockKeyboardAndMouseWhenTeleport )
+				PrintText("Fix numpad...");
+			}
+
+			if (FixNumpad(hWnd, Msg, wParam, _wParam, lParam, _IsShiftPressed))
+			{
+				return DefWindowProc(hWnd, Msg, wParam, lParam);
+			}
+
+			if (SetInfoObjDebugVal && (Msg == WM_KEYUP || Msg == WM_KEYDOWN))
+			{
+				PrintText("Fix numpad OK");
+			}
+
+
+			if (Msg == WM_KEYDOWN && IsNumpadPressed(wParam) && IsGameFrameActive())
+			{
+				bool NotFoundInHotKeys = true;
+				for (KeyActionStruct & keyAction : KeyActionList)
 				{
-					if ( Msg == WM_RBUTTONDOWN )
+					if (keyAction.VK == wParam)
 					{
-						int selectedunit = GetSelectedUnit( GetLocalPlayerId( ) );
-						if ( selectedunit > 0 )
-						{
-							unsigned int abilscount = 0;
-							FindUnitAbils( selectedunit, &abilscount, 'A3VO' );
-							if ( abilscount > 0 )
-							{
-								if ( TeleportShiftPress )
-								{
-									if ( ShiftPressed == 0 && !ShiftPressed )
-									{
-										SingleShift = TRUE;
-										ShiftPressed = 1;
-									}
-								}
-								else
-									return DefWindowProc( hWnd, Msg, wParam, lParam );
-							}
-						}
+						NotFoundInHotKeys = false;
 					}
+				}
 
-
-
-					if ( ( wParam >= 0x41 && wParam <= 0x5A ) || ( wParam >= VK_NUMPAD1 && wParam <= VK_NUMPAD8 ) )
+				if (NotFoundInHotKeys)
+				{
+					int btnaddr = GetBtnAddrByNumpad(wParam);
+					if (btnaddr)
 					{
-						BOOL NeedSkipForTP = TRUE;
-
-						for ( int & VK : WhiteListForTeleport )
-						{
-							if ( wParam == VK )
-							{
-								NeedSkipForTP = FALSE;
-								break;
-							}
-						}
-
-						if ( NeedSkipForTP )
-						{
-							int selectedunit = GetSelectedUnit( GetLocalPlayerId( ) );
-							if ( selectedunit > 0 )
-							{
-								unsigned int abilscount = 0;
-								FindUnitAbils( selectedunit, &abilscount, 'A3VO' );
-								if ( abilscount > 0 )
-								{
-									if ( TeleportShiftPress )
-									{
-										if ( ShiftPressed == 0 && !ShiftPressed )
-										{
-											SingleShift = TRUE;
-											ShiftPressed = 1;
-										}
-
-									}
-									else
-										return DefWindowProc( hWnd, Msg, wParam, lParam );
-								}
-							}
-						}
-
+						SimpleButtonClickEvent_my(btnaddr, 0, 1);
+						return DefWindowProc(hWnd, Msg, wParam, lParam);
 					}
-
 				}
 			}
 
-			if ( Msg == WM_KEYDOWN || Msg == WM_XBUTTONDOWN || Msg == WM_MBUTTONDOWN ||
-				Msg == WM_SYSKEYDOWN )
+			if (SetInfoObjDebugVal && (Msg == WM_KEYUP || Msg == WM_KEYDOWN))
+			{
+				PrintText("ProcessRegisteredHotkeys...");
+			}
+
+
+			if (ProcessRegisteredHotkeys(hWnd, Msg, wParam, lParam))
+			{
+				return DefWindowProc(hWnd, Msg, wParam, lParam);
+			}
+
+
+			if (SetInfoObjDebugVal && (Msg == WM_KEYUP || Msg == WM_KEYDOWN))
+			{
+				PrintText("SkipKeyboardAndMouseWhenTeleport...");
+			}
+
+
+			if (SkipKeyboardAndMouseWhenTeleport(hWnd, Msg, wParam, lParam))
+			{
+				return DefWindowProc(hWnd, Msg, wParam, lParam);
+			}
+
+
+			if (Msg == WM_KEYDOWN || Msg == WM_XBUTTONDOWN || Msg == WM_MBUTTONDOWN ||
+				Msg == WM_SYSKEYDOWN)
 			{
 				BOOL itempressed = FALSE;
 
-				if ( _Msg == WM_XBUTTONDOWN )
+				if (_Msg == WM_XBUTTONDOWN)
 				{
 					Msg = WM_KEYDOWN;
 					wParam = _wParam & MK_XBUTTON1 ? VK_XBUTTON1 : VK_XBUTTON2;
 				}
 
-				if ( _Msg == WM_MBUTTONDOWN )
+				if (_Msg == WM_MBUTTONDOWN)
 				{
 					Msg = WM_KEYDOWN;
 					wParam = VK_MBUTTON;
 				}
 
-				if ( ShopHelperEnabled  && IsGameFrameActive( ) && /*(*/ Msg == WM_KEYDOWN /*|| Msg == WM_KEYUP ) */ )
+				if (SetInfoObjDebugVal && (Msg == WM_KEYUP || Msg == WM_KEYDOWN))
 				{
-
-					if (
-						wParam == 'Q' ||
-						wParam == 'W' ||
-						wParam == 'E' ||
-						wParam == 'R' ||
-						wParam == 'A' ||
-						wParam == 'S' ||
-						wParam == 'D' ||
-						wParam == 'F' ||
-						wParam == 'Z' ||
-						wParam == 'X' ||
-						wParam == 'C' ||
-						wParam == 'V'
-						)
-					{
-						int selectedunit = GetSelectedUnit( GetLocalPlayerId( ) );
-						if ( selectedunit > 0 && GetSelectedUnitCountBigger( GetLocalPlayerId( ) ) > 0 )
-						{
-							if ( GetUnitOwnerSlot( selectedunit ) == 15 )
-							{
-								// | 0 | 3 | 6 | 9  |
-								// | 1 | 4 | 7 | 10 | 
-								// | 2 | 5 | 8 | 11 |
-
-								NeedSkipThisKey = TRUE;
-
-								/*	if ( Msg == WM_KEYDOWN && !( lParam & 0x40000000 ) )
-									{*/
-
-								if ( wParam == 'Q' )
-									PressSkillPanelButton( 0, FALSE );
-								else if ( wParam == 'W' )
-									PressSkillPanelButton( 3, FALSE );
-								else if ( wParam == 'E' )
-									PressSkillPanelButton( 6, FALSE );
-								else if ( wParam == 'R' )
-									PressSkillPanelButton( 9, FALSE );
-								else if ( wParam == 'A' )
-									PressSkillPanelButton( 1, FALSE );
-								else if ( wParam == 'S' )
-									PressSkillPanelButton( 4, FALSE );
-								else if ( wParam == 'D' )
-									PressSkillPanelButton( 7, FALSE );
-								else if ( wParam == 'F' )
-									PressSkillPanelButton( 10, FALSE );
-								else if ( wParam == 'Z' )
-									PressSkillPanelButton( 2, FALSE );
-								else if ( wParam == 'X' )
-									PressSkillPanelButton( 5, FALSE );
-								else if ( wParam == 'C' )
-									PressSkillPanelButton( 8, FALSE );
-								else if ( wParam == 'V' )
-									PressSkillPanelButton( 11, FALSE );
-								else
-									NeedSkipThisKey = FALSE;
-								//}
-							}
-						}
-					}
+					PrintText("ProcessShopHelper...");
 				}
 
 
-				if ( !NeedSkipThisKey && IsGameFrameActive( ) )
+				if (ProcessShopHelper(hWnd, Msg, wParam, lParam))
 				{
-					TestValues[ 7 ] = KeyActionList.size( );
-
-					for ( int lol = 0; lol < 2; lol++ )
-					{
-						//if ( !NeedSkipThisKey )
-						{
-							for ( KeyActionStruct & keyAction : KeyActionList )
-							{
-								if ( keyAction.VK == ( int )wParam )
-								{
-									if ( SetInfoObjDebugVal )
-									{
-										PrintText( "Hotkey vk code found." );
-									}
-									TestValues[ 6 ]++;
-									if ( Msg == WM_SYSKEYDOWN )
-										Msg = WM_KEYDOWN;
-
-									/*if ( Msg == WM_SYSKEYUP )
-										Msg = WM_KEYUP;*/
-
-
-
-									if ( ( !keyAction.IsAlt && !keyAction.IsCtrl && !keyAction.IsShift && lol == 1 )
-										|| ( keyAction.IsAlt && _IsAltPressed )
-										|| ( keyAction.IsCtrl && _IsCtrlPressed )
-										|| ( keyAction.IsShift && _IsShiftPressed )
-										)
-									{
-
-										lol++;
-										if ( SetInfoObjDebugVal )
-										{
-											PrintText( "Hotkey availabled!" );
-										}
-										itempressed = !keyAction.IsSkill;
-
-										if ( itempressed || ( keyAction.IsSkill && !IsCursorSelectTarget( ) ) )
-										{
-											int selectedunits = GetSelectedUnitCountBigger( GetLocalPlayerId( ) );
-
-											int selectedunit = GetSelectedUnit( GetLocalPlayerId( ) );
-											if ( selectedunit > 0 && selectedunits > 0 )
-											{
-												int unitowner = GetUnitOwnerSlot( selectedunit );
-												if ( !keyAction.IsSkill && ClickHelper && unitowner != 15 )
-												{
-													if ( wParam == LatestPressedKey )
-													{
-														if ( IsCursorSelectTarget( ) )
-														{
-															if ( SetInfoObjDebugVal )
-															{
-																PrintText( "Select hero!" );
-															}
-															if ( PressMouseAtSelectedHero( itempressed ) == 0 )
-															{
-																ClickHelperWork = TRUE;
-																NeedSkipThisKey = TRUE;
-															}
-														}
-													}
-												}
-
-												LatestPressedKey = wParam;
-
-
-												if ( unitowner != 15 && !ClickHelperWork )
-												{
-													NeedSkipThisKey = TRUE;
-
-
-													if ( EnableSelectHelper )
-													{
-
-														if ( unitowner != GetLocalPlayerId( ) && !GetPlayerAlliance( Player( unitowner ), Player( GetLocalPlayerId( ) ), 6 ) )
-														{
-															//	sprintf_s( keystateprint, 200, "Start emulate #2..." );
-															//	PrintText( keystateprint );
-																//PressHeroPanelButton( 0, FALSE );
-															WarcraftRealWNDProc_ptr( hWnd, WM_KEYDOWN, VK_F1, lpF1ScanKeyDOWN );
-															WarcraftRealWNDProc_ptr( hWnd, WM_KEYUP, VK_F1, lpF1ScanKeyUP );
-															if ( SetInfoObjDebugVal )
-															{
-																PrintText( "Hotkey delay press start!!" );
-															}
-
-															DelayedPress tmpDelayPress = DelayedPress( );
-															tmpDelayPress.IsCustom = TRUE;
-															tmpDelayPress.IsAlt = _IsAltPressed;
-															tmpDelayPress.IsCtrl = _IsCtrlPressed;
-															tmpDelayPress.IsShift = _IsShiftPressed;
-															tmpDelayPress.NeedPresslParam = lParam;
-															tmpDelayPress.NeedPresswParam = wParam;
-															tmpDelayPress.NeedPressMsg = Msg;
-															tmpDelayPress.TimeOut = 140;
-															DelayedPressList_pushback( tmpDelayPress );
-
-															//lol++;
-															return DefWindowProc( hWnd, Msg, wParam, lParam );
-														}
-													}
-
-													BOOL PressedButton = FALSE;
-
-													if ( IsNULLButtonFound( GetSkillPanelButton( 11 ) ) )
-													{
-														if ( keyAction.altbtnID >= 0 )
-														{
-															if ( keyAction.IsSkill )
-																PressedButton = PressSkillPanelButton( keyAction.altbtnID, keyAction.IsRightClick );
-															else
-																PressedButton = PressItemPanelButton( keyAction.btnID, keyAction.IsRightClick );
-															//PressedButton = TRUE;
-														}
-													}
-													else
-													{
-														if ( keyAction.IsSkill )
-															PressedButton = PressSkillPanelButton( keyAction.btnID, keyAction.IsRightClick );
-														else
-															PressedButton = PressItemPanelButton( keyAction.btnID, keyAction.IsRightClick );
-														//PressedButton = TRUE;
-													}
-
-												/*	if ( !PressedButton )
-													{
-														if ( SetInfoObjDebugVal )
-														{
-															PrintText( "NO ButtonPressed!" );
-														}
-													}*/
-
-													if ( keyAction.IsQuickCast && PressedButton && IsCursorSelectTarget( ) )
-													{
-														if ( SetInfoObjDebugVal )
-														{
-															int button = GetSkillPanelButton( 11 );
-															PrintText( "QuickCast called: ButtonAddr:" + to_string( button ) + ". IsCursorSelectTarget: " + to_string( IsCursorSelectTarget( ) ) );
-														}
-
-														/*int x = ( int )( *GetWindowXoffset );
-														int y = ( int )( *GetWindowYoffset );
-														*/
-														POINT cursorhwnd;
-														GetCursorPos( &cursorhwnd );
-														ScreenToClient( Warcraft3Window, &cursorhwnd );
-
-														WarcraftRealWNDProc_ptr( Warcraft3Window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM( cursorhwnd.x, cursorhwnd.y ) );
-														WarcraftRealWNDProc_ptr( Warcraft3Window, WM_LBUTTONUP, 0, MAKELPARAM( cursorhwnd.x, cursorhwnd.y ) );
-
-														HANDLE thr = CreateThread( 0, 0, PRESSRIGHTMOUSEIFCURSORTARGET, 0, 0, 0 );
-														if ( thr != NULL )
-															CloseHandle( thr );
-														else
-														{
-															if ( SetInfoObjDebugVal )
-															{
-																PrintText( "CreateThread QuickCast error!" );
-															}
-														}
-
-
-
-														/*	if ( IsCursorSelectTarget( ) )
-														{
-														PressSkillPanelButton( 11, FALSE );
-														}*/
-
-														//POINT cursor;
-														//GetCursorPos( &cursor );
-
-														//x = x - cursorhwnd.x;
-														//y = y - cursorhwnd.y;
-
-														//cursor.x = cursor.x + x;
-														//cursor.y = cursor.y + y;
-														////( toXX, toYY );
-
-														//MouseClick( cursor.x, cursor.y );
-													}
-													else if ( !keyAction.IsQuickCast )
-													{
-														if ( SetInfoObjDebugVal )
-														{
-															PrintText( "Skip quick cast: no flag!" );
-														}
-													}
-													else if ( !PressedButton )
-													{
-														if ( SetInfoObjDebugVal )
-														{
-															PrintText( "Skip quick cast: Button not pressed!" );
-														}
-													}
-
-
-													//if ( IsNULLButtonFound( GetSkillPanelButton( 11 ) ) )
-													//{
-													//	if ( keyAction.altbtnID >= 0 )
-													//	{
-													//		if ( SetInfoObjDebugVal )
-													//		{
-													//			PrintText( "OK. Now press panel button." );
-													//		}
-													//		//if ( !( lParam & 0x40000000 ) )
-													//	//	{
-													//		if ( keyAction.IsSkill )
-													//			PressSkillPanelButton( keyAction.altbtnID, keyAction.IsRightClick );
-													//		else
-													//			PressItemPanelButton( keyAction.btnID, keyAction.IsRightClick );
-													//		//	}
-
-													//	}
-													//	else
-													//	{
-													//		if ( SetInfoObjDebugVal )
-													//		{
-													//			PrintText( "ERROR. NO ACTION FOUND!" );
-													//		}
-													//	}
-													//}
-													//else
-													//{
-													//	if ( SetInfoObjDebugVal )
-													//	{
-													//		PrintText( "OK. Now press panel button." );
-													//	}
-													//	//if ( !( lParam & 0x40000000 ) )
-													////	{
-													//	if ( keyAction.IsSkill )
-													//		PressSkillPanelButton( keyAction.btnID, keyAction.IsRightClick );
-													//	else
-													//		PressItemPanelButton( keyAction.btnID, keyAction.IsRightClick );
-													//	//	}
-
-													//}
-												}
-												else
-												{
-													if ( SetInfoObjDebugVal )
-													{
-														PrintText( "Bad selected unit( player 15 ) or hotkey disabled." );
-													}
-
-												}
-											}
-										}
-										else
-										{
-											if ( SetInfoObjDebugVal )
-											{
-												PrintText( "No selected unit!" );
-											}
-
-										}
-
-										//lol++;
-										break;
-									}
-									else
-									{
-										if ( SetInfoObjDebugVal )
-										{
-											PrintText( "Hotkey not equal skip..." );
-										}
-
-									}
-								}
-							}
-						}
-
-					}
-					for ( int lol = 0; lol < 2; lol++ )
-					{
-						//if ( !NeedSkipThisKey )
-						{
-
-
-							for ( auto keyAction : KeyChatActionList )
-							{
-								if ( keyAction.VK == ( int )wParam )
-								{
-
-									if ( ( !keyAction.IsAlt && !keyAction.IsCtrl && !keyAction.IsShift && lol == 1 )
-										|| ( keyAction.IsAlt && _IsAltPressed )
-										|| ( keyAction.IsCtrl && _IsCtrlPressed )
-										|| ( keyAction.IsShift && _IsShiftPressed )
-										)
-									{
-
-										lol++;
-										NeedSkipThisKey = TRUE;
-										if ( ( keyAction.IsAlt && _IsAltPressed )
-											|| ( keyAction.IsCtrl && _IsCtrlPressed )
-											|| ( keyAction.IsShift && _IsShiftPressed )
-											)
-										{
-											if ( Msg == WM_SYSKEYDOWN )
-												Msg = WM_KEYDOWN;
-										}
-										else
-										{
-											if ( _IsAltPressed
-												|| _IsCtrlPressed )
-											{
-												NeedSkipThisKey = FALSE;
-											}
-										}
-
-
-										SendMessageToChat( keyAction.Message.c_str( ), keyAction.SendToAll );
-									}
-								}
-							}
-
-						}
-					}
-					for ( int lol = 0; lol < 2; lol++ )
-					{
-						//if ( !NeedSkipThisKey )
-						{
-							int selectedunits = GetSelectedUnitCountBigger( GetLocalPlayerId( ) );
-
-							int selectedunit = GetSelectedUnit( GetLocalPlayerId( ) );
-							if ( selectedunit > 0 && selectedunits > 0 )
-							{
-								int unitowner = GetUnitOwnerSlot( selectedunit );
-								if ( unitowner != 15 )
-								{
-									for ( auto keyAction : KeyCalbackActionList )
-									{
-										if ( keyAction.VK == ( int )wParam )
-										{
-											if ( SetInfoObjDebugVal )
-											{
-												PrintText( "Need keyAction!" );
-											}
-
-											if ( ( !keyAction.IsAlt && !keyAction.IsCtrl && !keyAction.IsShift && lol == 1 )
-												|| ( keyAction.IsAlt && _IsAltPressed )
-												|| ( keyAction.IsCtrl && _IsCtrlPressed )
-												|| ( keyAction.IsShift && _IsShiftPressed )
-												)
-											{
-												lol++;
-												NeedSkipThisKey = TRUE;
-												if ( ( keyAction.IsAlt && _IsAltPressed )
-													|| ( keyAction.IsCtrl && _IsCtrlPressed )
-													|| ( keyAction.IsShift && _IsShiftPressed )
-													)
-												{
-													if ( Msg == WM_SYSKEYDOWN )
-														Msg = WM_KEYDOWN;
-												}
-												else
-												{
-													if ( _IsAltPressed
-														|| _IsCtrlPressed )
-													{
-														NeedSkipThisKey = FALSE;
-													}
-												}
-
-												if ( GameVersion == 0x26a )
-												{
-													__asm
-													{
-														push eax;
-														mov eax, GameDll;
-														add eax, 0x3309F0;
-														call eax;
-														pop eax;
-													}
-												}
-												NeedSkipThisKey = TRUE;
-
-												( ( int( __thiscall * )( int, int, int, int, int, int, int ) )( GameDll + 0x37C420 ) )
-													( keyAction.args[ 0 ], keyAction.args[ 1 ], keyAction.args[ 2 ],
-														keyAction.args[ 3 ], keyAction.args[ 4 ], keyAction.args[ 5 ], keyAction.args[ 6 ] );
-											}
-										}
-									}
-
-								}
-							}
-						}
-					}
-					for ( int lol = 0; lol < 2; lol++ )
-					{
-						//if ( !NeedSkipThisKey )
-						{
-							for ( auto keyAction : KeySelectActionList )
-							{
-								if ( keyAction.VK == ( int )wParam )
-								{
-
-									if ( ( !keyAction.IsAlt && !keyAction.IsCtrl && !keyAction.IsShift && lol == 1 )
-										|| ( keyAction.IsAlt && _IsAltPressed )
-										|| ( keyAction.IsCtrl && _IsCtrlPressed )
-										|| ( keyAction.IsShift && _IsShiftPressed )
-										)
-									{
-
-										lol++;
-										NeedSkipThisKey = TRUE;
-										if ( ( keyAction.IsAlt && _IsAltPressed )
-											|| ( keyAction.IsCtrl && _IsCtrlPressed )
-											|| ( keyAction.IsShift && _IsShiftPressed )
-											)
-										{
-											if ( Msg == WM_SYSKEYDOWN )
-												Msg = WM_KEYDOWN;
-										}
-										else
-										{
-											if ( _IsAltPressed
-												|| _IsCtrlPressed )
-											{
-												NeedSkipThisKey = FALSE;
-											}
-										}
-
-										if ( SetInfoObjDebugVal )
-										{
-											PrintText( "Clear selection" );
-										}
-
-										vector<int> units = GetUnitsFromGroup( keyAction.GroupHandle );
-										//reverse( units.begin( ), units.end( ) );
-
-
-										if ( SetInfoObjDebugVal )
-										{
-											PrintText( ( "Select units:" + uint_to_hex( units.size( ) ) ).c_str( ) );
-										}
-
-
-										if ( units.size( ) > 0 )
-										{
-											ClearSelection( );
-
-											for ( int unit : units )
-											{
-												if ( SetInfoObjDebugVal )
-												{
-													PrintText( ( "Select unit:" + uint_to_hex( unit ) ).c_str( ) );
-												}
-												SelectUnit( unit );
-											}
-
-
-											if ( GetTickCount( ) - GroupSelectLastTime < 450 &&
-												LastSelectedGroupHandle == keyAction.GroupHandle )
-											{
-												int PortraitButtonAddr = GetGlobalClassAddr( );
-												if ( PortraitButtonAddr > 0 )
-												{
-													PortraitButtonAddr = *( int* )( PortraitButtonAddr + 0x3F4 );
-												}
-												if ( PortraitButtonAddr > 0 )
-												{
-													if ( SetInfoObjDebugVal )
-													{
-														PrintText( "double click to portrain." );
-													}
-													Wc3ControlClickButton_org( PortraitButtonAddr, 1 );
-													Wc3ControlClickButton_org( PortraitButtonAddr, 1 );
-												}
-											}
-
-
-										}
-
-										LastSelectedGroupHandle = keyAction.GroupHandle;
-										GroupSelectLastTime = GetTickCount( );
-									}
-								}
-							}
-
-						}
-					}
+					return DefWindowProc(hWnd, Msg, wParam, lParam);
+				}
+				if (SetInfoObjDebugVal && (Msg == WM_KEYUP || Msg == WM_KEYDOWN))
+				{
+					PrintText("ProcessChatHotkeys...");
 				}
 
-				if ( !NeedSkipThisKey )
+
+				if (ProcessChatHotkeys(hWnd, Msg, wParam, lParam, _IsAltPressed, _IsCtrlPressed, _IsShiftPressed, TRUE) ||
+					ProcessChatHotkeys(hWnd, Msg, wParam, lParam, _IsAltPressed, _IsCtrlPressed, _IsShiftPressed, FALSE))
 				{
+					return DefWindowProc(hWnd, Msg, wParam, lParam);
+				}
+				if (SetInfoObjDebugVal && (Msg == WM_KEYUP || Msg == WM_KEYDOWN))
+				{
+					PrintText("ProcessHotkeys...");
+				}
 
+				if (ProcessHotkeys(hWnd, Msg, wParam, lParam, _IsAltPressed, _IsCtrlPressed, _IsShiftPressed, itempressed, ClickHelperWork, TRUE) ||
+					ProcessHotkeys(hWnd, Msg, wParam, lParam, _IsAltPressed, _IsCtrlPressed, _IsShiftPressed, itempressed, ClickHelperWork, FALSE))
+				{
+					return DefWindowProc(hWnd, Msg, wParam, lParam);
+				}
 
-					/*	if ( _Msg == WM_XBUTTONDOWN
-							|| _Msg == WM_MBUTTONDOWN )
-						*/
+				if (SetInfoObjDebugVal && (Msg == WM_KEYUP || Msg == WM_KEYDOWN))
+				{
+					PrintText("ProcessCallbackHotkeys...");
+				}
 
-						//	}
+				if (ProcessCallbackHotkeys(hWnd, Msg, wParam, lParam, _IsAltPressed, _IsCtrlPressed, _IsShiftPressed, TRUE) ||
+					ProcessCallbackHotkeys(hWnd, Msg, wParam, lParam, _IsAltPressed, _IsCtrlPressed, _IsShiftPressed, FALSE))
+				{
+					return DefWindowProc(hWnd, Msg, wParam, lParam);
+				}
+				if (SetInfoObjDebugVal && (Msg == WM_KEYUP || Msg == WM_KEYDOWN))
+				{
+					PrintText("ProcessSelectActionHotkeys...");
+				}
 
-					for ( int & keyCode : BlockedKeyCodes )
+				if (ProcessSelectActionHotkeys(hWnd, Msg, wParam, lParam, _IsAltPressed, _IsCtrlPressed, _IsShiftPressed, TRUE) ||
+					ProcessSelectActionHotkeys(hWnd, Msg, wParam, lParam, _IsAltPressed, _IsCtrlPressed, _IsShiftPressed, FALSE))
+				{
+					return DefWindowProc(hWnd, Msg, wParam, lParam);
+				}
+
+				if (SetInfoObjDebugVal && (Msg == WM_KEYUP || Msg == WM_KEYDOWN))
+				{
+					PrintText("ProcessSelectActionHotkeys ok");
+				}
+
+				for (int & keyCode : BlockedKeyCodes)
+				{
+					if (keyCode == (int)wParam)
 					{
-						if ( keyCode == ( int )wParam )
-						{
 #ifdef DOTA_HELPER_LOG
-							AddNewLineToDotaHelperLog( __func__, __LINE__ );
+						AddNewLineToDotaHelperLog(__func__, __LINE__);
 #endif
-							return DefWindowProc( hWnd, Msg, wParam, lParam );
-						}
-
+						return DefWindowProc(hWnd, Msg, wParam, lParam);
 					}
-
-					Msg = _Msg;
-					wParam = _wParam;
-
 
 				}
 
+				Msg = _Msg;
+				wParam = _wParam;
 
-				if ( ( wParam >= 0x41 && wParam <= 0x5A ) ||
-					( wParam >= VK_NUMPAD1 && wParam <= VK_NUMPAD8 )
-					|| NeedSkipThisKey )
+
+
+				if ((wParam >= 0x41 && wParam <= 0x5A) ||
+					(wParam >= VK_NUMPAD1 && wParam <= VK_NUMPAD8))
 				{
 					/*if ( ( wParam >= 0x41 && wParam <= 0x5A ) || ( wParam >= VK_NUMPAD1 && wParam <= VK_NUMPAD8 ) )
 					{*/
 
 
 #ifdef DOTA_HELPER_LOG
-					AddNewLineToDotaHelperLog( __func__, __LINE__ );
+					AddNewLineToDotaHelperLog(__func__, __LINE__);
 #endif
 
 
 
-					int selectedunits = GetSelectedUnitCountBigger( GetLocalPlayerId( ) );
-					int unitowner = selectedunits > 0 ? GetUnitOwnerSlot( GetSelectedUnit( GetLocalPlayerId( ) ) ) : 0;
+					int selectedunits = GetSelectedUnitCountBigger(GetLocalPlayerId());
+					int unitowner = selectedunits > 0 ? GetUnitOwnerSlot(GetSelectedUnit(GetLocalPlayerId())) : 0;
 
 
-					if ( selectedunits == 1 )
+					if (selectedunits == 1)
 					{
-						if ( EnableSelectHelper )
+						if (EnableSelectHelper)
 						{
-							if ( selectedunits == 0 ||
-								( unitowner != GetLocalPlayerId( ) && !GetPlayerAlliance( Player( unitowner ), Player( GetLocalPlayerId( ) ), 6 ) ) )
+							if (selectedunits == 0 ||
+								(unitowner != GetLocalPlayerId() && !GetPlayerAlliance(Player(unitowner), Player(GetLocalPlayerId()), 6)))
 							{
 
 								/*sprintf_s( processdoubleclic, "%s", "2" );
 								PrintText( processdoubleclic );*/
 
 								//PressHeroPanelButton( 0, FALSE );
-								WarcraftRealWNDProc_ptr( hWnd, WM_KEYDOWN, VK_F1, lpF1ScanKeyDOWN );
-								WarcraftRealWNDProc_ptr( hWnd, WM_KEYUP, VK_F1, lpF1ScanKeyUP );
+								WarcraftRealWNDProc_ptr(hWnd, WM_KEYDOWN, VK_F1, lpF1ScanKeyDOWN);
+								WarcraftRealWNDProc_ptr(hWnd, WM_KEYUP, VK_F1, lpF1ScanKeyUP);
 
-
-								if ( NeedSkipThisKey )
-									return DefWindowProc( hWnd, Msg, wParam, lParam );
 
 
 								DelayedPress tmpDelayPress;
@@ -3365,153 +3592,153 @@ LRESULT __fastcall BeforeWarcraftWNDProc( HWND hWnd, unsigned int _Msg, WPARAM _
 								tmpDelayPress.NeedPresswParam = wParam;
 								tmpDelayPress.NeedPressMsg = 0;
 								tmpDelayPress.TimeOut = 60;
-								DelayedPressList_pushback( tmpDelayPress );
+								DelayedPressList_pushback(tmpDelayPress);
 
 #ifdef DOTA_HELPER_LOG
-								AddNewLineToDotaHelperLog( __func__, __LINE__ );
+								AddNewLineToDotaHelperLog(__func__, __LINE__);
 #endif
 
 
-								return WarcraftRealWNDProc_ptr( hWnd, Msg, wParam, lParam );
+								return WarcraftRealWNDProc_ptr(hWnd, Msg, wParam, lParam);
 							}
 						}
 					}
 
 
-					if ( !ClickHelperWork && ClickHelper )
+					if (!ClickHelperWork && DoubleClickHelper)
 					{
-
-						if ( LastPressedKeysTime[ wParam ] + 500 > GetTickCount( ) && ( ( wParam == LatestPressedKey && LatestButtonClickTime + 500 > GetTickCount( ) ) || wParam != LatestPressedKey ) )
+						if (GetTickCount() - LastPressedKeysTime[wParam] < 450 && ((wParam == LatestPressedKey && LatestButtonClickTime + 500 > GetTickCount()) || wParam != LatestPressedKey))
 						{
-							itempressed = itempressed || ( wParam >= VK_NUMPAD1 && wParam <= VK_NUMPAD8 );
+							itempressed = itempressed || (wParam >= VK_NUMPAD1 && wParam <= VK_NUMPAD8);
 
-							if ( IsCursorSelectTarget( ) )
+							if (IsCursorSelectTarget())
 							{
-								if ( PressMouseAtSelectedHero( itempressed ) == 0 )
+								if (PressMouseAtSelectedHero(itempressed) == 0)
 								{
-									LastPressedKeysTime[ wParam ] = 0;
-									if ( wParam >= VK_NUMPAD1 && wParam <= VK_NUMPAD8 )
+									LastPressedKeysTime[wParam] = 0;
+									if (wParam >= VK_NUMPAD1 && wParam <= VK_NUMPAD8)
 									{
-										LastPressedKeysTime[ wParam ] = 0;
+										LastPressedKeysTime[wParam] = 0;
 #ifdef DOTA_HELPER_LOG
-										AddNewLineToDotaHelperLog( __func__, __LINE__ );
+										AddNewLineToDotaHelperLog(__func__, __LINE__);
 #endif
-										return DefWindowProc( hWnd, Msg, wParam, lParam );
+										return DefWindowProc(hWnd, Msg, wParam, lParam);
 									}
 								}
 
 							}
 						}
 						else
-							LastPressedKeysTime[ wParam ] = GetTickCount( );
+							LastPressedKeysTime[wParam] = GetTickCount();
 					}
 
 
 #ifdef DOTA_HELPER_LOG
-					AddNewLineToDotaHelperLog( __func__, __LINE__ );
+					AddNewLineToDotaHelperLog(__func__, __LINE__);
 #endif
 
 				}
 			}
 
-			if ( NeedSkipThisKey )
-			{
-#ifdef DOTA_HELPER_LOG
-				AddNewLineToDotaHelperLog( __func__, __LINE__ );
-#endif
-				return DefWindowProc( hWnd, Msg, wParam, lParam );
-			}
-
-			if ( Msg == WM_LBUTTONDOWN )
+			if (Msg == WM_LBUTTONDOWN)
 			{
 				oldlParam = lParam;
 			}
 
 
-			if ( Msg == WM_RBUTTONDOWN )
+			if (Msg == WM_RBUTTONDOWN)
 			{
-				if ( EnableSelectHelper )
+				if (EnableSelectHelper)
 				{
-					int selectedunits = GetSelectedUnitCountBigger( GetLocalPlayerId( ) );
-					int unitowner = selectedunits > 0 ? GetUnitOwnerSlot( GetSelectedUnit( GetLocalPlayerId( ) ) ) : 0;
+					int selectedunits = GetSelectedUnitCountBigger(GetLocalPlayerId());
+					int unitowner = selectedunits > 0 ? GetUnitOwnerSlot(GetSelectedUnit(GetLocalPlayerId())) : 0;
 
 
-					if ( selectedunits == 0 ||
-						( unitowner != GetLocalPlayerId( ) && ( unitowner == 15 || !GetPlayerAlliance( Player( unitowner ), Player( GetLocalPlayerId( ) ), 6 ) ) )
+					if (selectedunits == 0 ||
+						(unitowner != GetLocalPlayerId() && (unitowner == 15 || !GetPlayerAlliance(Player(unitowner), Player(GetLocalPlayerId()), 6)))
 						)
 					{
 						//PressHeroPanelButton( 0, FALSE );
-						WarcraftRealWNDProc_ptr( hWnd, WM_KEYDOWN, VK_F1, lpF1ScanKeyDOWN );
-						WarcraftRealWNDProc_ptr( hWnd, WM_KEYUP, VK_F1, lpF1ScanKeyUP );
+						WarcraftRealWNDProc_ptr(hWnd, WM_KEYDOWN, VK_F1, lpF1ScanKeyDOWN);
+						WarcraftRealWNDProc_ptr(hWnd, WM_KEYUP, VK_F1, lpF1ScanKeyUP);
 #ifdef DOTA_HELPER_LOG
-						AddNewLineToDotaHelperLog( __func__, __LINE__ );
+						AddNewLineToDotaHelperLog(__func__, __LINE__);
 #endif
 					}
 				}
 			}
 		}
-
+		if (Msg == WM_KEYDOWN)
+		{
+			if (SetInfoObjDebugVal)
+			{
+				PrintText("end 1  ");
+			}
+		}
 	}
 	else
 	{
 
 		// Process RawImages. Mouse up and leave;
 
-		if ( GlobalRawImageCallbackData )
-			RawImageGlobalCallbackFunc( RawImageEventType::ALL, 0.0f, 0.0f );
+		if (GlobalRawImageCallbackData)
+			RawImageGlobalCallbackFunc(RawImageEventType::ALL, 0.0f, 0.0f);
 
-		if ( LOCK_MOUSE_IN_WINDOW )
-			ClipCursor( 0 );
+		if (LOCK_MOUSE_IN_WINDOW)
+			ClipCursor(0);
 
-		if ( BlockKeyAndMouseEmulation )
+		if (BlockKeyAndMouseEmulation)
 		{
-			if ( Msg == WM_RBUTTONDOWN || Msg == WM_KEYDOWN || Msg == WM_KEYUP )
+			if (Msg == WM_RBUTTONDOWN || Msg == WM_KEYDOWN || Msg == WM_KEYUP)
 			{
 #ifdef DOTA_HELPER_LOG
-				AddNewLineToDotaHelperLog( __func__, __LINE__ );
+				AddNewLineToDotaHelperLog(__func__, __LINE__);
 #endif
-				return DefWindowProc( hWnd, Msg, wParam, lParam );
+				return DefWindowProc(hWnd, Msg, wParam, lParam);
 			}
 		}
 	}
 
 
 #ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__, __LINE__ );
+	AddNewLineToDotaHelperLog(__func__, __LINE__);
 #endif
 
-	return WarcraftRealWNDProc_ptr( hWnd, Msg, wParam, lParam );
+	return WarcraftRealWNDProc_ptr(hWnd, Msg, wParam, lParam);
 }
 
 
 
-int __stdcall ToggleBlockKeyAndMouseEmulation( BOOL enable )
+int __stdcall ToggleBlockKeyAndMouseEmulation(BOOL enable)
 {
 	BlockKeyAndMouseEmulation = enable;
 	return 0;
 }
 
 
-int __stdcall ToggleForcedSubSelection( BOOL enable )
+int __stdcall ToggleForcedSubSelection(BOOL enable)
 {
 	EnableSelectHelper = enable;
 	return 0;
 }
 
-int __stdcall ToggleClickHelper( BOOL enable )
+int __stdcall ToggleClickHelper(BOOL enable)
 {
-	ClickHelper = enable;
+	DoubleClickHelper = enable;
 	return 0;
 }
 
-typedef int( __stdcall * IssueWithoutTargetOrder )( int a1, int a2, unsigned int a3, unsigned int a4 );
-typedef int( __stdcall * IssueTargetOrPointOrder2 )( int a1, int a2, float a3, float a4, int a5, int a6 );
-typedef int( __stdcall * sub_6F339D50 )( int a1, int a2, int a3, unsigned int a4, unsigned int a5 );
-typedef int( __stdcall * IssueTargetOrPointOrder )( int a1, int a2, float a3, float a4, int a5, int a6, int a7 );
-typedef int( __stdcall * sub_6F339E60 )( int a1, int a2, float a3, float a4, int a5, int a6, int a7, int a8 );
-typedef int( __stdcall * sub_6F339F00 )( int a1, int a2, int a3, unsigned int a4, unsigned int a5 );
-typedef int( __stdcall * sub_6F339F80 )( int a1, int a2, float a3, float a4, int a5, int a6, int a7 );
-typedef int( __stdcall * sub_6F33A010 )( int a1, int a2, float a3, float a4, int a5, int a6, int a7, int a8 );
+
+#pragma region Фикс шифта для приказов
+
+typedef int(__stdcall * IssueWithoutTargetOrder)(int a1, int a2, unsigned int a3, unsigned int a4);
+typedef int(__stdcall * IssueTargetOrPointOrder2)(int a1, int a2, float a3, float a4, int a5, int a6);
+typedef int(__stdcall * sub_6F339D50)(int a1, int a2, int a3, unsigned int a4, unsigned int a5);
+typedef int(__stdcall * IssueTargetOrPointOrder)(int a1, int a2, float a3, float a4, int a5, int a6, int a7);
+typedef int(__stdcall * sub_6F339E60)(int a1, int a2, float a3, float a4, int a5, int a6, int a7, int a8);
+typedef int(__stdcall * sub_6F339F00)(int a1, int a2, int a3, unsigned int a4, unsigned int a5);
+typedef int(__stdcall * sub_6F339F80)(int a1, int a2, float a3, float a4, int a5, int a6, int a7);
+typedef int(__stdcall * sub_6F33A010)(int a1, int a2, float a3, float a4, int a5, int a6, int a7, int a8);
 
 
 IssueWithoutTargetOrder IssueWithoutTargetOrderorg;
@@ -3539,84 +3766,207 @@ sub_6F33A010 sub_6F33A010org;
 sub_6F33A010 sub_6F33A010ptr;
 
 
-int __stdcall IssueWithoutTargetOrdermy( int a1, int a2, unsigned int a3, unsigned int a4 )
+int __stdcall IssueWithoutTargetOrdermy(int a1, int a2, unsigned int a3, unsigned int a4)
 {
-	int retvalue = IssueWithoutTargetOrderptr( a1, a2, a3, ( ( a4 & ShiftPressed ) > 0 ) ? a4 : a4 | ShiftPressed );
-
-	if ( SingleShift )
+	if (a4 & ShiftPressed)
 	{
-		SingleShift = FALSE;
-		ShiftPressed = 0;
+		if (GetTickCount() - SkipSingleShift < 100)
+		{
+			SkipSingleShift = 0;
+			a4 -= ShiftPressed;
+		}
+	}
+	else
+	{
+		if (ShiftPressed)
+		{
+			a4 += ShiftPressed;
+		}
 	}
 
+
+	int retvalue = IssueWithoutTargetOrderptr(a1, a2, a3, a4);
+
+	if (GetTickCount() - SingleShift < 100)
+	{
+		SingleShift = 0;
+		ShiftPressed = 0;
+	}
+
 	return retvalue;
 }
-int __stdcall IssueTargetOrPointOrder2my( int a1, int a2, float a3, float a4, int a5, int a6 )
+int __stdcall IssueTargetOrPointOrder2my(int a1, int a2, float a3, float a4, int a5, int a6)
 {
-	int retvalue = IssueTargetOrPointOrder2ptr( a1, a2, a3, a4, a5, ( ( a6 & ShiftPressed ) > 0 ) ? a6 : a6 | ShiftPressed );
-	if ( SingleShift )
+	if (a6 & ShiftPressed)
 	{
-		SingleShift = FALSE;
+		if (GetTickCount() - SkipSingleShift < 100)
+		{
+			SkipSingleShift = 0;
+			a6 -= ShiftPressed;
+		}
+	}
+	else
+	{
+		if (ShiftPressed)
+		{
+			a6 += ShiftPressed;
+		}
+	}
+	int retvalue = IssueTargetOrPointOrder2ptr(a1, a2, a3, a4, a5, a6);
+	if (GetTickCount() - SingleShift < 100)
+	{
+		SingleShift = 0;
 		ShiftPressed = 0;
 	}
 	return retvalue;
 }
-int __stdcall sub_6F339D50my( int a1, int a2, int a3, unsigned int a4, unsigned int a5 )
+int __stdcall sub_6F339D50my(int a1, int a2, int a3, unsigned int a4, unsigned int a5)
 {
-	int retvalue = sub_6F339D50ptr( a1, a2, a3, a4, ( ( a5 & ShiftPressed ) > 0 ) ? a5 : a5 | ShiftPressed );
-	if ( SingleShift )
+	if (a5 & ShiftPressed)
 	{
-		SingleShift = FALSE;
+		if (GetTickCount() - SkipSingleShift < 100)
+		{
+			SkipSingleShift = 0;
+			a5 -= ShiftPressed;
+		}
+	}
+	else
+	{
+		if (ShiftPressed)
+		{
+			a5 += ShiftPressed;
+		}
+	}
+	int retvalue = sub_6F339D50ptr(a1, a2, a3, a4, a5);
+	if (GetTickCount() - SingleShift < 100)
+	{
+		SingleShift = 0;
 		ShiftPressed = 0;
 	}
 	return retvalue;
 }
-int __stdcall IssueTargetOrPointOrdermy( int a1, int a2, float a3, float a4, int a5, int a6, int a7 )
+int __stdcall IssueTargetOrPointOrdermy(int a1, int a2, float a3, float a4, int a5, int a6, int a7)
 {
-	int retvalue = IssueTargetOrPointOrderptr( a1, a2, a3, a4, a5, a6, ( ( a7 & ShiftPressed ) > 0 ) ? a7 : a7 | ShiftPressed );
-	if ( SingleShift )
+	if (a7 & ShiftPressed)
 	{
-		SingleShift = FALSE;
+		if (GetTickCount() - SkipSingleShift < 100)
+		{
+			SkipSingleShift = 0;
+			a7 -= ShiftPressed;
+		}
+	}
+	else
+	{
+		if (ShiftPressed)
+		{
+			a7 += ShiftPressed;
+		}
+	}
+
+	int retvalue = IssueTargetOrPointOrderptr(a1, a2, a3, a4, a5, a6, a7);
+	if (GetTickCount() - SingleShift < 100)
+	{
+		SingleShift = 0;
 		ShiftPressed = 0;
 	}
 	return retvalue;
 }
-int __stdcall sub_6F339E60my( int a1, int a2, float a3, float a4, int a5, int a6, int a7, int a8 )
+int __stdcall sub_6F339E60my(int a1, int a2, float a3, float a4, int a5, int a6, int a7, int a8)
 {
-	int retvalue = sub_6F339E60ptr( a1, a2, a3, a4, a5, a6, a7, ( ( a8 & ShiftPressed ) > 0 ) ? a8 : a8 | ShiftPressed );
-	if ( SingleShift )
+	if (a8 & ShiftPressed)
 	{
-		SingleShift = FALSE;
+		if (GetTickCount() - SkipSingleShift < 100)
+		{
+			SkipSingleShift = 0;
+			a8 -= ShiftPressed;
+		}
+	}
+	else
+	{
+		if (ShiftPressed)
+		{
+			a8 += ShiftPressed;
+		}
+	}
+	int retvalue = sub_6F339E60ptr(a1, a2, a3, a4, a5, a6, a7, a8);
+	if (GetTickCount() - SingleShift < 100)
+	{
+		SingleShift = 0;
 		ShiftPressed = 0;
 	}
 	return retvalue;
 }
-int __stdcall sub_6F339F00my( int a1, int a2, int a3, unsigned int a4, unsigned int a5 )
+int __stdcall sub_6F339F00my(int a1, int a2, int a3, unsigned int a4, unsigned int a5)
 {
-	int retvalue = sub_6F339F00ptr( a1, a2, a3, a4, ( ( a5 & ShiftPressed ) > 0 ) ? a5 : a5 | ShiftPressed );
-	if ( SingleShift )
+	if (a5 & ShiftPressed)
 	{
-		SingleShift = FALSE;
+		if (GetTickCount() - SkipSingleShift < 100)
+		{
+			SkipSingleShift = 0;
+			a5 -= ShiftPressed;
+		}
+	}
+	else
+	{
+		if (ShiftPressed)
+		{
+			a5 += ShiftPressed;
+		}
+	}
+	int retvalue = sub_6F339F00ptr(a1, a2, a3, a4, a5);
+	if (GetTickCount() - SingleShift < 100)
+	{
+		SingleShift = 0;
 		ShiftPressed = 0;
 	}
 	return retvalue;
 }
-int __stdcall sub_6F339F80my( int a1, int a2, float a3, float a4, int a5, int a6, int a7 )
+int __stdcall sub_6F339F80my(int a1, int a2, float a3, float a4, int a5, int a6, int a7)
 {
-	int retvalue = sub_6F339F80ptr( a1, a2, a3, a4, a5, a6, ( ( a7 & ShiftPressed ) > 0 ) ? a7 : a7 | ShiftPressed );
-	if ( SingleShift )
+	if (a7 & ShiftPressed)
 	{
-		SingleShift = FALSE;
+		if (GetTickCount() - SkipSingleShift < 100)
+		{
+			SkipSingleShift = 0;
+			a7 -= ShiftPressed;
+		}
+	}
+	else
+	{
+		if (ShiftPressed)
+		{
+			a7 += ShiftPressed;
+		}
+	}
+	int retvalue = sub_6F339F80ptr(a1, a2, a3, a4, a5, a6, a7);
+	if (GetTickCount() - SingleShift < 100)
+	{
+		SingleShift = 0;
 		ShiftPressed = 0;
 	}
 	return retvalue;
 }
-int __stdcall sub_6F33A010my( int a1, int a2, float a3, float a4, int a5, int a6, int a7, int a8 )
+int __stdcall sub_6F33A010my(int a1, int a2, float a3, float a4, int a5, int a6, int a7, int a8)
 {
-	int retvalue = sub_6F33A010ptr( a1, a2, a3, a4, a5, a6, a7, ( ( a8 & ShiftPressed ) > 0 ) ? a8 : a8 | ShiftPressed );
-	if ( SingleShift )
+	if (a8 & ShiftPressed)
 	{
-		SingleShift = FALSE;
+		if (GetTickCount() - SkipSingleShift < 100)
+		{
+			SkipSingleShift = 0;
+			a8 -= ShiftPressed;
+		}
+	}
+	else
+	{
+		if (ShiftPressed)
+		{
+			a8 += ShiftPressed;
+		}
+	}
+	int retvalue = sub_6F33A010ptr(a1, a2, a3, a4, a5, a6, a7, a8);
+	if (GetTickCount() - SingleShift < 100)
+	{
+		SingleShift = 0;
 		ShiftPressed = 0;
 	}
 	return retvalue;
@@ -3631,134 +3981,644 @@ int sub_6F339F00Offset = 0;
 int sub_6F339F80Offset = 0;
 int sub_6F33A010Offset = 0;
 
-void IssueFixerInit( )
+#pragma endregion
+
+// Включить фикс шифта для приказов
+void IssueFixerInit()
 {
 #ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__, __LINE__ );
+	AddNewLineToDotaHelperLog(__func__, __LINE__);
 #endif
 
 
-	IssueWithoutTargetOrderorg = ( IssueWithoutTargetOrder )( GameDll + IssueWithoutTargetOrderOffset );
-	MH_CreateHook( IssueWithoutTargetOrderorg, &IssueWithoutTargetOrdermy, reinterpret_cast< void** >( &IssueWithoutTargetOrderptr ) );
+	IssueWithoutTargetOrderorg = (IssueWithoutTargetOrder)(GameDll + IssueWithoutTargetOrderOffset);
+	MH_CreateHook(IssueWithoutTargetOrderorg, &IssueWithoutTargetOrdermy, reinterpret_cast<void**>(&IssueWithoutTargetOrderptr));
 
-	IssueTargetOrPointOrder2org = ( IssueTargetOrPointOrder2 )( GameDll + IssueTargetOrPointOrder2Offset );
-	MH_CreateHook( IssueTargetOrPointOrder2org, &IssueTargetOrPointOrder2my, reinterpret_cast< void** >( &IssueTargetOrPointOrder2ptr ) );
+	IssueTargetOrPointOrder2org = (IssueTargetOrPointOrder2)(GameDll + IssueTargetOrPointOrder2Offset);
+	MH_CreateHook(IssueTargetOrPointOrder2org, &IssueTargetOrPointOrder2my, reinterpret_cast<void**>(&IssueTargetOrPointOrder2ptr));
 
-	sub_6F339D50org = ( sub_6F339D50 )( GameDll + sub_6F339D50Offset );
-	MH_CreateHook( sub_6F339D50org, &sub_6F339D50my, reinterpret_cast< void** >( &sub_6F339D50ptr ) );
+	sub_6F339D50org = (sub_6F339D50)(GameDll + sub_6F339D50Offset);
+	MH_CreateHook(sub_6F339D50org, &sub_6F339D50my, reinterpret_cast<void**>(&sub_6F339D50ptr));
 
-	IssueTargetOrPointOrderorg = ( IssueTargetOrPointOrder )( GameDll + IssueTargetOrPointOrderOffset );
-	MH_CreateHook( IssueTargetOrPointOrderorg, &IssueTargetOrPointOrdermy, reinterpret_cast< void** >( &IssueTargetOrPointOrderptr ) );
+	IssueTargetOrPointOrderorg = (IssueTargetOrPointOrder)(GameDll + IssueTargetOrPointOrderOffset);
+	MH_CreateHook(IssueTargetOrPointOrderorg, &IssueTargetOrPointOrdermy, reinterpret_cast<void**>(&IssueTargetOrPointOrderptr));
 
-	sub_6F339E60org = ( sub_6F339E60 )( GameDll + sub_6F339E60Offset );
-	MH_CreateHook( sub_6F339E60org, &sub_6F339E60my, reinterpret_cast< void** >( &sub_6F339E60ptr ) );
+	sub_6F339E60org = (sub_6F339E60)(GameDll + sub_6F339E60Offset);
+	MH_CreateHook(sub_6F339E60org, &sub_6F339E60my, reinterpret_cast<void**>(&sub_6F339E60ptr));
 
-	sub_6F339F00org = ( sub_6F339F00 )( GameDll + sub_6F339F00Offset );
-	MH_CreateHook( sub_6F339F00org, &sub_6F339F00my, reinterpret_cast< void** >( &sub_6F339F00ptr ) );
+	sub_6F339F00org = (sub_6F339F00)(GameDll + sub_6F339F00Offset);
+	MH_CreateHook(sub_6F339F00org, &sub_6F339F00my, reinterpret_cast<void**>(&sub_6F339F00ptr));
 
-	sub_6F339F80org = ( sub_6F339F80 )( GameDll + sub_6F339F80Offset );
-	MH_CreateHook( sub_6F339F80org, &sub_6F339F80my, reinterpret_cast< void** >( &sub_6F339F80ptr ) );
+	sub_6F339F80org = (sub_6F339F80)(GameDll + sub_6F339F80Offset);
+	MH_CreateHook(sub_6F339F80org, &sub_6F339F80my, reinterpret_cast<void**>(&sub_6F339F80ptr));
 
-	sub_6F33A010org = ( sub_6F33A010 )( GameDll + sub_6F33A010Offset );
-	MH_CreateHook( sub_6F33A010org, &sub_6F33A010my, reinterpret_cast< void** >( &sub_6F33A010ptr ) );
+	sub_6F33A010org = (sub_6F33A010)(GameDll + sub_6F33A010Offset);
+	MH_CreateHook(sub_6F33A010org, &sub_6F33A010my, reinterpret_cast<void**>(&sub_6F33A010ptr));
 
 
 
-	MH_EnableHook( IssueWithoutTargetOrderorg );
-	MH_EnableHook( IssueTargetOrPointOrder2org );
-	MH_EnableHook( sub_6F339D50org );
-	MH_EnableHook( IssueTargetOrPointOrderorg );
-	MH_EnableHook( sub_6F339E60org );
-	MH_EnableHook( sub_6F339F00org );
-	MH_EnableHook( sub_6F339F80org );
-	MH_EnableHook( sub_6F33A010org );
+	MH_EnableHook(IssueWithoutTargetOrderorg);
+	MH_EnableHook(IssueTargetOrPointOrder2org);
+	MH_EnableHook(sub_6F339D50org);
+	MH_EnableHook(IssueTargetOrPointOrderorg);
+	MH_EnableHook(sub_6F339E60org);
+	MH_EnableHook(sub_6F339F00org);
+	MH_EnableHook(sub_6F339F80org);
+	MH_EnableHook(sub_6F33A010org);
 
-	if ( GameVersion == 0x26a )
-	{
-		GetCameraHeight_org = pGetCameraHeight( GameDll + 0x3019A0 );
-		MH_CreateHook( GetCameraHeight_org, &GetCameraHeight_my, reinterpret_cast< void** >( &GetCameraHeight_ptr ) );
-		MH_EnableHook( GetCameraHeight_org );
-	}
+
+	GetCameraHeight_org = pGetCameraHeight(GameDll + 0x3019A0);
+	MH_CreateHook(GetCameraHeight_org, &GetCameraHeight_my, reinterpret_cast<void**>(&GetCameraHeight_ptr));
+	MH_EnableHook(GetCameraHeight_org);
 
 
 #ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__, __LINE__ );
+	AddNewLineToDotaHelperLog(__func__, __LINE__);
 #endif
 }
 
-
-void IssueFixerDisable( )
+// Отключить фикс шифта для приказов
+void IssueFixerDisable()
 {
 #ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__, __LINE__ );
+	AddNewLineToDotaHelperLog(__func__, __LINE__);
 #endif
 
-	memset( LastPressedKeysTime, 0, sizeof( LastPressedKeysTime ) );
+	memset(LastPressedKeysTime, 0, sizeof(LastPressedKeysTime));
 
-	if ( IssueWithoutTargetOrderorg )
+	if (IssueWithoutTargetOrderorg)
 	{
-		MH_DisableHook( IssueWithoutTargetOrderorg );
+		MH_DisableHook(IssueWithoutTargetOrderorg);
 		IssueWithoutTargetOrderorg = NULL;
 	}
-	if ( IssueTargetOrPointOrder2org )
+	if (IssueTargetOrPointOrder2org)
 	{
-		MH_DisableHook( IssueTargetOrPointOrder2org );
+		MH_DisableHook(IssueTargetOrPointOrder2org);
 		IssueTargetOrPointOrder2org = NULL;
 	}
-	if ( sub_6F339D50org )
+	if (sub_6F339D50org)
 	{
-		MH_DisableHook( sub_6F339D50org );
+		MH_DisableHook(sub_6F339D50org);
 		sub_6F339D50org = NULL;
 	}
-	if ( IssueTargetOrPointOrderorg )
+	if (IssueTargetOrPointOrderorg)
 	{
-		MH_DisableHook( IssueTargetOrPointOrderorg );
+		MH_DisableHook(IssueTargetOrPointOrderorg);
 		IssueTargetOrPointOrderorg = NULL;
 	}
-	if ( sub_6F339E60org )
+	if (sub_6F339E60org)
 	{
-		MH_DisableHook( sub_6F339E60org );
+		MH_DisableHook(sub_6F339E60org);
 		sub_6F339E60org = NULL;
 	}
-	if ( sub_6F339F00org )
+	if (sub_6F339F00org)
 	{
-		MH_DisableHook( sub_6F339F00org );
+		MH_DisableHook(sub_6F339F00org);
 		sub_6F339F00org = NULL;
 	}
-	if ( sub_6F339F80org )
+	if (sub_6F339F80org)
 	{
-		MH_DisableHook( sub_6F339F80org );
+		MH_DisableHook(sub_6F339F80org);
 		sub_6F339F80org = NULL;
 	}
-	if ( sub_6F33A010org )
+	if (sub_6F33A010org)
 	{
-		MH_DisableHook( sub_6F33A010org );
+		MH_DisableHook(sub_6F33A010org);
 		sub_6F33A010org = NULL;
 	}
 
-	if ( GetCameraHeight_org )
+	if (GetCameraHeight_org)
 	{
-		MH_DisableHook( GetCameraHeight_org );
+		MH_DisableHook(GetCameraHeight_org);
 		GetCameraHeight_org = NULL;
 	}
 
-	if ( !RegisteredKeyCodes.empty( ) )
-		RegisteredKeyCodes.clear( );
+	if (!RegisteredKeyCodes.empty())
+		RegisteredKeyCodes.clear();
 
-	if ( !BlockedKeyCodes.empty( ) )
-		BlockedKeyCodes.clear( );
+	if (!BlockedKeyCodes.empty())
+		BlockedKeyCodes.clear();
 
-	if ( !KeyActionList.empty( ) )
-		KeyActionList.clear( );
+	if (!KeyActionList.empty())
+		KeyActionList.clear();
 
-	if ( !KeyChatActionList.empty( ) )
-		KeyChatActionList.clear( );
+	if (!KeyChatActionList.empty())
+		KeyChatActionList.clear();
 
-	if ( !KeySelectActionList.empty( ) )
-		KeySelectActionList.clear( );
+	if (!KeySelectActionList.empty())
+		KeySelectActionList.clear();
 
-	if ( !KeyCalbackActionList.empty( ) )
-		KeyCalbackActionList.clear( );
+	if (!KeyCalbackActionList.empty())
+		KeyCalbackActionList.clear();
 
 	SkipAllMessages = FALSE;
+}
+
+// построение текущих нажатых кнопок в код клавиш
+unsigned int BuildKeyCode()
+{
+	unsigned int code = 0;
+
+	if (IsKeyPressed(VK_LSHIFT) ||
+		IsKeyPressed(VK_RSHIFT) ||
+		IsKeyPressed(VK_SHIFT))
+	{
+		code += 0x40000;
+	}
+	else if (IsKeyPressed(VK_MENU) ||
+		IsKeyPressed(VK_RMENU) ||
+		IsKeyPressed(VK_LMENU))
+	{
+		code += 0x10000;
+	}
+	else if (IsKeyPressed(VK_LCONTROL) ||
+		IsKeyPressed(VK_RCONTROL) ||
+		IsKeyPressed(VK_CONTROL))
+	{
+		code += 0x20000;
+	}
+
+	for (int i = 0; i < 255; i++)
+	{
+		if (i == (int)VK_LSHIFT ||
+			i == (int)VK_RSHIFT ||
+			i == (int)VK_SHIFT ||
+			i == (int)VK_MENU ||
+			i == (int)VK_RMENU ||
+			i == (int)VK_LMENU ||
+			i == (int)VK_LCONTROL ||
+			i == (int)VK_RCONTROL ||
+			i == (int)VK_CONTROL)
+			continue;
+		if (i == (int)VK_MENU)
+			continue;
+		if (i == (int)VK_CONTROL)
+			continue;
+
+		short x = GetAsyncKeyState(i);
+		if ((x & 0x8000) > 0)
+		{
+			code += i;
+			break;
+		}
+
+	}
+
+	return code;
+
+}
+
+// конвертировать строку в код клавиши
+int _StrToVKey(const std::string  & skey) {
+	if (skey == "LBTN") return VK_LBUTTON; // Left mouse button
+	if (skey == "RBTN") return VK_RBUTTON; // Right mouse button
+	if (skey == "CANCEL") return VK_CANCEL; // Control-break processing
+	if (skey == "MBTN") return VK_MBUTTON; // Middle mouse button (three-button mouse)
+	if (skey == "XBTN1") return VK_XBUTTON1; // X1 mouse button
+	if (skey == "XBTN2") return VK_XBUTTON2; // X2 mouse button
+	if (skey == "BACK") return VK_BACK; // BACKSPACE key
+	if (skey == "TAB") return VK_TAB; // TAB key
+	if (skey == "CLEAR") return VK_CLEAR; // CLEAR key
+	if (skey == "RETURN") return VK_RETURN; // ENTER key
+	if (skey == "SHIFT") return VK_SHIFT; // SHIFT key
+	if (skey == "CTRL") return VK_CONTROL; // CTRL key
+	if (skey == "ALT") return VK_MENU; // ALT key
+	if (skey == "PAUSE") return VK_PAUSE; // PAUSE key
+	if (skey == "CAPS") return VK_CAPITAL; // CAPS LOCK key
+	if (skey == "KANA") return VK_KANA; // IME Kana mode
+										//if (skey == "VK_HANGUEL") return VK_HANGUL; // IME Hangul mode
+	if (skey == "JUNJA") return VK_JUNJA; // IME Junja mode
+	if (skey == "FINAL") return VK_FINAL; // IME final mode
+	if (skey == "HANJA") return VK_HANJA; // IME Hanja mode
+										  //if (skey == "VK_KANJI") return VK_KANJI; // IME Kanji mode
+	if (skey == "ESC") return VK_ESCAPE; // ESC key
+	if (skey == "CONV") return VK_CONVERT; // IME convert
+	if (skey == "NCONV") return VK_NONCONVERT; // IME nonconvert
+	if (skey == "ACCEPT") return VK_ACCEPT; // IME accept
+	if (skey == "MCHANGE") return VK_MODECHANGE; // IME mode change request
+	if (skey == "SPACE") return VK_SPACE; // SPACEBAR
+	if (skey == "PAGEUP") return VK_PRIOR; // PAGE UP key
+	if (skey == "PAGEDN") return VK_NEXT; // PAGE DOWN key
+	if (skey == "END") return VK_END; // END key
+	if (skey == "HOME") return VK_HOME; // HOME key
+	if (skey == "LEFT") return VK_LEFT; // LEFT ARROW key
+	if (skey == "UP") return VK_UP; // UP ARROW key
+	if (skey == "RIGHT") return VK_RIGHT; // RIGHT ARROW key
+	if (skey == "DOWN") return VK_DOWN; // DOWN ARROW key
+	if (skey == "SELECT") return VK_SELECT; // SELECT key
+	if (skey == "PRINT") return VK_PRINT; // PRINT key
+	if (skey == "EXEC") return VK_EXECUTE; // EXECUTE key
+	if (skey == "SSHOT") return VK_SNAPSHOT; // PRINT SCREEN key
+	if (skey == "INSERT") return VK_INSERT; // INS key
+	if (skey == "DELETE") return VK_DELETE; // DEL key
+	if (skey == "HELP") return VK_HELP; // HELP key
+
+	if (skey == "0") return '0';
+	if (skey == "1") return '1';
+	if (skey == "2") return '2';
+	if (skey == "3") return '3';
+	if (skey == "4") return '4';
+	if (skey == "5") return '5';
+	if (skey == "6") return '6';
+	if (skey == "7") return '7';
+	if (skey == "8") return '8';
+	if (skey == "9") return '9';
+	if (skey == "A") return 'A';
+	if (skey == "B") return 'B';
+	if (skey == "C") return 'C';
+	if (skey == "D") return 'D';
+	if (skey == "E") return 'E';
+	if (skey == "F") return 'F';
+	if (skey == "G") return 'G';
+	if (skey == "H") return 'H';
+	if (skey == "I") return 'I';
+	if (skey == "J") return 'J';
+	if (skey == "K") return 'K';
+	if (skey == "L") return 'L';
+	if (skey == "M") return 'M';
+	if (skey == "N") return 'N';
+	if (skey == "O") return 'O';
+	if (skey == "P") return 'P';
+	if (skey == "Q") return 'Q';
+	if (skey == "R") return 'R';
+	if (skey == "S") return 'S';
+	if (skey == "T") return 'T';
+	if (skey == "U") return 'U';
+	if (skey == "V") return 'V';
+	if (skey == "W") return 'W';
+	if (skey == "X") return 'X';
+	if (skey == "Y") return 'Y';
+	if (skey == "Z") return 'Z';
+
+	if (skey == "LWIN") return VK_LWIN; // Left Windows key (Natural keyboard)
+	if (skey == "RWIN") return VK_RWIN; // Right Windows key (Natural keyboard)
+	if (skey == "APPS") return VK_APPS; // Applications key (Natural keyboard)
+	if (skey == "SLEEP") return VK_SLEEP; // Computer Sleep key
+	if (skey == "NPAD0") return VK_NUMPAD0; // Numeric keypad 0 key
+	if (skey == "NPAD1") return VK_NUMPAD1; // Numeric keypad 1 key
+	if (skey == "NPAD2") return VK_NUMPAD2; // Numeric keypad 2 key
+	if (skey == "NPAD3") return VK_NUMPAD3; // Numeric keypad 3 key
+	if (skey == "NPAD4") return VK_NUMPAD4; // Numeric keypad 4 key
+	if (skey == "NPAD5") return VK_NUMPAD5; // Numeric keypad 5 key
+	if (skey == "NPAD6") return VK_NUMPAD6; // Numeric keypad 6 key
+	if (skey == "NPAD7") return VK_NUMPAD7; // Numeric keypad 7 key
+	if (skey == "NPAD8") return VK_NUMPAD8; // Numeric keypad 8 key
+	if (skey == "NPAD9") return VK_NUMPAD9; // Numeric keypad 9 key
+	if (skey == "MULT") return VK_MULTIPLY; // Multiply key
+	if (skey == "ADD") return VK_ADD; // Add key
+	if (skey == "SEP") return VK_SEPARATOR; // Separator key
+	if (skey == "SUB") return VK_SUBTRACT; // Subtract key
+	if (skey == "DEC") return VK_DECIMAL; // Decimal key
+	if (skey == "DIV") return VK_DIVIDE; // Divide key
+	if (skey == "F1") return VK_F1; // F1 key
+	if (skey == "F2") return VK_F2; // F2 key
+	if (skey == "F3") return VK_F3; // F3 key
+	if (skey == "F4") return VK_F4; // F4 key
+	if (skey == "F5") return VK_F5; // F5 key
+	if (skey == "F6") return VK_F6; // F6 key
+	if (skey == "F7") return VK_F7; // F7 key
+	if (skey == "F8") return VK_F8; // F8 key
+	if (skey == "F9") return VK_F9; // F9 key
+	if (skey == "F10") return VK_F10; // F10 key
+	if (skey == "F11") return VK_F11; // F11 key
+	if (skey == "F12") return VK_F12; // F12 key
+	if (skey == "F13") return VK_F13; // F13 key
+	if (skey == "F14") return VK_F14; // F14 key
+	if (skey == "F15") return VK_F15; // F15 key
+	if (skey == "F16") return VK_F16; // F16 key
+	if (skey == "F17") return VK_F17; // F17 key
+	if (skey == "F18") return VK_F18; // F18 key
+	if (skey == "F19") return VK_F19; // F19 key
+	if (skey == "F20") return VK_F20; // F20 key
+	if (skey == "F21") return VK_F21; // F21 key
+	if (skey == "F22") return VK_F22; // F22 key
+	if (skey == "F23") return VK_F23; // F23 key
+	if (skey == "F24") return VK_F24; // F24 key
+	if (skey == "NLOCK") return VK_NUMLOCK; // NUM LOCK key
+	if (skey == "SCRL") return VK_SCROLL; // SCROLL LOCK key
+	if (skey == "LSHFT") return VK_LSHIFT; // Left SHIFT key
+	if (skey == "RSHFT") return VK_RSHIFT; // Right SHIFT key
+	if (skey == "LCTRL") return VK_LCONTROL; // Left CONTROL key
+	if (skey == "RCTRL") return VK_RCONTROL; // Right CONTROL key
+	if (skey == "LALT") return VK_LMENU; // Left MENU key
+	if (skey == "RALT") return VK_RMENU; // Right MENU key
+	if (skey == "BBACK") return VK_BROWSER_BACK; // Browser Back key
+	if (skey == "BFORW") return VK_BROWSER_FORWARD; // Browser Forward key
+	if (skey == "BREFR") return VK_BROWSER_REFRESH; // Browser Refresh key
+	if (skey == "BSTOP") return VK_BROWSER_STOP; // Browser Stop key
+	if (skey == "BSEARCH") return VK_BROWSER_SEARCH; // Browser Search key
+	if (skey == "BFAV") return VK_BROWSER_FAVORITES; // Browser Favorites key
+	if (skey == "BHOME") return VK_BROWSER_HOME; // Browser Start and Home key
+	if (skey == "MUTE") return VK_VOLUME_MUTE; // Volume Mute key
+	if (skey == "V_DOWN") return VK_VOLUME_DOWN; // Volume Down key
+	if (skey == "V_UP") return VK_VOLUME_UP; // Volume Up key
+	if (skey == "NEXT") return VK_MEDIA_NEXT_TRACK; // Next Track key
+	if (skey == "PREV") return VK_MEDIA_PREV_TRACK; // Previous Track key
+	if (skey == "STOP") return VK_MEDIA_STOP; // Stop Media key
+	if (skey == "MPLAY") return VK_MEDIA_PLAY_PAUSE; // Play/Pause Media key
+	if (skey == "MAIL") return VK_LAUNCH_MAIL; // Start Mail key
+	if (skey == "MSEL") return VK_LAUNCH_MEDIA_SELECT; // Select Media key
+	if (skey == "APP1") return VK_LAUNCH_APP1; // Start Application 1 key
+	if (skey == "APP2") return VK_LAUNCH_APP2; // Start Application 2 key
+	if (skey == "OEM_1") return VK_OEM_1; // Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the ';:' key
+	if (skey == "OEM_P") return VK_OEM_PLUS; // For any country/region, the '+' key
+	if (skey == "COMMA") return VK_OEM_COMMA; // For any country/region, the ',' key
+	if (skey == "MINUS") return VK_OEM_MINUS; // For any country/region, the '-' key
+	if (skey == "PERIOD") return VK_OEM_PERIOD; // For any country/region, the '.' key
+	if (skey == "OEM_2") return VK_OEM_2; // Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the '/?' key
+	if (skey == "OEM_3") return VK_OEM_3; // Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the '`~' key
+	if (skey == "ABNT_C1") return 0xC1; // Brazilian (ABNT) Keyboard
+	if (skey == "ABNT_C2") return 0xC2; // Brazilian (ABNT) Keyboard
+	if (skey == "OEM_4") return VK_OEM_4; // Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the '[{' key
+	if (skey == "OEM_5") return VK_OEM_5; // Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the '\|' key
+	if (skey == "OEM_6") return VK_OEM_6; // Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the ']}' key
+	if (skey == "OEM_7") return VK_OEM_7; // Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the 'single-quote/double-quote' key
+	if (skey == "OEM_8") return VK_OEM_8; // Used for miscellaneous characters; it can vary by keyboard.
+	if (skey == "OEM102") return VK_OEM_102; // Either the angle bracket key or the backslash key on the RT 102-key keyboard
+	if (skey == "PROCKEY") return VK_PROCESSKEY; // IME PROCESS key
+	if (skey == "PACKET") return VK_PACKET; // Used to pass Unicode characters as if they were keystrokes. The VK_PACKET key is the low word of a 32-bit Virtual Key value used for non-keyboard input methods. For more information, see Remark in KEYBDINPUT, SendInput, WM_KEYDOWN, and WM_KEYUP // 0xE8
+	if (skey == "ATTN") return VK_ATTN; // Attn key
+	if (skey == "CRSEL") return VK_CRSEL; // CrSel key
+	if (skey == "EXSEL") return VK_EXSEL; // ExSel key
+	if (skey == "EREOF") return VK_EREOF; // Erase EOF key
+	if (skey == "PLAY") return VK_PLAY; // Play key
+	if (skey == "ZOOM") return VK_ZOOM; // Zoom key
+	if (skey == "NONAME") return VK_NONAME; // Reserved
+	if (skey == "PA1") return VK_PA1; // PA1 key
+	if (skey == "OCLEAR") return VK_OEM_CLEAR; // Clear key
+
+	return 0;
+}
+
+// конвертировать код клавиши в строку
+std::string _VKeyToStr(int vkey) {
+	switch (vkey) {
+	case VK_LBUTTON: return "LBTN"; // Left mouse button
+	case VK_RBUTTON: return "RBTN"; // Right mouse button
+	case VK_CANCEL: return "CANCEL"; // Control-break processing
+	case VK_MBUTTON: return "MBTN"; // Middle mouse button (three-button mouse)
+	case VK_XBUTTON1: return "XBTN1"; // X1 mouse button
+	case VK_XBUTTON2: return "XBTN2"; // X2 mouse button
+	case VK_BACK: return "BACK"; // BACKSPACE key
+	case VK_TAB: return "TAB"; // TAB key
+	case VK_CLEAR: return "CLEAR"; // CLEAR key
+	case VK_RETURN: return "RETURN"; // ENTER key
+	case VK_SHIFT: return "SHIFT"; // SHIFT key
+	case VK_CONTROL: return "CTRL"; // CTRL key
+	case VK_MENU: return "ALT"; // ALT key
+	case VK_PAUSE: return "PAUSE"; // PAUSE key
+	case VK_CAPITAL: return "CAPS"; // CAPS LOCK key
+	case VK_KANA: return "KANA"; // IME Kana mode
+									//case VK_HANGUL: return "VK_HANGUEL"; // IME Hangul mode
+	case VK_JUNJA: return "JUNJA"; // IME Junja mode
+	case VK_FINAL: return "FINAL"; // IME final mode
+	case VK_HANJA: return "HANJA"; // IME Hanja mode
+									  //case VK_KANJI: return "VK_KANJI"; // IME Kanji mode
+	case VK_ESCAPE: return "ESC"; // ESC key
+	case VK_CONVERT: return "CONV"; // IME convert
+	case VK_NONCONVERT: return "NCONV"; // IME nonconvert
+	case VK_ACCEPT: return "ACCEPT"; // IME accept
+	case VK_MODECHANGE: return "MCHANGE"; // IME mode change request
+	case VK_SPACE: return "SPACE"; // SPACEBAR
+	case VK_PRIOR: return "PAGEUP"; // PAGE UP key
+	case VK_NEXT: return "PAGEDN"; // PAGE DOWN key
+	case VK_END: return "END"; // END key
+	case VK_HOME: return "HOME"; // HOME key
+	case VK_LEFT: return "LEFT"; // LEFT ARROW key
+	case VK_UP: return "UP"; // UP ARROW key
+	case VK_RIGHT: return "RIGHT"; // RIGHT ARROW key
+	case VK_DOWN: return "DOWN"; // DOWN ARROW key
+	case VK_SELECT: return "SELECT"; // SELECT key
+	case VK_PRINT: return "PRINT"; // PRINT key
+	case VK_EXECUTE: return "EXEC"; // EXECUTE key
+	case VK_SNAPSHOT: return "SSHOT"; // PRINT SCREEN key
+	case VK_INSERT: return "INSERT"; // INS key
+	case VK_DELETE: return "DELETE"; // DEL key
+	case VK_HELP: return "HELP"; // HELP key
+
+	case '0': return "0";
+	case '1': return "1";
+	case '2': return "2";
+	case '3': return "3";
+	case '4': return "4";
+	case '5': return "5";
+	case '6': return "6";
+	case '7': return "7";
+	case '8': return "8";
+	case '9': return "9";
+	case 'A': return "A";
+	case 'B': return "B";
+	case 'C': return "C";
+	case 'D': return "D";
+	case 'E': return "E";
+	case 'F': return "F";
+	case 'G': return "G";
+	case 'H': return "H";
+	case 'I': return "I";
+	case 'J': return "J";
+	case 'K': return "K";
+	case 'L': return "L";
+	case 'M': return "M";
+	case 'N': return "N";
+	case 'O': return "O";
+	case 'P': return "P";
+	case 'Q': return "Q";
+	case 'R': return "R";
+	case 'S': return "S";
+	case 'T': return "T";
+	case 'U': return "U";
+	case 'V': return "V";
+	case 'W': return "W";
+	case 'X': return "X";
+	case 'Y': return "Y";
+	case 'Z': return "Z";
+
+	case VK_LWIN: return "LWIN"; // Left Windows key (Natural keyboard)
+	case VK_RWIN: return "RWIN"; // Right Windows key (Natural keyboard)
+	case VK_APPS: return "APPS"; // Applications key (Natural keyboard)
+	case VK_SLEEP: return "SLEEP"; // Computer Sleep key
+	case VK_NUMPAD0: return "NPAD0"; // Numeric keypad 0 key
+	case VK_NUMPAD1: return "NPAD1"; // Numeric keypad 1 key
+	case VK_NUMPAD2: return "NPAD2"; // Numeric keypad 2 key
+	case VK_NUMPAD3: return "NPAD3"; // Numeric keypad 3 key
+	case VK_NUMPAD4: return "NPAD4"; // Numeric keypad 4 key
+	case VK_NUMPAD5: return "NPAD5"; // Numeric keypad 5 key
+	case VK_NUMPAD6: return "NPAD6"; // Numeric keypad 6 key
+	case VK_NUMPAD7: return "NPAD7"; // Numeric keypad 7 key
+	case VK_NUMPAD8: return "NPAD8"; // Numeric keypad 8 key
+	case VK_NUMPAD9: return "NPAD9"; // Numeric keypad 9 key
+	case VK_MULTIPLY: return "MULT"; // Multiply key
+	case VK_ADD: return "ADD"; // Add key
+	case VK_SEPARATOR: return "SEP"; // Separator key
+	case VK_SUBTRACT: return "SUB"; // Subtract key
+	case VK_DECIMAL: return "DEC"; // Decimal key
+	case VK_DIVIDE: return "DIV"; // Divide key
+	case VK_F1: return "F1"; // F1 key
+	case VK_F2: return "F2"; // F2 key
+	case VK_F3: return "F3"; // F3 key
+	case VK_F4: return "F4"; // F4 key
+	case VK_F5: return "F5"; // F5 key
+	case VK_F6: return "F6"; // F6 key
+	case VK_F7: return "F7"; // F7 key
+	case VK_F8: return "F8"; // F8 key
+	case VK_F9: return "F9"; // F9 key
+	case VK_F10: return "F10"; // F10 key
+	case VK_F11: return "F11"; // F11 key
+	case VK_F12: return "F12"; // F12 key
+	case VK_F13: return "F13"; // F13 key
+	case VK_F14: return "F14"; // F14 key
+	case VK_F15: return "F15"; // F15 key
+	case VK_F16: return "F16"; // F16 key
+	case VK_F17: return "F17"; // F17 key
+	case VK_F18: return "F18"; // F18 key
+	case VK_F19: return "F19"; // F19 key
+	case VK_F20: return "F20"; // F20 key
+	case VK_F21: return "F21"; // F21 key
+	case VK_F22: return "F22"; // F22 key
+	case VK_F23: return "F23"; // F23 key
+	case VK_F24: return "F24"; // F24 key
+	case VK_NUMLOCK: return "NLOCK"; // NUM LOCK key
+	case VK_SCROLL: return "SCRL"; // SCROLL LOCK key
+	case VK_LSHIFT: return "LSHFT"; // Left SHIFT key
+	case VK_RSHIFT: return "RSHFT"; // Right SHIFT key
+	case VK_LCONTROL: return "LCTRL"; // Left CONTROL key
+	case VK_RCONTROL: return "RCTRL"; // Right CONTROL key
+	case VK_LMENU: return "LALT"; // Left MENU key
+	case VK_RMENU: return "RALT"; // Right MENU key
+	case VK_BROWSER_BACK: return "BBACK"; // Browser Back key
+	case VK_BROWSER_FORWARD: return "BFORW"; // Browser Forward key
+	case VK_BROWSER_REFRESH: return "BREFR"; // Browser Refresh key
+	case VK_BROWSER_STOP: return "BSTOP"; // Browser Stop key
+	case VK_BROWSER_SEARCH: return "BSEARCH"; // Browser Search key
+	case VK_BROWSER_FAVORITES: return "BFAV"; // Browser Favorites key
+	case VK_BROWSER_HOME: return "BHOME"; // Browser Start and Home key
+	case VK_VOLUME_MUTE: return "MUTE"; // Volume Mute key
+	case VK_VOLUME_DOWN: return "V_DOWN"; // Volume Down key
+	case VK_VOLUME_UP: return "V_UP"; // Volume Up key
+	case VK_MEDIA_NEXT_TRACK: return "NEXT"; // Next Track key
+	case VK_MEDIA_PREV_TRACK: return "PREV"; // Previous Track key
+	case VK_MEDIA_STOP: return "STOP"; // Stop Media key
+	case VK_MEDIA_PLAY_PAUSE: return "MPLAY"; // Play/Pause Media key
+	case VK_LAUNCH_MAIL: return "MAIL"; // Start Mail key
+	case VK_LAUNCH_MEDIA_SELECT: return "MSEL"; // Select Media key
+	case VK_LAUNCH_APP1: return "APP1"; // Start Application 1 key
+	case VK_LAUNCH_APP2: return "APP2"; // Start Application 2 key
+	case VK_OEM_1: return "OEM_1"; // Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the ';:' key
+	case VK_OEM_PLUS: return "OEM_P"; // For any country/region, the '+' key
+	case VK_OEM_COMMA: return "COMMA"; // For any country/region, the ',' key
+	case VK_OEM_MINUS: return "MINUS"; // For any country/region, the '-' key
+	case VK_OEM_PERIOD: return "PERIOD"; // For any country/region, the '.' key
+	case VK_OEM_2: return "OEM_2"; // Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the '/?' key
+	case VK_OEM_3: return "OEM_3"; // Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the '`~' key
+	case 0xC1: return "ABNT_C1"; // Brazilian (ABNT) Keyboard
+	case 0xC2: return "ABNT_C2"; // Brazilian (ABNT) Keyboard
+	case VK_OEM_4: return "OEM_4"; // Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the '[{' key
+	case VK_OEM_5: return "OEM_5"; // Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the '\|' key
+	case VK_OEM_6: return "OEM_6"; // Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the ']}' key
+	case VK_OEM_7: return "OEM_7"; // Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the 'single-quote/double-quote' key
+	case VK_OEM_8: return "OEM_8"; // Used for miscellaneous characters; it can vary by keyboard.
+	case VK_OEM_102: return "OEM102"; // Either the angle bracket key or the backslash key on the RT 102-key keyboard
+	case VK_PROCESSKEY: return "PROCKEY"; // IME PROCESS key
+	case VK_PACKET: return "PACKET"; // Used to pass Unicode characters as if they were keystrokes. The VK_PACKET key is the low word of a 32-bit Virtual Key value used for non-keyboard input methods. For more information, see Remark in KEYBDINPUT, SendInput, WM_KEYDOWN, and WM_KEYUP // 0xE8
+	case VK_ATTN: return "ATTN"; // Attn key
+	case VK_CRSEL: return "CRSEL"; // CrSel key
+	case VK_EXSEL: return "EXSEL"; // ExSel key
+	case VK_EREOF: return "EREOF"; // Erase EOF key
+	case VK_PLAY: return "PLAY"; // Play key
+	case VK_ZOOM: return "ZOOM"; // Zoom key
+	case VK_NONAME: return "NONAME"; // Reserved
+	case VK_PA1: return "PA1"; // PA1 key
+	case VK_OEM_CLEAR: return "OCLEAR"; // Clear key
+	}
+
+	return "VK_UNK";
+}
+
+// конвертировать код клавиши в строку
+
+std::string CovertKeyCodeToString(unsigned int val)
+{
+	std::string outstr;
+
+	if (val == 0)
+	{
+		return "";
+	}
+
+	int KeyVal = (int)(val & 0xFF);
+
+	outstr = _VKeyToStr(KeyVal);
+
+	if ((val & 0x40000) > 0)
+	{
+		outstr = "SHIFT+" + outstr;
+	}
+	if ((val & 0x10000) > 0)
+	{
+		outstr = "ALT+" + outstr;
+	}
+	if ((val & 0x20000) > 0)
+	{
+		outstr = "CTRL+" + outstr;
+	}
+
+	return outstr;
+}
+
+// конвертировать строку в код клавиши (комбинации клавиш)
+unsigned int CovertStringToKeyCode(std::string code)
+{
+
+	if (code.length() == 0)
+		return 0;
+
+	unsigned int outcode = 0;
+	char * arg2;
+	if ((arg2 = strstr(&code[0], "+")) != NULL)
+	{
+		arg2[0] = '\0';
+		arg2++;
+		std::string arg1 = &code[0];
+		if (arg1 == "CTRL")
+		{
+			outcode = 0x20000;
+		}
+		else if (arg1 == "ALT")
+		{
+			outcode = 0x10000;
+		}
+		else if (arg1 == "SHIFT")
+		{
+			outcode = 0x40000;
+		}
+	}
+	else arg2 = &code[0];
+
+	int vkeyout = _StrToVKey(arg2);
+
+	outcode += vkeyout;
+
+	if (vkeyout == 0)
+		return 0;
+
+	return outcode;
+}
+
+
+
+std::string tmpkeycode;
+
+// конвертировать строку в код клавиши (комбинации клавиш)
+int __stdcall ConvertKeyStringToKeyCode(const char * str)
+{
+	if (str == NULL)
+		return 0;
+	return CovertStringToKeyCode(str);
+}
+
+// конвертировать код клавиши в строку
+const char * __stdcall ConvertKeyCodeToKeyString(int code)
+{
+	tmpkeycode = CovertKeyCodeToString(code);
+	return tmpkeycode.c_str();
 }

@@ -212,7 +212,7 @@ struct StringRep {
 	char*				text;		//0x1C
 };//sizeof = 0x20
 
-struct RCString {
+struct jRCString {
 	void**				vtable;		//0x0
 	uint32_t			unk_4;		//0x4
 	StringRep*			stringRep;	//0x8
@@ -497,6 +497,7 @@ struct KeyActionStruct
 	BOOL IsAlt;
 	BOOL IsRightClick;
 	BOOL IsQuickCast;
+	DWORD LastPressTime;
 };
 
 

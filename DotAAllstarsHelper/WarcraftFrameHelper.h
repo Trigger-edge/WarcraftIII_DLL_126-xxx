@@ -321,7 +321,7 @@ namespace NWar3Frame
 		static void __fastcall SetAnimOffset( int real_frame, float *a2, float unk_val );
 		void SetSkipAnotherCallback( bool skip = true );
 		static void UninitializeAllFrames( bool freeframes = false );
-		static void Init( int GameVersion, int GameDll );
+		static void Init( int GameDll );
 		void SetModel( const char * modelpath, int MdlType = 1 /* -1 */, int Flags = 0 );
 		static void Wc3PlaySound( const char * name );
 		static std::string DumpAllFrames( );

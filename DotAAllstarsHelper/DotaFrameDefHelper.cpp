@@ -24,7 +24,7 @@ void DotaHelperEventEndCallback( )
 
 
 
-RCString NewCallBackFuncName = RCString( );
+jRCString NewCallBackFuncName = jRCString( );
 
 int NewCallBackTriggerHandle = 0;
 
@@ -131,9 +131,9 @@ int DotaHelperFrameCallback( CWar3Frame*frame, int FrameAddr, unsigned int Event
 void FrameDefHelperInitialize( )
 {
 	CWar3Frame::SetGlobalEventCallback( DotaHelperEventEndCallback );
-	CWar3Frame::Init( GameVersion, GameDll );
+	CWar3Frame::Init(GameDll );
 	CWar3Frame::InitCallbackHook( );
-	NewCallBackFuncName = RCString( );
+	NewCallBackFuncName = jRCString( );
 	NewCallBackTriggerHandle = 0;
 }
 
@@ -142,7 +142,7 @@ void FrameDefHelperUninitialize( )
 	CFrameBufferList.clear( );
 	CWar3Frame::UninitializeAllFrames( TRUE );
 	CWar3Frame::UninitializeCallbackHook( );
-	NewCallBackFuncName = RCString( );
+	NewCallBackFuncName = jRCString( );
 	NewCallBackTriggerHandle = 0;
 }
 

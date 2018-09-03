@@ -86,19 +86,11 @@ int __stdcall ScanJassStringForErrors( BOOL dump )
 
 	int strrepvtable = GameDll + 0x954658;
 
-	if ( GameVersion == 0x27a )
-	{
-		strrepvtable = GameDll + 0x952F30;
-	}
 
 
 	int * firstoffset = ( int * )( StormDll + 0x055370 );
 
-	if ( GameVersion == 0x27a )
-	{
-		firstoffset = ( int * )( StormDll + 0x056F80 );
-	}
-
+	
 
 
 	int memsize = 0x100;
@@ -199,19 +191,10 @@ int __stdcall GetJassStringCount( BOOL dump )
 
 	int strrepvtable = GameDll + 0x954658;
 
-	if ( GameVersion == 0x27a )
-	{
-		strrepvtable = GameDll + 0x952F30;
-	}
-
 
 	int * firstoffset = ( int * )( StormDll + 0x055370 );
 
-	if ( GameVersion == 0x27a )
-	{
-		firstoffset = ( int * )( StormDll + 0x056F80 );
-	}
-
+	
 
 
 	int memsize = 0x100;

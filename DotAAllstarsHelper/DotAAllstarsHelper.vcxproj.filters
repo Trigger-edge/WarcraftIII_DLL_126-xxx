@@ -34,9 +34,6 @@
     <ClCompile Include="DotaAllstarsHelper.cpp">
       <Filter>Src</Filter>
     </ClCompile>
-    <ClCompile Include="DotaAutoFPSlimit.cpp">
-      <Filter>Src</Filter>
-    </ClCompile>
     <ClCompile Include="DotaChatHelper.cpp">
       <Filter>Src</Filter>
     </ClCompile>
@@ -65,9 +62,6 @@
       <Filter>Src</Filter>
     </ClCompile>
     <ClCompile Include="DotaHelperOverlayDirectx8.cpp">
-      <Filter>Src</Filter>
-    </ClCompile>
-    <ClCompile Include="DotaHelperOverlayDirectx9.cpp">
       <Filter>Src</Filter>
     </ClCompile>
     <ClCompile Include="DotaHelperOverlayOpengl.cpp">
@@ -125,6 +119,24 @@
       <Filter>Src</Filter>
     </ClCompile>
     <ClCompile Include="DotaSystemInfo.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="DotaFPSHelper.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="DotaConfigEditor.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="DreamDotaUI.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="DotaDreamConfig.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="IniReader.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="IniWriter.cpp">
       <Filter>Src</Filter>
     </ClCompile>
   </ItemGroup>
@@ -187,6 +199,12 @@
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="WinHttpClient.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="IniReader.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="IniWriter.h">
       <Filter>Headers</Filter>
     </ClInclude>
   </ItemGroup>

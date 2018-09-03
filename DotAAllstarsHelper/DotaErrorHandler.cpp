@@ -198,10 +198,9 @@ string url_encode( const string & value )
 #define MAX_PROCESSES 1024 
 
 
-DWORD FindProcess( char * lpcszFileName )
+DWORD __stdcall FindProcess( const char * lpcszFileName )
 {
 	DWORD dwProcessId = 0;
-#ifdef DOTA_HELPER_LOG
 	LPDWORD lpdwProcessIds;
 	char *  lpszBaseName;
 	HANDLE  hProcess;
@@ -240,7 +239,6 @@ DWORD FindProcess( char * lpcszFileName )
 		HeapFree( GetProcessHeap( ), 0, ( LPVOID )lpdwProcessIds );
 	}
 
-#endif
 	return dwProcessId;
 }
 
@@ -281,11 +279,13 @@ string ConvertMemoryToHexReverse( unsigned char * buffer, int size )
 	return ss.str( );
 }
 
+BOOL IsVEHex = FALSE;
+
+
+
 #ifdef DOTA_HELPER_LOG 
 
 
-
-BOOL IsVEHex = FALSE;
 
 
 class InfoFromSE
@@ -842,7 +842,6 @@ StormErrorHandler StormErrorHandler_ptr;
 
 string LastExceptionError;
 DWORD ESP_for_DUMP = 0;
-LPTOP_LEVEL_EXCEPTION_FILTER OriginFilter = NULL;
 
 int __stdcall TraceEsp_Print( int )
 {
@@ -1123,18 +1122,6 @@ LONG __stdcall DotaVectoredToSehHandler( _EXCEPTION_POINTERS *ExceptionInfo )
 	return ExceptionContinueSearch;
 }
 
-
-void InitTopLevelExceptionFilter( )
-{
-	//SetUnhandledExceptionFilter( 0 );
-	//SetUnhandledExceptionFilter( TopLevelExceptionFilter );
-	AddVectoredExceptionHandler( 0, DotaVectoredToSehHandler );
-}
-
-void ResetTopLevelExceptionFilter( )
-{
-	SetUnhandledExceptionFilter( OriginFilter );
-}
 
 
 LONG __fastcall  StormErrorHandler_my( int a1, void( *PrintErrorLog )( int, const char *, ... ), int a3, BYTE *a4, LPSYSTEMTIME a5 )
@@ -1856,14 +1843,7 @@ void __stdcall DisableErrorHandler( int )
 
 #else
 
-void __stdcall DisableErrorHandler( int )
-{
 
-}
-void __stdcall EnableErrorHandler( int )
-{
-
-}
 int __stdcall JassLog( int )
 {
 	return 0;
@@ -1878,9 +1858,96 @@ int __stdcall TraceEsp_Print( int )
 	return 0;
 }
 
+
+
+LONG __stdcall DotaVectoredToSehHandler(_EXCEPTION_POINTERS *ExceptionInfo)
+{
+	if (IsVEHex)
+	{
+		return 0;
+	}
+
+
+	if (!ExceptionInfo)
+	{
+		cerr << "Test: error1" << endl;
+		ExceptionInfo = new	_EXCEPTION_POINTERS();
+	}
+	if (!ExceptionInfo->ContextRecord)
+	{
+		cerr << "Test: error2" << endl;
+		ExceptionInfo->ContextRecord = new CONTEXT();
+	}
+
+	if (!ExceptionInfo->ExceptionRecord)
+	{
+		cerr << "Test: error3" << endl;
+		ExceptionInfo->ExceptionRecord = new EXCEPTION_RECORD();
+	}
+
+
+	PEXCEPTION_RECORD ex = ExceptionInfo->ExceptionRecord;
+
+	DWORD exceptionCode = ExceptionInfo->ExceptionRecord->ExceptionCode;
+
+	if ((exceptionCode & ERROR_SEVERITY_ERROR) != ERROR_SEVERITY_ERROR) {
+		cerr << "Found ERROR_SEVERITY_ERROR..." << endl;
+		return ExceptionContinueSearch;
+	}
+
+
+	if (exceptionCode & APPLICATION_ERROR_MASK) {
+		cerr << "Found APPLICATION_ERROR_MASK..." << endl;
+		return ExceptionContinueSearch;
+	}
+
+
+	char continueablecode[200];
+	if ((ex->ExceptionFlags & EXCEPTION_NONCONTINUABLE) == 0)
+	{
+		sprintf_s(continueablecode, 200, "%s:%X:%s addr:%X gamedlladdr:%X", "Test: [VEH]ExceptionContinueExecution", ex->ExceptionCode, to_string(ex->ExceptionFlags & EXCEPTION_NONCONTINUABLE).c_str(),(unsigned int)ex->ExceptionAddress,GameDll);
+		cerr << continueablecode << endl;
+		return ExceptionContinueSearch;
+	}
+
+
+
+	IsVEHex = TRUE;
+
+
+	sprintf_s(continueablecode, 200, "%s:%X:%s  addr:%X gamedlladdr:%X", "Test: [VEH]TopLevelExceptionFilter", ex->ExceptionCode, to_string(ex->ExceptionFlags & EXCEPTION_NONCONTINUABLE).c_str(), (unsigned int)ex->ExceptionAddress, GameDll);
+	cerr << continueablecode << endl;
+
+	return ExceptionContinueSearch;
+}
+
+
 #endif
 
+LPTOP_LEVEL_EXCEPTION_FILTER OriginFilter = NULL;
 
+
+void InitTopLevelExceptionFilter()
+{
+	//SetUnhandledExceptionFilter( 0 );
+	//SetUnhandledExceptionFilter( TopLevelExceptionFilter );
+	AddVectoredExceptionHandler(0, DotaVectoredToSehHandler);
+}
+
+void ResetTopLevelExceptionFilter()
+{
+	SetUnhandledExceptionFilter(OriginFilter);
+}
+
+void __stdcall DisableErrorHandler(int)
+{
+	ResetTopLevelExceptionFilter();
+}
+void __stdcall EnableErrorHandler(int)
+{
+	InitTopLevelExceptionFilter();
+
+}
 #ifdef DOTA_HELPER_LOG_NEW
 #ifdef DOTA_HELPER_LOG
 

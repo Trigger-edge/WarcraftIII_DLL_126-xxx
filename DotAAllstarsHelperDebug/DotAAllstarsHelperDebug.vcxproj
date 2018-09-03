@@ -106,7 +106,6 @@
     <ClCompile Include="..\DotAAllstarsHelper\BlpReadWrite.cpp" />
     <ClCompile Include="..\DotAAllstarsHelper\Crc32Dynamic.cpp" />
     <ClCompile Include="..\DotAAllstarsHelper\DotaAllstarsHelper.cpp" />
-    <ClCompile Include="..\DotAAllstarsHelper\DotaAutoFPSlimit.cpp" />
     <ClCompile Include="..\DotAAllstarsHelper\DotaChatHelper.cpp" />
     <ClCompile Include="..\DotAAllstarsHelper\DotaClickHelper.cpp" />
     <ClCompile Include="..\DotAAllstarsHelper\DotaCustomFrames.cpp" />
@@ -114,9 +113,9 @@
     <ClCompile Include="..\DotAAllstarsHelper\DotaErrorHandler.cpp" />
     <ClCompile Include="..\DotAAllstarsHelper\DotaFilesHelper.cpp" />
     <ClCompile Include="..\DotAAllstarsHelper\DotaFOVfix.cpp" />
+    <ClCompile Include="..\DotAAllstarsHelper\DotaFPSHelper.cpp" />
     <ClCompile Include="..\DotAAllstarsHelper\DotaFrameDefHelper.cpp" />
     <ClCompile Include="..\DotAAllstarsHelper\DotaHelperOverlayDirectx8.cpp" />
-    <ClCompile Include="..\DotAAllstarsHelper\DotaHelperOverlayDirectx9.cpp" />
     <ClCompile Include="..\DotAAllstarsHelper\DotaHelperOverlayOpengl.cpp" />
     <ClCompile Include="..\DotAAllstarsHelper\DotaHPBarHelper.cpp" />
     <ClCompile Include="..\DotAAllstarsHelper\DotaHttpHelper.cpp" />

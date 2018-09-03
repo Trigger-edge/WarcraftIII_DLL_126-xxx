@@ -29,8 +29,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <LibraryPath>.\..\MinHook;$(LibraryPath);.\..\JPEG\;.\..\NTDLL\;.\..\includes\;.\..\pa_snapshot\portaudio\build\msvc\Win32\ReleaseMinDependency\</LibraryPath>
-    <IncludePath>.\..\MinHook;$(IncludePath);.\..\JPEG\;.\..\NTDLL\;.\..\includes\;.\..\pa_snapshot\portaudio\include\;.\..\ydbase\</IncludePath>
+    <LibraryPath>.\..\DreamUI;.\..\MinHook;$(LibraryPath);.\..\JPEG\;.\..\NTDLL\;.\..\includes\;.\..\pa_snapshot\portaudio\build\msvc\Win32\ReleaseMinDependency\</LibraryPath>
+    <IncludePath>.\..\DreamUI;.\..\MinHook;$(IncludePath);.\..\JPEG\;.\..\NTDLL\;.\..\includes\;.\..\pa_snapshot\portaudio\include\;.\..\ydbase\</IncludePath>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <IgnoreImportLibrary>
@@ -128,18 +128,19 @@
     <ClCompile Include="BlpReadWrite.cpp" />
     <ClCompile Include="Crc32Dynamic.cpp" />
     <ClCompile Include="DotaAllstarsHelper.cpp" />
-    <ClCompile Include="DotaAutoFPSlimit.cpp" />
     <ClCompile Include="DotaChatHelper.cpp" />
     <ClCompile Include="DotaClickHelper.cpp" />
+    <ClCompile Include="DotaConfigEditor.cpp" />
     <ClCompile Include="DotaCustomFrames.cpp" />
     <ClCompile Include="DotaCustomMinimap.cpp" />
     <ClCompile Include="DotaDebugHelpers.cpp" />
+    <ClCompile Include="DotaDreamConfig.cpp" />
     <ClCompile Include="DotaErrorHandler.cpp" />
     <ClCompile Include="DotaFilesHelper.cpp" />
     <ClCompile Include="DotaFOVfix.cpp" />
+    <ClCompile Include="DotaFPSHelper.cpp" />
     <ClCompile Include="DotaFrameDefHelper.cpp" />
     <ClCompile Include="DotaHelperOverlayDirectx8.cpp" />
-    <ClCompile Include="DotaHelperOverlayDirectx9.cpp" />
     <ClCompile Include="DotaHelperOverlayOpengl.cpp" />
     <ClCompile Include="DotaHPBarHelper.cpp" />
     <ClCompile Include="DotaHttpHelper.cpp" />
@@ -153,7 +154,10 @@
     <ClCompile Include="DotaViewAllySkill.cpp" />
     <ClCompile Include="DotaWebHelper.cpp" />
     <ClCompile Include="DoteNewDebugSystem.cpp" />
+    <ClCompile Include="DreamDotaUI.cpp" />
     <ClCompile Include="hash_64.cpp" />
+    <ClCompile Include="IniReader.cpp" />
+    <ClCompile Include="IniWriter.cpp" />
     <ClCompile Include="MegaPacketHandler.cpp" />
     <ClCompile Include="quantizer.cpp" />
     <ClCompile Include="Storm.cpp" />
@@ -170,6 +174,8 @@
     <ClInclude Include="fp_call.h" />
     <ClInclude Include="FunctionTemplate.h" />
     <ClInclude Include="HttpClass.h" />
+    <ClInclude Include="IniReader.h" />
+    <ClInclude Include="IniWriter.h" />
     <ClInclude Include="longlong.h" />
     <ClInclude Include="Main.h" />
     <ClInclude Include="MegaPacketHandler.h" />

@@ -56,7 +56,7 @@ struct RawImageStruct
 
 	BOOL	MouserExecuteFuncCallback;
 	BOOL	PacketCallback;
-	RCString MouseActionCallback;
+	jRCString MouseActionCallback;
 
 
 	BOOL IsMouseDown;
@@ -104,7 +104,7 @@ struct RawImageStruct
 		IsMouseDown = FALSE;
 		IsMouseEntered = FALSE;
 		MouseCallback = FALSE;
-		MouseActionCallback = RCString( );
+		MouseActionCallback = jRCString( );
 		MouserExecuteFuncCallback = FALSE;
 		PacketCallback = FALSE;
 		button = FALSE;

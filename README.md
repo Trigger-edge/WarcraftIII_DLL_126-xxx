@@ -1,4 +1,4 @@
-# WarcraftIII_DLL_126-127
+﻿# WarcraftIII_DLL_126-127
 ## Improvements for Warcraft III 126a and 127a, used in new DoTA (d1stats.ru)
 
 # Features:
@@ -635,3 +635,148 @@ endfunction
 
 ```
 # endcode 
+
+Key codes:
+
+```
+	 0-Z = 0-Z 
+	 "LBTN" =  Left mouse button
+	 "RBTN" =  Right mouse button
+	 "CANCEL" =  Control-break processing
+	 "MBTN" =  Middle mouse button (three-button mouse)
+	 "XBTN1" =  X1 mouse button
+	 "XBTN2" =  X2 mouse button
+	 "BACK" =  BACKSPACE key
+	 "TAB" =  TAB key
+	 "CLEAR" =  CLEAR key
+	 "RETURN" =  ENTER key
+	 "SHIFT" =  SHIFT key
+	 "CTRL" =  CTRL key
+	 "ALT" =  ALT key
+	 "PAUSE" =  PAUSE key
+	 "CAPS" =  CAPS LOCK key
+	 "KANA" =  IME Kana mode
+	 "VK_HANGUEL" =  IME Hangul mode
+	 "JUNJA" =  IME Junja mode
+	 "FINAL" =  IME final mode
+	 "HANJA" =  IME Hanja mode
+	 "VK_KANJI" =  IME Kanji mode
+	 "ESC" =  ESC key
+	 "CONV" =  IME convert
+	 "NCONV" =  IME nonconvert
+	 "ACCEPT" =  IME accept
+	 "MCHANGE" =  IME mode change request
+	 "SPACE" =  SPACEBAR
+	 "PAGEUP" =  PAGE UP key
+	 "PAGEDN" =  PAGE DOWN key
+	 "END" =  END key
+	 "HOME" =  HOME key
+	 "LEFT" =  LEFT ARROW key
+	 "UP" =  UP ARROW key
+	 "RIGHT" =  RIGHT ARROW key
+	 "DOWN" =  DOWN ARROW key
+	 "SELECT" =  SELECT key
+	 "PRINT" =  PRINT key
+	 "EXEC" =  EXECUTE key
+	 "SSHOT" =  PRINT SCREEN key
+	 "INSERT" =  INS key
+	 "DELETE" =  DEL key
+	 "HELP" =  HELP key
+	 "LWIN" =  Left Windows key (Natural keyboard)
+	 "RWIN" =  Right Windows key (Natural keyboard)
+	 "APPS" =  Applications key (Natural keyboard)
+	 "SLEEP" =  Computer Sleep key
+	 "NPAD0" =  Numeric keypad 0 key
+	 "NPAD1" =  Numeric keypad 1 key
+	 "NPAD2" =  Numeric keypad 2 key
+	 "NPAD3" =  Numeric keypad 3 key
+	 "NPAD4" =  Numeric keypad 4 key
+	 "NPAD5" =  Numeric keypad 5 key
+	 "NPAD6" =  Numeric keypad 6 key
+	 "NPAD7" =  Numeric keypad 7 key
+	 "NPAD8" =  Numeric keypad 8 key
+	 "NPAD9" =  Numeric keypad 9 key
+	 "MULT" =  Multiply key
+	 "ADD" =  Add key
+	 "SEP" =  Separator key
+	 "SUB" =  Subtract key
+	 "DEC" =  Decimal key
+	 "DIV" =  Divide key
+	 "F1" =  F1 key
+	 "F2" =  F2 key
+	 "F3" =  F3 key
+	 "F4" =  F4 key
+	 "F5" =  F5 key
+	 "F6" =  F6 key
+	 "F7" =  F7 key
+	 "F8" =  F8 key
+	 "F9" =  F9 key
+	 "F10" =  F10 key
+	 "F11" =  F11 key
+	 "F12" =  F12 key
+	 "F13" =  F13 key
+	 "F14" =  F14 key
+	 "F15" =  F15 key
+	 "F16" =  F16 key
+	 "F17" =  F17 key
+	 "F18" =  F18 key
+	 "F19" =  F19 key
+	 "F20" =  F20 key
+	 "F21" =  F21 key
+	 "F22" =  F22 key
+	 "F23" =  F23 key
+	 "F24" =  F24 key
+	 "NLOCK" =  NUM LOCK key
+	 "SCRL" =  SCROLL LOCK key
+	 "LSHFT" =  Left SHIFT key
+	 "RSHFT" =  Right SHIFT key
+	 "LCTRL" =  Left CONTROL key
+	 "RCTRL" =  Right CONTROL key
+	 "LALT" =  Left MENU key
+	 "RALT" =  Right MENU key
+	 "BBACK" =  Browser Back key
+	 "BFORW" =  Browser Forward key
+	 "BREFR" =  Browser Refresh key
+	 "BSTOP" =  Browser Stop key
+	 "BSEARCH" =  Browser Search key
+	 "BFAV" =  Browser Favorites key
+	 "BHOME" =  Browser Start and Home key
+	 "MUTE" =  Volume Mute key
+	 "V_DOWN" =  Volume Down key
+	 "V_UP" =  Volume Up key
+	 "NEXT" =  Next Track key
+	 "PREV" =  Previous Track key
+	 "STOP" =  Stop Media key
+	 "MPLAY" =  Play/Pause Media key
+	 "MAIL" =  Start Mail key
+	 "MSEL" =  Select Media key
+	 "APP1" =  Start Application 1 key
+	 "APP2" =  Start Application 2 key
+	 "OEM_1" =  Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the ';:' key
+	 "OEM_P" =  For any country/region, the '+' key
+	 "COMMA" =  For any country/region, the ',' key
+	 "MINUS" =  For any country/region, the '-' key
+	 "PERIOD" =  For any country/region, the '.' key
+	 "OEM_2" =  Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the '/?' key
+	 "OEM_3" =  Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the '`~' key
+	 "ABNT_C1" =  Brazilian (ABNT) Keyboard
+	 "ABNT_C2" =  Brazilian (ABNT) Keyboard
+	 "OEM_4" =  Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the '[{' key
+	 "OEM_5" =  Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the '\|' key
+	 "OEM_6" =  Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the ']}' key
+	 "OEM_7" =  Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the 'single-quote/double-quote' key
+	 "OEM_8" =  Used for miscellaneous characters; it can vary by keyboard.
+	 "OEM102" =  Either the angle bracket key or the backslash key on the RT 102-key keyboard
+	 "PROCKEY" =  IME PROCESS key
+	 "PACKET" =  Used to pass Unicode characters as if they were keystrokes.
+	 "ATTN" =  Attn key
+	 "CRSEL" =  CrSel key
+	 "EXSEL" =  ExSel key
+	 "EREOF" =  Erase EOF key
+	 "PLAY" =  Play key
+	 "ZOOM" =  Zoom key
+	 "NONAME" =  Reserved
+	 "PA1" =  PA1 key
+	 "OCLEAR" =  Clear key
+```
+

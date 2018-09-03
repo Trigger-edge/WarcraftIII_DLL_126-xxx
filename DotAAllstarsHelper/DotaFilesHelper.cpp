@@ -2183,7 +2183,7 @@ int __stdcall CreateIconFrameMask( const char * iconpath )
 //int __stdcall Storm_279_my( const char * filename, int arg1, int arg2, size_t arg3, int arg4 )
 //{
 //
-//	if ( NeedOpenConfigWindow )
+//	if ( ConfigWindowCreated )
 //	{
 //		if ( ToLower( "UI\\FrameDef\\Glue\\DialogWar3.fdf" ) == ToLower( filename ) )
 //		{

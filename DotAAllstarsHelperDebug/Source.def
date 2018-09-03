@@ -177,3 +177,14 @@ StopTimer
 SendLatestError
 GetSystemInfo2
 RemoveOffset
+EnableVsync
+EnableAntialiasing
+SetMipMaps
+GetMouseX
+GetMouseY
+GetMouseIngameX
+GetMouseIngameY
+GetMouseIngameZ
+ConvertKeyStringToKeyCode
+ConvertKeyCodeToKeyString
+FindProcess

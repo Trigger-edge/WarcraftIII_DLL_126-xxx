@@ -46,13 +46,11 @@ using namespace std;
 #include <winsock2.h>
 #pragma comment (lib, "Ws2_32.lib")
 #include "buffer.h"
-#ifdef DOTA_HELPER_LOG
 
 #define PSAPI_VERSION 1
 #include <Psapi.h>
 #pragma comment(lib,"Psapi.lib")
 
-#endif
 #define MASK_56 (((u_int64_t)1<<56)-1) /* i.e., (u_int64_t)0xffffffffffffff */
 
 #include "fnv.h"
@@ -95,10 +93,12 @@ extern BOOL TerminateStarted;
 extern BOOL IsVEHex;
 extern BOOL TestModeActivated;
 
+extern const char * configfilename;
+
 void FrameDefHelperUninitialize( );
 void FrameDefHelperInitialize( );
 
-
+void PatchOffsetValue1(void * addr, BYTE value);
 extern int RenderStage;
 
 int GetGlobalClassAddr( );
@@ -109,9 +109,9 @@ extern _TriggerExecute TriggerExecute;
 
 int __stdcall SendMessageToChat( const char * msg, BOOL toAll );
 
-typedef void( __cdecl * pExecuteFunc )( RCString * funcname );
+typedef void( __cdecl * pExecuteFunc )( jRCString * funcname );
 extern pExecuteFunc ExecuteFunc;
-typedef void( __thiscall * pConvertStrToJassStr )( RCString * jStr, const char * cStr );
+typedef void( __thiscall * pConvertStrToJassStr )( jRCString * jStr, const char * cStr );
 extern pConvertStrToJassStr str2jstr;
 
 std::string uint_to_hex( unsigned int i );
@@ -255,13 +255,15 @@ extern LookupJassFunc LookupJassFunc_org;
 
 extern BOOL bDllLogEnable;
 
+
+extern LPTOP_LEVEL_EXCEPTION_FILTER OriginFilter;
+
 #ifndef DOTA_HELPER_LOG_NEW
 #ifdef DOTA_HELPER_LOG
 
 void __cdecl DumpExceptionInfoToFile( _EXCEPTION_POINTERS * ExceptionInfo );
 
 extern void ResetTopLevelExceptionFilter( );
-extern LPTOP_LEVEL_EXCEPTION_FILTER OriginFilter;
 
 typedef LONG( __fastcall * StormErrorHandler )( int a1, void( *a2 )( int, const char *, ... ), int a3, BYTE *a4, LPSYSTEMTIME a5 );
 extern StormErrorHandler StormErrorHandler_org;
@@ -291,7 +293,6 @@ extern int GameDll;
 extern int StormDll;
 extern HMODULE GameDllModule;
 extern HMODULE StormDllModule;
-extern int GameVersion;
 extern HWND Warcraft3Window;
 
 #pragma region All Offsets Here
@@ -316,8 +317,8 @@ extern int UnitVtable;
 extern int ItemVtable;
 extern int pPrintText2;
 extern const char * GetBoolStr( BOOL val );
-extern void PrintText( const char * text, float staytime = 10.0f );
-extern void PrintText( std::string text, float staytime = 10.0f );
+extern void PrintText( const char * text, float staytime = 10.0f, BOOL force = FALSE );
+extern void PrintText( std::string text, float staytime = 10.0f, BOOL force = FALSE);
 extern int MapNameOffset1;
 extern int MapNameOffset2;
 extern int pOnChatMessage_offset;
@@ -343,14 +344,14 @@ extern BOOL ShopHelperEnabled;
 extern BOOL TeleportShiftPress;
 extern BOOL BlockKeyAndMouseEmulation;
 extern BOOL EnableSelectHelper;
-extern BOOL ClickHelper;
+extern BOOL DoubleClickHelper;
 extern BOOL AutoSelectHero;
 extern BOOL LOCK_MOUSE_IN_WINDOW;
 extern BOOL BlockKeyboardAndMouseWhenTeleport;
 extern BOOL rawimage_skipmouseevent;
 typedef LRESULT( __fastcall *  WarcraftRealWNDProc )( HWND hWnd, unsigned int Msg, WPARAM wParam, LPARAM lParam );
 extern WarcraftRealWNDProc WarcraftRealWNDProc_org, WarcraftRealWNDProc_ptr;
-LRESULT __fastcall BeforeWarcraftWNDProc( HWND hWnd, unsigned int Msg, WPARAM _wParam, LPARAM lParam );
+LRESULT __fastcall WarcraftWindowProcHooked( HWND hWnd, unsigned int Msg, WPARAM _wParam, LPARAM lParam );
 extern int ShiftPressed;
 extern BOOL SkipAllMessages;
 extern int IssueWithoutTargetOrderOffset;
@@ -379,7 +380,9 @@ extern std::vector<ObjInfoAction> IgnoreObjInfo;
 
 extern std::vector< int > InfoWhitelistedObj;
 
-
+unsigned int CovertStringToKeyCode(std::string code);
+std::string CovertKeyCodeToString(unsigned int val);
+unsigned int BuildKeyCode();
 #pragma endregion
 
 
@@ -504,7 +507,7 @@ typedef int( __thiscall *  pWc3ControlClickButton )( int btnaddr, int unk );
 extern pWc3ControlClickButton Wc3ControlClickButton_org, Wc3ControlClickButton_ptr;
 int __fastcall Wc3ControlClickButton_my( int btnaddr, int, int unk );
 int __stdcall ShowConfigWindow( const char * );
-extern BOOL NeedOpenConfigWindow;
+extern BOOL ConfigWindowCreated;
 void ProcessClickAtCustomFrames( );
 extern BOOL GlyphButtonCreated;
 #pragma endregion
@@ -520,20 +523,15 @@ void Uninitd3d8Hook( BOOL cleartextures );
 void Initd3d8Hook( );
 
 // 1.27a
-void Uninitd3d9Hook( BOOL cleartextures );
-void Initd3d9Hook( );
-
-void DrawOverlayDx9( );
 void DrawOverlayDx8( );
 void DrawOverlayGl( );
-
-void SetNewLightDx9( int id );
-void SetOldLightDx9( int id );
 
 void SetNewLightDx8( int id );
 void SetOldLightDx8( int id );
 
 extern BOOL OverlayDrawed;
+
+void InitD3DVSync(BOOL enabled);
 
 #pragma endregion
 
@@ -590,3 +588,13 @@ void UninitializeVoiceClient( );
 void InitVoiceClientThread( );
 void AddNewPaTestData( std::vector<unsigned char> _samples, int playerid, int packetsize, bool compressed );
 */
+
+
+
+
+
+
+bool IfNeedSkipAllKeyMessages();
+void InitializeDreamDotaAPI(BOOL config,HMODULE _GameDll);
+void UninitializeDreamDotaAPI();
+void RegisterConfigWindow();
