@@ -6,14 +6,24 @@
 #include "Tools.h"
 
 namespace SimpleButton {
-	war3::CSimpleButton* create(void* parent) {
-		war3::CSimpleButton* t = DreamStorm::MemAllocStruct<war3::CSimpleButton>();
+	war3::CSimpleButton* create( void* parent ) {
+		war3::CSimpleButton* t = DreamStorm::MemAllocStruct<war3::CSimpleButton>( );
 		dreamaero::generic_this_call<void>(
-			Offset(SIMPLEBUTTON_CONSTRUCT), 
+			Offset( SIMPLEBUTTON_CONSTRUCT ),
 			t,
-			parent ? parent : GameUIObjectGet()->simpleConsole
-		);
-		return t;		
+			parent ? parent : GameUIObjectGet( )->simpleConsole
+			);
+		return t;
+	}
+
+	war3::CSimpleButton* createeditbox( void* parent ) {
+		war3::CSimpleButton* t = DreamStorm::MemAllocStruct<war3::CSimpleButton>( );
+		dreamaero::generic_this_call<void>(
+			Offset( EDITBOX_CONSTRUCT ),
+			t,
+			parent ? parent : GameUIObjectGet( )->simpleConsole,0,0,0
+			);
+		return t;
 	}
 
 	void destroy(war3::CSimpleButton* t) {

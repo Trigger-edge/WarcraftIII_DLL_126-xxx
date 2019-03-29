@@ -13,18 +13,18 @@
 
 static const uint32_t MAX_WNDPROC = 32;
 static uint32_t WndProcCount = 0;
-static CustomWndProc WndProcs[MAX_WNDPROC] = { 0 };
+static CustomWndProc WndProcs[ MAX_WNDPROC ] = { 0 };
 
-static void CallWndProcs(HWND win, UINT message, WPARAM wParam, LPARAM lParam) {
-	for (uint32_t i = 0; i < MAX_WNDPROC && WndProcs[i]; ++i) {
-		if (WndProcs[i](win, message, wParam, lParam))
+static void CallWndProcs( HWND win, UINT message, WPARAM wParam, LPARAM lParam ) {
+	for ( uint32_t i = 0; i < MAX_WNDPROC && WndProcs[ i ]; ++i ) {
+		if ( WndProcs[ i ]( win, message, wParam, lParam ) )
 			break;
 	}
 }
 
-void AddWindowProc(CustomWndProc proc) {
-	if (WndProcCount < MAX_WNDPROC)
-		WndProcs[WndProcCount++] = proc;
+void AddWindowProc( CustomWndProc proc ) {
+	if ( WndProcCount < MAX_WNDPROC )
+		WndProcs[ WndProcCount++ ] = proc;
 }
 
 namespace DEVICE_TYPE {
@@ -48,26 +48,27 @@ static RECT TaskBarRect;
 
 static bool EnableImprovedWindow;
 static bool Fullscreen;
-static float WidthRatio = 1.0f;
+static float WidthRatioX = 1.0f;
+static float WidthRatioY = 1.0f;
 //static bool KeepRatio;
 HWND Hwnd = NULL;
 
-HWND GetWar3Window() { return Hwnd; }
+HWND GetWar3Window( ) { return Hwnd; }
 
-typedef LRESULT(__fastcall *WAR3WNDPROC)(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+typedef LRESULT( __fastcall *WAR3WNDPROC )( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam );
 
 WAR3WNDPROC OldWndProc;
 
-bool UpdateClipCursor();
-void UpdateFullscreen(WORD width = 0, WORD height = 0);
-void HookReady();
+bool UpdateClipCursor( );
+void UpdateFullscreen( WORD width = 0, WORD height = 0 );
+void HookReady( );
 
-void D3DSetStageSize(float width, float height) {
-	war3::CGxDeviceD3d * device = reinterpret_cast<war3::CGxDeviceD3d*>(DeviceObject);
+void D3DSetStageSize( float width, float height ) {
+	war3::CGxDeviceD3d * device = reinterpret_cast< war3::CGxDeviceD3d* >( DeviceObject );
 	device->unk_6C0 = 0.f;
 	device->unk_6C4 = 0.f;
-	device->windowWidth = static_cast<float>(width);
-	device->windowHeight = static_cast<float>(height);
+	device->windowWidth = static_cast< float >( width );
+	device->windowHeight = static_cast< float >( height );
 	device->unk_6D0 = 1;
 	/*
 	if (*reinterpret_cast<DWORD*>(0x6FA9E7A0))
@@ -75,9 +76,9 @@ void D3DSetStageSize(float width, float height) {
 	*/
 }
 
-void RefreshUICallback(Timer *tm)
+void RefreshUICallback( Timer *tm )
 {
-	UI_Refresh();
+	UI_Refresh( );
 }
 
 static POINTS LastMousePoint, MousePoint;
@@ -91,24 +92,28 @@ LRESULT __fastcall DetourWindowProc(
 	static bool Inited = false;
 	RECT orgRect;
 
-	if (!Inited) {
-		if (TlsGetValue(GameTlsIndexGet())) {
+	if ( !Inited ) {
+		if ( TlsGetValue( GameTlsIndexGet( ) ) ) {
 			Inited = true;
-			if (!Hwnd) {
+			if ( !Hwnd ) {
 				Hwnd = hwnd;
-				HookReady();
+				HookReady( );
 			}
-			if (hwnd != Hwnd) {
+			if ( hwnd != Hwnd ) {
 				Hwnd = hwnd;
-				HookReady();
+				HookReady( );
 			}
 		}
 	}
 
-	if (uMsg == WM_SIZE)
+	if ( uMsg == WM_SIZE )
 	{
-		WidthRatio = ((float)LOWORD(lParam) / (float)HIWORD(lParam)) / (4.f / 3.f);
-		GetTimer(0.05, RefreshUICallback)->start();
+		// (x / y) / (4 / 3 ) = (640 / 480) / ( 4 / 3) = 
+		WidthRatioX = ( ( float )LOWORD( lParam ) / ( float )HIWORD( lParam ) ) / ( 4.f / 3.f );
+		// (y / x) / (3 / 4 ) = (480 / 640) / ( 3 / 4) = 
+		WidthRatioY = ( ( float )HIWORD( lParam ) / ( float )LOWORD( lParam ) ) / ( 3.f / 4.f );
+
+		GetTimer( 0.05, RefreshUICallback )->start( );
 	}
 	//else if (EnableImprovedWindow && Inited) {
 	//	switch (uMsg) {
@@ -147,8 +152,8 @@ LRESULT __fastcall DetourWindowProc(
 	//			UpdateClipCursor();
 	//		}
 
-	//		WidthRatio = ((float)LOWORD(lParam) / (float)HIWORD(lParam)) / (4.f / 3.f);
-	//		//OutputScreen(1, "widthratio = %.3f", WidthRatio);
+	//		WidthRatioX = ((float)LOWORD(lParam) / (float)HIWORD(lParam)) / (4.f / 3.f);
+	//		//OutputScreen(1, "widthratio = %.3f", WidthRatioX);
 
 	//		GetTimer(0.05, RefreshUICallback)->start();
 	//		break;
@@ -168,143 +173,150 @@ LRESULT __fastcall DetourWindowProc(
 	//}
 	//TODO 把上面的switch换成不同的callback
 
-	CallWndProcs(hwnd, uMsg, wParam, lParam);
+	CallWndProcs( hwnd, uMsg, wParam, lParam );
 
-	return OldWndProc(hwnd, uMsg, wParam, lParam);
+	return OldWndProc( hwnd, uMsg, wParam, lParam );
 }
 
-__declspec(noinline) void War3Window_Init() {
+__declspec( noinline ) void War3Window_Init( ) {
 	//检测设备类型
-	DeviceObject = GxDeviceGet();
-	DeviceType = RTTIClassNameGet(DeviceObject)[9] == 'D' ? DEVICE_TYPE::D3D : DEVICE_TYPE::OpenGL;
+	DeviceObject = GxDeviceGet( );
+	DeviceType = RTTIClassNameGet( DeviceObject )[ 9 ] == 'D' ? DEVICE_TYPE::D3D : DEVICE_TYPE::OpenGL;
 #ifdef _DEBUG
 	;//OutputDebug("DeviceObject 0x%08X vtable = 0x%08X, window = 0x%08X\n", DeviceObject, VTBL(DeviceObject), dreamaero::offset_element_get<void*>(DeviceObject, 0x57C));
-	HWND win = dreamaero::offset_element_get<HWND>(DeviceObject, 0x578);
+	HWND win = dreamaero::offset_element_get<HWND>( DeviceObject, 0x578 );
 	//GetObjectHookManager()->analysis(DeviceObject, 45);
 #endif
 
-	memset(&OldRect, 0, sizeof(RECT));
-	memset(&LockRect, 0, sizeof(RECT));
-	memset(&ClientAreaScreenRect, 0, sizeof(RECT));
-	memset(&Point, 0, sizeof(POINT));
-	GetClipCursor(&OldRect);
-	Hwnd = DeviceObject->vtable->GetDeviceWindow();
-	OldWndProc = reinterpret_cast<war3::CGxDeviceD3d*>(DeviceObject)->wndProc;
-	reinterpret_cast<war3::CGxDeviceD3d*>(DeviceObject)->wndProc = &(DetourWindowProc);
+	memset( &OldRect, 0, sizeof( RECT ) );
+	memset( &LockRect, 0, sizeof( RECT ) );
+	memset( &ClientAreaScreenRect, 0, sizeof( RECT ) );
+	memset( &Point, 0, sizeof( POINT ) );
+	GetClipCursor( &OldRect );
+	Hwnd = DeviceObject->vtable->GetDeviceWindow( );
+	OldWndProc = reinterpret_cast< war3::CGxDeviceD3d* >( DeviceObject )->wndProc;
+	reinterpret_cast< war3::CGxDeviceD3d* >( DeviceObject )->wndProc = &( DetourWindowProc );
 
 }
 
-__declspec(noinline) void War3Window_Cleanup() {
-	if (!IsBadWritePtr(DeviceObject, 4))
-		reinterpret_cast<war3::CGxDeviceD3d*>(DeviceObject)->wndProc = OldWndProc;
+__declspec( noinline ) void War3Window_Cleanup( ) {
+	if ( !IsBadWritePtr( DeviceObject, 4 ) )
+		reinterpret_cast< war3::CGxDeviceD3d* >( DeviceObject )->wndProc = OldWndProc;
 
-	GameEventObserver_Cleanup();
+	GameEventObserver_Cleanup( );
 }
 
 //当确保Hook成功时调用
-void HookReady() {
-	GameEventObserver_Init();
+void HookReady( ) {
+	GameEventObserver_Init( );
 }
 
-void UpdateFullscreen(WORD width, WORD height) {
-	HDC windowHDC = GetDC(Hwnd);
-	WORD screenWidth = width ? width : GetDeviceCaps(windowHDC, HORZRES);
-	WORD screenHeight = height ? height : GetDeviceCaps(windowHDC, VERTRES);
+void UpdateFullscreen( WORD width, WORD height ) {
+	HDC windowHDC = GetDC( Hwnd );
+	WORD screenWidth = width ? width : GetDeviceCaps( windowHDC, HORZRES );
+	WORD screenHeight = height ? height : GetDeviceCaps( windowHDC, VERTRES );
 	WORD windowWidth = screenWidth;
 	WORD windowHeight = screenHeight;
 	//0.8 x 0.6
 
-	if (DeviceType == DEVICE_TYPE::D3D)
-		D3DSetStageSize(static_cast<float>(screenWidth), static_cast<float>(screenHeight));
+	if ( DeviceType == DEVICE_TYPE::D3D )
+		D3DSetStageSize( static_cast< float >( screenWidth ), static_cast< float >( screenHeight ) );
 
-	SetWindowLongPtr(Hwnd, GWL_EXSTYLE, WS_EX_APPWINDOW);
-	SetWindowLongPtr(Hwnd, GWL_STYLE, WS_POPUP | WS_VISIBLE);
-	SetWindowPos(Hwnd, HWND_TOPMOST, (screenWidth - windowWidth) / 2, (screenHeight - windowHeight) / 2, windowWidth, windowHeight, SWP_SHOWWINDOW);
+	SetWindowLongPtr( Hwnd, GWL_EXSTYLE, WS_EX_APPWINDOW );
+	SetWindowLongPtr( Hwnd, GWL_STYLE, WS_POPUP | WS_VISIBLE );
+	SetWindowPos( Hwnd, HWND_TOPMOST, ( screenWidth - windowWidth ) / 2, ( screenHeight - windowHeight ) / 2, windowWidth, windowHeight, SWP_SHOWWINDOW );
 }
 
-bool UpdateClipCursor() {
+bool UpdateClipCursor( ) {
 	Point.x = Point.y = 0;
-	if (GetClientRect(Hwnd, &LockRect) && ClientToScreen(Hwnd, &Point)) {
+	if ( GetClientRect( Hwnd, &LockRect ) && ClientToScreen( Hwnd, &Point ) ) {
 		LockRect.left += Point.x;
 		LockRect.right += Point.x;
 		LockRect.top += Point.y;
 		LockRect.bottom += Point.y;
-		ClipCursor(&LockRect);
+		ClipCursor( &LockRect );
 		return true;
 	}
 	else
 		return false;
 }
 
-void LockCursor() {
-	if (Locked)
+void LockCursor( ) {
+	if ( Locked )
 		return;
 
 
-	if (UpdateClipCursor()) {
+	if ( UpdateClipCursor( ) ) {
 		Locked = true;
 	}
 }
 
-void UnlockCursor() {
-	if (!Locked)
+void UnlockCursor( ) {
+	if ( !Locked )
 		return;
 
-	ClipCursor(&OldRect);
+	ClipCursor( &OldRect );
 	Locked = false;
 }
 
-bool ToggleCursorLock() {
-	if (!Locked)
-		LockCursor();
+bool ToggleCursorLock( ) {
+	if ( !Locked )
+		LockCursor( );
 	else
-		UnlockCursor();
+		UnlockCursor( );
 	return Locked;
 }
 
-void EnableFullscreen() {
-	if (!Fullscreen) {
+void EnableFullscreen( ) {
+	if ( !Fullscreen ) {
 		Fullscreen = true;
-		GetWindowRect(Hwnd, &OldWindowRect);
-		GetClientRect(Hwnd, &OldClientRect);
-		UpdateFullscreen();
+		GetWindowRect( Hwnd, &OldWindowRect );
+		GetClientRect( Hwnd, &OldClientRect );
+		UpdateFullscreen( );
 	}
 }
 
-void DisableFullscreen() {
-	if (Fullscreen) {
-		HDC windowHDC = GetDC(Hwnd);
-		WORD screenWidth = GetDeviceCaps(windowHDC, HORZRES);
-		WORD screenHeight = GetDeviceCaps(windowHDC, VERTRES);
-		WORD windowWidth = static_cast<WORD>(OldWindowRect.right - OldWindowRect.left);
-		WORD windowHeight = static_cast<WORD>(OldWindowRect.bottom - OldWindowRect.top);
-		windowWidth = static_cast<WORD>(OldWindowRect.right - OldWindowRect.left);
-		windowHeight = static_cast<WORD>(OldWindowRect.bottom - OldWindowRect.top);
-		if (DeviceType == DEVICE_TYPE::D3D)
-			D3DSetStageSize(static_cast<float>(windowWidth), static_cast<float>(windowHeight));
-		SetWindowLongPtr(Hwnd, GWL_EXSTYLE, DefaultWindowExStyle);
-		SetWindowLongPtr(Hwnd, GWL_STYLE, DefaultWindowStyle);
-		SetWindowPos(Hwnd, HWND_NOTOPMOST, OldWindowRect.left, OldWindowRect.top, windowWidth, windowHeight, 0);
+void DisableFullscreen( ) {
+	if ( Fullscreen ) {
+		HDC windowHDC = GetDC( Hwnd );
+		WORD screenWidth = GetDeviceCaps( windowHDC, HORZRES );
+		WORD screenHeight = GetDeviceCaps( windowHDC, VERTRES );
+		WORD windowWidth = static_cast< WORD >( OldWindowRect.right - OldWindowRect.left );
+		WORD windowHeight = static_cast< WORD >( OldWindowRect.bottom - OldWindowRect.top );
+		windowWidth = static_cast< WORD >( OldWindowRect.right - OldWindowRect.left );
+		windowHeight = static_cast< WORD >( OldWindowRect.bottom - OldWindowRect.top );
+		if ( DeviceType == DEVICE_TYPE::D3D )
+			D3DSetStageSize( static_cast< float >( windowWidth ), static_cast< float >( windowHeight ) );
+		SetWindowLongPtr( Hwnd, GWL_EXSTYLE, DefaultWindowExStyle );
+		SetWindowLongPtr( Hwnd, GWL_STYLE, DefaultWindowStyle );
+		SetWindowPos( Hwnd, HWND_NOTOPMOST, OldWindowRect.left, OldWindowRect.top, windowWidth, windowHeight, 0 );
 		Fullscreen = false;
 	}
 }
 
-bool ToggleFullscreen() {
-	if (Fullscreen) {
-		DisableFullscreen();
+bool ToggleFullscreen( ) {
+	if ( Fullscreen ) {
+		DisableFullscreen( );
 	}
 	else {
-		EnableFullscreen();
+		EnableFullscreen( );
 	}
 	return Fullscreen;
 }
 
-bool IsFullscreen() {
+bool IsFullscreen( ) {
 	return Fullscreen;
 }
 
-float War3WindowWidthRatio()
+float War3WindowRatioX( )
 {
 	//TODO
-	return WidthRatio ? WidthRatio : 1.f;
+	return WidthRatioX ? WidthRatioX : 1.f;
 }
+
+float War3WindowRatioY( )
+{
+	//TODO
+	return WidthRatioY ? WidthRatioY : 1.f;
+}
+

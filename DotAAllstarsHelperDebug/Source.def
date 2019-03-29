@@ -188,3 +188,4 @@ GetMouseIngameZ
 ConvertKeyStringToKeyCode
 ConvertKeyCodeToKeyString
 FindProcess
+SetMpBarWhiteListUnitTypeID

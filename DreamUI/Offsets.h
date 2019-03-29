@@ -138,6 +138,11 @@ void* Offset(int offset);
 #define IG_ARTILLERYLINE 131
 #define AH_NATIVEFUNC 132
 #define SIMPLEFRAME_SETLEVEL 133
+
+#define EDITBOX_CONSTRUCT 134
+
+
+#define FOCUSED_FRAME 135
 /*<! END Offset !>*/
 
 #endif

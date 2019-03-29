@@ -4,6 +4,7 @@
 
 #include "UISimpleRegion.h"
 #include "UISimpleFrame.h"
+#include <string>
 
 class UISimpleFontString : public UISimpleRegion {
 public:
@@ -20,8 +21,10 @@ public:
 	void initFont(const char* path, float size, uint32_t useShadow);
 	void setText(const char* text);
 	float getTextWidth();
+	float getTextHeight( );
 private:
-	
+	std::string _org_text;
+	float fontsize;
 };
 
 #endif

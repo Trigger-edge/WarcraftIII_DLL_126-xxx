@@ -24,7 +24,6 @@ namespace InfoPanel {
 
 	static void onMouseUpDown(const Event* evt){
 		MouseEventData *data = evt->data<MouseEventData>();
-
 		if (data->buttonPushed != NULL){
 			for (std::map<UISimpleButton*, std::pair<PullDown*, bool>>::iterator iter = PullDownSimpleButtonMap.begin();
 				iter != PullDownSimpleButtonMap.end(); ++iter)

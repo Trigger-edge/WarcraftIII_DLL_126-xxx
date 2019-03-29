@@ -117,12 +117,12 @@ OBSERVER_EVENT_HANDLER(NetEventHook) {
 		Game_Init();
 		
 		War3GameUI = GameUIObjectGet();
-		HookManager->replace(War3GameUI, 57, true);
-		OrgGameUIEventHandler = HookManager->apply(War3GameUI, 0xC, GameUIEventHook);
+		//HookManager->replace(War3GameUI, 57, true);
+	//	OrgGameUIEventHandler = HookManager->apply(War3GameUI, 0xC, GameUIEventHook);
 		
 		worldFrame = War3GameUI->world;
-		HookManager->replace(worldFrame, 57, true);
-		OrgWorldFrame0x30 = HookManager->apply(worldFrame, 0x30, WorldFrame0x30Hook);
+	//	HookManager->replace(worldFrame, 57, true);
+	//	OrgWorldFrame0x30 = HookManager->apply(worldFrame, 0x30, WorldFrame0x30Hook);
 
 		//HookManager->analysis(War3GameUI->world, 57);
 

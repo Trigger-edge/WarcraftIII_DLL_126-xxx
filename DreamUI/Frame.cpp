@@ -303,7 +303,7 @@ void Frame::tick()
 void Frame::refresh()
 {
 	if (bRefreshing) return;
-	//OutputScreen(1, "Frame::refresh() WidthRatio = %.3f", War3WindowWidthRatio());
+	//OutputScreen(1, "Frame::refresh() WidthRatioX = %.3f", War3WindowRatioX());
 	bRefreshing = true;
 
 	setWidth(this->_width);

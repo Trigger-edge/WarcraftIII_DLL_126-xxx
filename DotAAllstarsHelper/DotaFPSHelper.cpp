@@ -22,15 +22,15 @@ int __stdcall SetMaxFps( int fps )
 }
 
 
-bool WGLExtensionSupported(const char *extension_name)
+bool WGLExtensionSupported( const char *extension_name )
 {
 	// this is pointer to function which returns pointer to string with list of all wgl extensions
 	PFNWGLGETEXTENSIONSSTRINGEXTPROC _wglGetExtensionsStringEXT = NULL;
 
 	// determine pointer to wglGetExtensionsStringEXT function
-	_wglGetExtensionsStringEXT = (PFNWGLGETEXTENSIONSSTRINGEXTPROC)wglGetProcAddress("wglGetExtensionsStringEXT");
+	_wglGetExtensionsStringEXT = ( PFNWGLGETEXTENSIONSSTRINGEXTPROC )wglGetProcAddress( "wglGetExtensionsStringEXT" );
 
-	if (_wglGetExtensionsStringEXT == NULL || strstr(_wglGetExtensionsStringEXT(), extension_name) == NULL)
+	if ( _wglGetExtensionsStringEXT == NULL || strstr( _wglGetExtensionsStringEXT( ), extension_name ) == NULL )
 	{
 		// string was not found
 		return false;
@@ -41,34 +41,34 @@ bool WGLExtensionSupported(const char *extension_name)
 }
 
 
-void __stdcall EnableVsync(BOOL enable)
+void __stdcall EnableVsync( BOOL enable )
 {
 	PFNWGLSWAPINTERVALEXTPROC       wglSwapIntervalEXT = NULL;
 	PFNWGLGETSWAPINTERVALEXTPROC    wglGetSwapIntervalEXT = NULL;
 
-	if (WGLExtensionSupported("WGL_EXT_swap_control"))
+	if ( WGLExtensionSupported( "WGL_EXT_swap_control" ) )
 	{
 		// Extension is supported, init pointers.
-		wglSwapIntervalEXT = (PFNWGLSWAPINTERVALEXTPROC)wglGetProcAddress("wglSwapIntervalEXT");
+		wglSwapIntervalEXT = ( PFNWGLSWAPINTERVALEXTPROC )wglGetProcAddress( "wglSwapIntervalEXT" );
 
 		//// this is another function from WGL_EXT_swap_control extension
 		//wglGetSwapIntervalEXT = (PFNWGLGETSWAPINTERVALEXTPROC)wglGetProcAddress("wglGetSwapIntervalEXT");
 		//
-		if (wglSwapIntervalEXT)
+		if ( wglSwapIntervalEXT )
 		{
-			if (SetInfoObjDebugVal)
+			if ( SetInfoObjDebugVal )
 			{
-				PrintText("CHANGE VSYNC STATE OPENGL!");
+				PrintText( "CHANGE VSYNC STATE OPENGL!" );
 			}
-			wglSwapIntervalEXT(enable);
+			wglSwapIntervalEXT( enable );
 		}
 	}
 
 
 
-		PatchOffsetValue1((void*)(GameDll + 0x62D7FB),enable ? 0xFB : 0xFF);
+	PatchOffsetValue1( ( void* )( GameDll + 0x62D7FB ), enable ? 0xFB : 0xFF );
 
-		InitD3DVSync(enable);
+	InitD3DVSync( enable );
 
 }
 
@@ -76,7 +76,7 @@ void __stdcall EnableVsync(BOOL enable)
 
 void InitThreadCpuUsage( ) {
 #ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__,__LINE__ );//;
+	AddNewLineToDotaHelperLog( __func__, __LINE__ );//;
 #endif
 	SYSTEM_INFO sysInfo;
 	FILETIME ftime, fsys, fuser;
@@ -100,7 +100,7 @@ void InitThreadCpuUsage( ) {
 
 double GetWar3CpuUsage( ) {
 #ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__,__LINE__ );//;
+	AddNewLineToDotaHelperLog( __func__, __LINE__ );//;
 #endif
 	FILETIME ftime, fsys, fuser;
 	ULARGE_INTEGER now, sys, user;
@@ -164,7 +164,7 @@ int __stdcall EnableAutoFPSlimit( BOOL enable )
 BOOL __stdcall UnitNeedDrawBar( int unitaddr )
 {
 #ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__,__LINE__ );//;
+	AddNewLineToDotaHelperLog( __func__, __LINE__ );//;
 #endif
 	if ( unitaddr && IsNotBadUnit( unitaddr ) )
 	{
@@ -198,7 +198,7 @@ void __fastcall DrawBarForUnit_my( int unitaddr )
 	{
 		BOOL needremove = FALSE;
 		int hpbaraddr = *( int* )( unitaddr + 0x50 );
-		if ( hpbaraddr)
+		if ( hpbaraddr )
 		{
 			if ( !IsNotBadUnit( unitaddr ) || ( IsTower( unitaddr ) && IsUnitInvulnerable( unitaddr ) ) )
 			{

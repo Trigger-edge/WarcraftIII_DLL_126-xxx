@@ -33,6 +33,7 @@ SetSequenceValue
 PatchModel
 RemoveTagFromModel
 SetModelScale
+SetModelScaleEx
 RedirectFile
 ApplyTerrainFilterDirectly
 SetMainFuncWork
@@ -188,3 +189,4 @@ GetMouseIngameZ
 ConvertKeyStringToKeyCode
 ConvertKeyCodeToKeyString
 FindProcess
+SetMpBarWhiteListUnitTypeID

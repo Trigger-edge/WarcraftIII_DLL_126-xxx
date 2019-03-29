@@ -39,7 +39,8 @@ public:
 	virtual ~Label ( );
 
 	char*	getText ( ) const;
-	float	getTextWidth( )const;
+	float	getTextWidth( ) const;
+	float   getTextHeight( ) const;
 	void	showBackground ( bool flag );
 	void	setFont ( const char *fontPath );
 	bool	setText ( const char *format, ... );
@@ -50,6 +51,7 @@ public:
 	virtual void	activate ( bool flag );
 	virtual void	tick ( );
 	virtual void	refresh ( );
+
 
 private:
 	UISimpleTexture		*lbBackground;

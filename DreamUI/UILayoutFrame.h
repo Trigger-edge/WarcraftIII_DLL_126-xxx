@@ -41,11 +41,11 @@ public:
 	void setRelativePosition(uint32_t originPos, UILayoutFrame* target, uint32_t toPos, float relativeX, float relativeY);
 	void setRelativeObject(UILayoutFrame* target);
 	float width() {return this->base<war3::CLayoutFrame*>(this->baseLayoutFrameOffset_)->width
-		* War3WindowWidthRatio();}
+		* War3WindowRatioX();}
 	float height() {return this->base<war3::CLayoutFrame*>(this->baseLayoutFrameOffset_)->height;}
 	void setWidth(float width) {
 		this->base<war3::CLayoutFrame*>(this->baseLayoutFrameOffset_)->width = 
-			( width / War3WindowWidthRatio() );
+			( width / War3WindowRatioX() );
 		applyPosition();
 	}
 	void setHeight(float height) {
@@ -74,6 +74,10 @@ public:
 		war3::CLayoutFrame* base = this->base<war3::CLayoutFrame*>(this->baseLayoutFrameOffset_);
 		return base ? (base->borderU + base->borderB)/2.f : 0;
 	}
+
+	void Focus( );
+	void ClearFocus( );
+
 	void applyPosition();
 private:
 	uint32_t baseLayoutFrameOffset_;

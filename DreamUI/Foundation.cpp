@@ -64,7 +64,7 @@ __declspec(noinline) void Init(HMODULE _GameDll) {
 		
 		Input_Init();
 	
-		RefreshManager_Init();
+		// RefreshManager_Init();
 		
 	//	WindowResizer::Init();
 		
@@ -87,7 +87,7 @@ __declspec(noinline) void Cleanup() {
 		DreamStorm::Cleanup();
 		ObjectHookManager_Cleanup();
 		War3Window_Cleanup();
-		RefreshManager_Cleanup();
+		//RefreshManager_Cleanup();
 	}
 
 }

@@ -66,7 +66,7 @@ private:
 	float						textHeightFactor;	//文字相对行的高度比例
 	
 public:
-	DropDownList (
+	DropDownList(
 		IUIObject				*parent,
 		float					titleHeight,
 		float					itemHeight,
@@ -74,7 +74,15 @@ public:
 		float					minWidth = 0,
 		float					fontHeightFactor = 0	//默认自动
 	);
-	
+	DropDownList(
+		UISimpleFrame				*parent,
+		float					titleHeight,
+		float					itemHeight,
+		DropDownListCallback	callback = NULL,
+		float					minWidth = 0,
+		float					fontHeightFactor = 0	//默认自动
+	);
+
 	virtual ~DropDownList ( );
 
 	void	setTexture (

@@ -8,7 +8,7 @@
 #include "GameEventObserver.h"
 #include "ToolTip.h"
 #include "HotkeyButton.h"
-
+#include "EditBoxButton.h"
 #include "Button.h"
 #include "InfoPanelRow.h"//MUSTDO
 #include "IUIObject.h"
@@ -45,7 +45,8 @@ Game::Game() {
 	UI_Init();
 	Button::Init();
 	ToolTip_Init();//TODO
-	HotkeyButton::Init();
+	HotkeyButton::Init( );
+	EditBoxButton::Init( );
 
 	GetTimer(RandomFloat(15.f, 30.f), onGlobalTimerCheck, true)->start();
 
@@ -61,10 +62,11 @@ Game::~Game() {
 	Button::Cleanup();
 	ToolTip_Cleanup();//TODO
 	HotkeyButton::Cleanup();
+	EditBoxButton::Cleanup( );
 
 	UI_Cleanup();
 
-	RefreshManager_CleanupGame();
+	//RefreshManager_CleanupGame();
 	Timer_Cleanup();
 	delete Dispatcher;
 	Dispatcher = NULL;

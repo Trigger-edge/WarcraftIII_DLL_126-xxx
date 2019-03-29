@@ -28,18 +28,40 @@ ToolTip* ToolTip::Create(
 	sf->setBorderWidth(0.01f);//size ?
 	sf->setPadding(0.002f);
 	sf->applyTextureSettings();
-	sf->setAbsolutePosition(UILayoutFrame::POSITION_BOTTOM_LEFT, 0.3f, 0.3f);
+	//sf->setAbsolutePosition( UILayoutFrame::POSITION_BOTTOM_LEFT, 0.3f, 0.3f );
+	sf->setRelativePosition( POS_BL, parent, POS_BL, parent->baseLayoutFrame()->width + 0.01, 0 );
+	/*sf->setRelativePosition(
+		UISimpleFrame::POSITION_LEFT,
+		parent,
+		UISimpleFrame::POSITION_TOP_RIGHT,
+		0, 0
+	);*/
 	sf->show();
+	
+
 	tooltip->_frame = sf;
 
 	UISimpleFontString* sfs = UISimpleFontString::Create(tooltip->_frame);
 	sprintf_s(ToolTipStrBuffer, TOOLTIP_MAX_SIZE, "%s", formattedContent);//TODO½âÎö?
 	sfs->initFont(UIObject::GetPathByName("InfoPanelTextFont"), 0.013f, false);//?
-	sfs->setRelativePosition(POS_UL, tooltip->_frame, POS_UL, 0, 0);
+	sfs->setRelativePosition(POS_UL, tooltip->_frame, POS_L, 0.01f, 0);
 	sfs->setText(ToolTipStrBuffer);
+
+
+//	sf->setWidth( sfs->getTextWidth( ) );
+
+
 	tooltip->_text = sfs;
 
 	if (!dontStore) ToolTipSet.insert(tooltip);
+
+	tooltip->applyPosition( );
+
+	//sf->setWidth( sfs->getTextWidth( ) );
+	//sf->setHeight( sfs->getTextHeight( ) );
+
+	tooltip->applyPosition( );
+
 	return tooltip;
 }
 
@@ -64,6 +86,10 @@ void ToolTip::bindButton(Button *button){
 
 void ToolTip::applyPosition(){
 	if (this){
+		
+		_frame->setWidth( _text->getTextWidth( )  * War3WindowRatioX( ) + 0.02f  );
+		_frame->setHeight( _text->getTextHeight( ) * War3WindowRatioY( ) + 0.01f  );
+
 		_frame->applyPosition();
 		_text->applyPosition();
 	}

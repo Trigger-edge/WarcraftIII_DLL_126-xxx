@@ -14,7 +14,7 @@ void UILayoutFrame::setAbsolutePosition(uint32_t originPos, float absoluteX, flo
 }
 
 void UILayoutFrame::setRelativePosition(uint32_t originPos, UILayoutFrame* target, uint32_t toPos, float relativeX, float relativeY) {
-	float x = relativeX / War3WindowWidthRatio();
+	float x = relativeX / War3WindowRatioX();
 	dreamaero::generic_this_call<war3::FRAMENODE*>(
 		Offset(LAYOUTFRAME_SETRELPOS), 
 		this->base<war3::CLayoutFrame*>(this->baseLayoutFrameOffset_), 
@@ -42,4 +42,15 @@ void UILayoutFrame::applyPosition() {
 		this->base<war3::CLayoutFrame*>(this->baseLayoutFrameOffset_),
 		1			//TODO 搞清楚这个是什么
 	);
+}
+
+void UILayoutFrame::Focus( )
+{
+	*( uint32_t* )Offset( FOCUSED_FRAME ) = this->baseLayoutFrameOffset_;
+}
+
+
+void UILayoutFrame::ClearFocus( )
+{
+	*( uint32_t* )Offset( FOCUSED_FRAME ) = 0;
 }

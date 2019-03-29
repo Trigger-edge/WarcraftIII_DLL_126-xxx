@@ -132,6 +132,8 @@ void UISimpleFrame::setParent(UISimpleFrame* parent) {
 void UISimpleFrame::setLevel(int level) {
 	war3::CSimpleFrame* baseObj = this->base<war3::CSimpleFrame*>();
 	dreamaero::generic_this_call<uint32_t>(Offset(SIMPLEFRAME_SETLEVEL), baseObj, level);
+
+	this->applyPosition( );
 }
 
 UILayoutFrame *UISimpleFrame::parent()

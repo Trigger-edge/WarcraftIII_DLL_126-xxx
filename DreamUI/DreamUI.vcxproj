@@ -52,6 +52,7 @@
     <ClCompile Include="CheckBox.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="DropDownList.cpp" />
+    <ClCompile Include="EditBoxButton.cpp" />
     <ClCompile Include="EventDispatcher.cpp" />
     <ClCompile Include="Foundation.cpp" />
     <ClCompile Include="Frame.cpp" />
@@ -116,6 +117,7 @@
     <ClInclude Include="CustomDataObject.h" />
     <ClInclude Include="DreamUI.h" />
     <ClInclude Include="DropDownList.h" />
+    <ClInclude Include="EditBoxButton.h" />
     <ClInclude Include="Event.h" />
     <ClInclude Include="EventData.h" />
     <ClInclude Include="EventDispatcher.h" />

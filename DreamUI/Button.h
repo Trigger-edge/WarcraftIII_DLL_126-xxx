@@ -10,7 +10,7 @@
 #include "Observer.h"
 #include "Event.h"
 #include "IUIObject.h"
-
+#include <string>
 class ToolTip;
 class Button;
 class Label;
@@ -22,7 +22,7 @@ class Button {
 public:
 	Button();
 
-	Button (
+	Button(
 		UISimpleFrame*			parent,
 		float					width,
 		float					height,
@@ -39,7 +39,9 @@ public:
 
 	void			setAbsolutePosition (UISimpleButton::Position originPos, float x, float y);
 	void			setRelativePosition (uint32_t originPos, UILayoutFrame* target, uint32_t toPos, float relativeX, float relativeY);
-	void			setText (const char *text);
+	void			setText( const char *text );
+	void			setText( std::string text );
+	void Bold( bool flag );
 	const char*		getText () const;
 	void			applyPosition();
 
@@ -83,7 +85,7 @@ private:
 	Label*					_caption;
 	float					_fontHeight;
 	ToolTip*				_tooltip;
-
+	std::string				_org_text;
 	bool				_isDisabled;
 	bool				_isTextShown;
 

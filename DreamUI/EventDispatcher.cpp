@@ -92,7 +92,7 @@ void EventDispatcher::subscribe(EventListenerType callback) {
 	if (this->subscriber_count_ < EVENTDISPATCHER_MAX_SUBSCRIBER)
 		this->subscribers_[this->subscriber_count_++] = callback;
 #ifndef _VMP
-	else
-		;//OutputDebug("[WARNING] unable to add subscriber.(overflow)");
+	//else
+	//	;//OutputDebug("[WARNING] unable to add subscriber.(overflow)");
 #endif
 }

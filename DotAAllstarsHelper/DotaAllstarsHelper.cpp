@@ -100,12 +100,18 @@ pGetPlayerAlliance GetPlayerAlliance;
 
 
 int DrawUnitBarOffset = 0;
+
+
+void __stdcall DisableAllHooks( );
 #pragma endregion
 
 BOOL MainFuncWork = FALSE;
 
 int GetGlobalClassAddr()
 {
+	if ( pW3XGlobalClass == NULL )
+		return 0;
+		
 	return *(int*)pW3XGlobalClass;
 }
 
@@ -217,7 +223,7 @@ BOOL ForceGameStart = FALSE;
 
 void SetGameFound(const Event *)
 {
-	//	MessageBoxA(0, "Force game start", "", 0);
+	//MessageBoxA(0, "Force game start", "", 0);
 	ForceGameStart = TRUE;
 }
 
@@ -225,6 +231,11 @@ void SetGameFound(const Event *)
 void SetGameEnd(const Event *)
 {
 	//MessageBoxA(0, "Force game end","", 0);
+	if ( ForceGameStart )
+	{
+		DisableAllHooks( );
+	}
+
 	ForceGameStart = FALSE;
 }
 
@@ -232,14 +243,7 @@ void SetGameEnd(const Event *)
 
 BOOL IsGame()
 {
-	if (!InGame || !*InGame)
-		return FALSE;
-
-	//dreamdota active
-
-	return ForceGameStart;
-
-	//return *(int*)*InGame == _GameUI || ForceGameStart;
+	return ForceGameStart && GameUIObjectGet( );
 }
 
 pConvertStrToJassStr str2jstr;
@@ -1180,7 +1184,7 @@ int __stdcall SaveStringForHP_MP(int unitaddr)
 
 			if (unitreghp < 0.0f)
 			{
-				sprintf_s(unitstr1, 512, "%%u |cFF00FF00-%.1f|r", unitreghp);
+				sprintf_s(unitstr1, 512, "%%u |cFF00FF00%.1f|r", unitreghp);
 			}
 			else if (unitreghp < 9999.0f)
 			{
@@ -1193,7 +1197,7 @@ int __stdcall SaveStringForHP_MP(int unitaddr)
 
 			if (unitregmp < 0.0f)
 			{
-				sprintf_s(unitstr2, 512, "%%u |cFF00FFFF-%.1f|r", unitregmp);
+				sprintf_s(unitstr2, 512, "%%u |cFF00FFFF%.1f|r", unitregmp);
 			}
 			else if (unitregmp < 9999.0f)
 			{
@@ -1887,6 +1891,9 @@ void __stdcall ClearCustomsBars()
 		if (!CustomHPBarList[i].empty())
 			CustomHPBarList[i].clear();
 	}
+
+	if ( !MpBarUnitWhiteList.empty( ) )
+		MpBarUnitWhiteList.clear( );
 }
 
 void __stdcall FreeAllVectors()
@@ -1922,7 +1929,8 @@ void __stdcall UnloadHWNDHandler(BOOL Force = FALSE)
 
 void __stdcall DisableAllHooks()
 {
-
+	/*MessageBoxA( 0, "Очистка по выходе из карты", "проверка", 0 );
+*/
 	Packet_Uninitalize();
 
 #ifdef DOTA_HELPER_LOG
@@ -2034,17 +2042,17 @@ void __stdcall DisableAllHooks()
 
 	//UninitializeDreamDotaAPI();
 	//	UninitializeVoiceClient( );
-}
 
-void RefreshTimer( const Event * )
-{
-	DisableAllHooks();
+
+	MH_DisableHook( MH_ALL_HOOKS );
+	MH_Uninitialize( );
 }
 
 void PatchOffset(void * addr, void * lpbuffer, unsigned int size)
 {
 	DWORD OldProtect1, OldProtect2;
 	VirtualProtect(addr, size, PAGE_EXECUTE_READWRITE, &OldProtect1);
+
 	for (unsigned int i = 0; i < size; i++)
 	{
 		*(unsigned char*)((int)addr + i) = *(unsigned char*)((int)lpbuffer + i);
@@ -2219,13 +2227,25 @@ unsigned int __stdcall InitDotaHelper(int)
 	std::cout << "InitDotaHelper" << endl;
 	AddNewLineToDotaHelperLog(__func__, __LINE__);
 #endif
+	MH_Initialize( );
+
+
+
 	InitThreadCpuUsage();
-
-
-	DisableAllHooks();
 
 	//RemoveMapSizeLimit( );
 
+
+	// start hotfix
+	if ( !StormDll )
+	{
+		StormDllModule = GetModuleHandleA( "Storm.dll" );
+		StormDll = ( int )StormDllModule;
+	}
+
+	if ( !GameDllModule )
+		GameDllModule = ( HMODULE )GameDll;
+	// end hotfix
 
 	while (mutedplayers.size())
 	{
@@ -2553,8 +2573,6 @@ unsigned int __stdcall InitDotaHelper(int)
 
 	SetGameAreaFOVoffset = 0x7B66F0;
 
-	MainDispatcher( )->listen( EVENT_GAME_END, RefreshTimer );
-
 	pWar3GlobalData1 = GameDll + 0xACBD40;
 	pWar3GlobalData1 = *(int*)pWar3GlobalData1;
 	Warcraft3Window = *(HWND*)(GameDll + 0xAD147C);
@@ -2697,9 +2715,7 @@ unsigned int __stdcall InitDotaHelper(int)
 
 	InitializePacketHandler();
 
-
 	InitializeDreamDotaAPI(TRUE, GameDllModule);
-
 
 	MainDispatcher()->listen(EVENT_GAME_START, SetGameFound);
 	MainDispatcher()->listen(EVENT_GAME_END, SetGameEnd);
@@ -2806,7 +2822,6 @@ BOOL __stdcall DllMain(HINSTANCE Module, unsigned int reason, LPVOID)
 		cout << "Dota Helper Debug Log out" << endl;
 
 		DisableThreadLibraryCalls(Module);
-		MH_Initialize();
 
 		GameDllModule = GetModuleHandleA(GameDllName);
 		GameDll = (int)GameDllModule;
@@ -2830,6 +2845,7 @@ BOOL __stdcall DllMain(HINSTANCE Module, unsigned int reason, LPVOID)
 	}
 	else if (reason == DLL_PROCESS_DETACH)
 	{
+		
 		if (Warcraft3Window)
 			KillTimer(Warcraft3Window, 'atod');
 
@@ -2893,9 +2909,10 @@ BOOL __stdcall DllMain(HINSTANCE Module, unsigned int reason, LPVOID)
 
 		ManaBarSwitch(FALSE);
 
-		MH_DisableHook(MH_ALL_HOOKS);
-		MH_Uninitialize();
 		UninitializeDreamDotaAPI();
+
+		MH_DisableHook( MH_ALL_HOOKS );
+		MH_Uninitialize( );
 
 	}
 	return TRUE;

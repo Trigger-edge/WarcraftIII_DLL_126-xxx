@@ -7,12 +7,21 @@
 static UISimpleFrame GameSimpleConsole;
 static UISimpleFrame GameMinimapScreenFrame;
 
-UISimpleFrame* UIObject::GetGameSimpleConsole() {
-	war3::CGameUI* gameUI = GameUIObjectGet();
-	war3::CSimpleFrame* console = gameUI ? (war3::CSimpleFrame*)(gameUI->simpleConsole) : NULL;
-	if (console){
-		GameSimpleConsole = UISimpleFrame(console);
+UISimpleFrame* UIObject::GetGameSimpleConsole( ) {
+	war3::CGameUI* gameUI = GameUIObjectGet( );
+	war3::CSimpleFrame* console = gameUI ? ( war3::CSimpleFrame* )( gameUI->simpleConsole ) : NULL;
+	if ( console ) {
+		GameSimpleConsole = UISimpleFrame( console );
 		return &GameSimpleConsole;
+	}
+	return NULL;
+}
+
+UISimpleFrame* UIObject::CreateGameSimpleConsole(/*....*/ ) {
+	war3::CGameUI* gameUI = GameUIObjectGet( );
+	war3::CSimpleFrame* console = gameUI ? ( war3::CSimpleFrame* )( gameUI->simpleConsole ) : NULL;
+	if ( console ) {
+			//...
 	}
 	return NULL;
 }

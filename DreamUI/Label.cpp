@@ -156,7 +156,7 @@ void Label::initLabel(const char *text, const char *fontPath, bool withBackgroun
 	lbText->setText(lbTextContent.c_str());
 
 	float bgWidth, bgHeight;
-	bgWidth = lbText->getTextWidth()*War3WindowWidthRatio() + 0.002f/War3WindowWidthRatio();
+	bgWidth = lbText->getTextWidth()*War3WindowRatioX() + 0.002f/War3WindowRatioX();
 	bgHeight = lbTextSize + 0.002f;
 
 	lbBackground->setWidth(bgWidth);
@@ -260,7 +260,7 @@ void Label::refresh()
 
 	//重设frame大小
 	float bgWidth, bgHeight;
-	bgWidth = lbText->getTextWidth()*War3WindowWidthRatio() + 0.001f/War3WindowWidthRatio();
+	bgWidth = lbText->getTextWidth()*War3WindowRatioX() + 0.001f/War3WindowRatioX();
 	bgHeight = lbTextSize + 0.001f;
 
 	lbBackground->setWidth(bgWidth);
@@ -283,7 +283,11 @@ void Label::refresh()
 	lbBackground->fillColor(bWantShowBackground ? 0xC0000000 : 0x00000000);
 }
 
-float Label::getTextWidth() const
+float Label::getTextWidth( ) const
 {
-	return lbText->getTextWidth() * War3WindowWidthRatio();
+	return lbText->getTextWidth( ) * War3WindowRatioX( ) ;
+}
+float Label::getTextHeight( ) const
+{
+	return lbText->getTextHeight( ) * War3WindowRatioY( );
 }

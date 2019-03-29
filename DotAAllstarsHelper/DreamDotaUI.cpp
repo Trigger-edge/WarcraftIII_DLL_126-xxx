@@ -4,17 +4,32 @@
 
 // Thanks @thewisp and @fluxxu for DreamDota https://github.com/DreamHacks/dreamdota
 
-void InitializeDreamDotaAPI(BOOL config, HMODULE _GameDll)
+BOOL DreamDotaInitialized = FALSE;
+
+void InitializeDreamDotaAPI( BOOL config, HMODULE _GameDll )
 {
-	if (config)
-		RegisterConfigWindow();
+	if ( config )
+	{
+		RegisterConfigWindow( );
+
+		if ( !DreamDotaInitialized )
+		{
+			InitializeDreamUI( _GameDll );
+			DreamDotaInitialized = TRUE;
+		}
+	}
 	else
-		InitializeDreamUI(_GameDll);
+	{
+		if ( !DreamDotaInitialized )
+			InitializeDreamUI( _GameDll );
+		DreamDotaInitialized = TRUE;
+	}
 }
 
-void UninitializeDreamDotaAPI()
+void UninitializeDreamDotaAPI( )
 {
-	UnitializeDreamUI();
+	if ( DreamDotaInitialized )
+		UnitializeDreamUI( );
 }
 
 

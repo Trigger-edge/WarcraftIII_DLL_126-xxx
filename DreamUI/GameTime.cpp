@@ -12,8 +12,6 @@ void GameTime_Reset() {
 void GameTime_Update(uint32_t time) {
 	TimeUint = time;
 	TimeFloat = static_cast<float>(time) / 1000.f;
-
-
 }
 
 float Time() {

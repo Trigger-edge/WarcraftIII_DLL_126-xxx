@@ -429,7 +429,7 @@ namespace keyconverter
 		case VK_OEM_CLEAR: return "OCLEAR"; // Clear key
 		}
 
-		return "VK_UNK";
+		return "NOTHING";
 	}
 
 	// конвертировать код клавиши в строку
@@ -458,6 +458,9 @@ namespace keyconverter
 		{
 			outstr = "CTRL+" + outstr;
 		}
+
+		if ( !KeyVal )
+			return "";
 
 		return outstr;
 	}
@@ -533,7 +536,7 @@ static void HotkeyUpdate(Timer* tm)
 				(*iter)->setText((std::to_string((*iter)->getTimer()) + std::string("...")).c_str());
 				(*iter)->setTimer((*iter)->getTimer() - 1);
 			}
-			else if ((*iter)->getTimer() == 0)
+			else if ((*iter)->getTimer() <= 0)
 			{
 				(*iter)->setTimer(-1);
 				(*iter)->toggleEnteringHotkey();
@@ -543,15 +546,28 @@ static void HotkeyUpdate(Timer* tm)
 				{
 					(*iter)->hotkeyButtonCallback((*iter));
 				}
-				break;
 			}
+
+			break;
 		}
 	}
 }
 
 void CallbackHotkeyButton(Button *btn) {
 	HotkeyButton *btnhot = (HotkeyButton *)btn;
-	btnhot->toggleEnteringHotkey();
+
+
+	for ( std::set<HotkeyButton *>::iterator iter = HotkeyButtonSet.begin( );
+		iter != HotkeyButtonSet.end( ); ++iter )
+	{
+		if ( ( *iter )->isEnteringHotkey( ) ) {
+			return;
+		}
+	}
+
+
+	btnhot->toggleEnteringHotkey( );
+
 	if (btnhot->isEnteringHotkey()) {
 		//set text to "..."
 		btnhot->setTimer(2);
@@ -577,7 +593,8 @@ void DetectHotkey(const Event *evt) {
 			{
 				(*iter)->hotkeyButtonCallback((*iter));
 			}
-			data->discard();	 DiscardCurrentEvent();
+			data->discard();	 
+			DiscardCurrentEvent();
 			break;
 		}
 	}
@@ -634,11 +651,21 @@ HotkeyButton::~HotkeyButton() {
 
 void HotkeyButton::Init() {
 	HotkeyButtonSet.clear();
-	//MainDispatcher()->listen(EVENT_KEY_DOWN, DetectHotkey);
-
-	GetTimer(1, HotkeyUpdate, true)->start();
+	GetTimer(1, HotkeyUpdate, true,TimeType::TimeGame)->start();
 }
 
 void HotkeyButton::Cleanup() {
 	HotkeyButtonSet.clear();
+}
+
+void HotkeyButton::StopInput( )
+{
+	for ( std::set<HotkeyButton *>::iterator iter = HotkeyButtonSet.begin( );
+		iter != HotkeyButtonSet.end( ); ++iter )
+	{
+		if ( ( *iter )->isEnteringHotkey( ) ) {
+			( *iter )->toggleEnteringHotkey( );
+			( *iter )->setText( "????" );
+		}
+	}
 }

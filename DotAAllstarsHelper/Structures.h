@@ -276,10 +276,13 @@ struct ModelSequenceReSpeedStruct
 struct ModelScaleStruct
 {
 	string FilePath;
-	float Scale;
+	float Scale, ScaleX, ScaleY, ScaleZ;
 	ModelScaleStruct( )
 	{
 		Scale = 0.0f;
+		ScaleX = 0.0f;
+		ScaleY = 0.0f;
+		ScaleZ = 0.0f;
 		FilePath = string( );
 	}
 };

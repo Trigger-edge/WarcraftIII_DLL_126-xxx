@@ -10,6 +10,7 @@ class UIObject : public War3ClassWrapper{
 public:
 	static const char* GetPathByName(const char* name, const char* type = NULL);
 	static UISimpleFrame* GetGameSimpleConsole();
+	UISimpleFrame * CreateGameSimpleConsole( );
 	static UISimpleFrame* GetMinimapFrame();
 
 	UIObject() {}

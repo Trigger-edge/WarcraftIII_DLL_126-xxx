@@ -221,7 +221,9 @@ void PatchOffset( void * addr, void * buffer, unsigned int size );
 PBYTE HookVTableFunction( PDWORD* dwVTable, PBYTE dwHook, INT Index );
 PBYTE GetVTableFunction( PDWORD* dwVTable, INT Index );
 
-int __stdcall SetColorForUnit( unsigned int  * coloraddr, BarStruct * BarStruct );
+
+extern vector<int> MpBarUnitWhiteList;
+
 #pragma endregion
 
 
@@ -236,6 +238,10 @@ extern float hpbarscaleHeroY[ 20 ];
 extern float hpbarscaleUnitY[ 20 ];
 extern float hpbarscaleTowerY[ 20 ];
 extern vector<CustomHPBar> CustomHPBarList[ 20 ];
+int __stdcall SetColorForUnit( unsigned int  * coloraddr, BarStruct * BarStruct );
+
+
+
 #pragma endregion
 
 #pragma region ErrorHandler.cpp
@@ -594,7 +600,16 @@ void AddNewPaTestData( std::vector<unsigned char> _samples, int playerid, int pa
 
 
 
-bool IfNeedSkipAllKeyMessages();
+bool IsAnyHotkeyIsActive();
+bool IsAnyEditBoxIsActive( );
+
+void DisableInputForAnyHotkeyAndEditBox( );
+
+void CurrentEditBoxRemoveCharacter( bool right = false );
+void CurrentEditBoxMoveCursorLeft( );
+void CurrentEditBoxMoveCursorRight( );
+void CurrentEditBoxEnterText( std::wstring text );
+
 void InitializeDreamDotaAPI(BOOL config,HMODULE _GameDll);
 void UninitializeDreamDotaAPI();
 void RegisterConfigWindow();

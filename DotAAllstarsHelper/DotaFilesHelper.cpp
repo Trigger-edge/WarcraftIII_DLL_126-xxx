@@ -680,6 +680,21 @@ int __stdcall SetModelScale( const char * mdlpath, float Scale )
 	ModelScaleStruct tmpModelFix;
 	tmpModelFix.FilePath = mdlpath;
 	tmpModelFix.Scale = Scale;
+	tmpModelFix.ScaleX = 0.0f;
+	tmpModelFix.ScaleY = 0.0f;
+	tmpModelFix.ScaleZ = 0.0f;
+	ModelScaleList.push_back( tmpModelFix );
+	return 0;
+}
+
+int __stdcall SetModelScaleEx( const char * mdlpath, float x, float y, float z )
+{
+	ModelScaleStruct tmpModelFix;
+	tmpModelFix.FilePath = mdlpath;
+	tmpModelFix.Scale = 0.0f;
+	tmpModelFix.ScaleX = x;
+	tmpModelFix.ScaleY = y;
+	tmpModelFix.ScaleZ = z;
 	ModelScaleList.push_back( tmpModelFix );
 	return 0;
 }
@@ -1513,24 +1528,51 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 
 			float scaleall = mdlfix.Scale;
 
-			patchbytes = ( BYTE * )&scaleall;
+			if (scaleall != 0.0f)
+			{
+				patchbytes = ( BYTE * )&mdlfix.Scale;
 
 
-			FullPatchData.push_back( patchbytes[ 0 ] );
-			FullPatchData.push_back( patchbytes[ 1 ] );
-			FullPatchData.push_back( patchbytes[ 2 ] );
-			FullPatchData.push_back( patchbytes[ 3 ] );
+				FullPatchData.push_back( patchbytes[ 0 ] );
+				FullPatchData.push_back( patchbytes[ 1 ] );
+				FullPatchData.push_back( patchbytes[ 2 ] );
+				FullPatchData.push_back( patchbytes[ 3 ] );
 
-			FullPatchData.push_back( patchbytes[ 0 ] );
-			FullPatchData.push_back( patchbytes[ 1 ] );
-			FullPatchData.push_back( patchbytes[ 2 ] );
-			FullPatchData.push_back( patchbytes[ 3 ] );
+				FullPatchData.push_back( patchbytes[ 0 ] );
+				FullPatchData.push_back( patchbytes[ 1 ] );
+				FullPatchData.push_back( patchbytes[ 2 ] );
+				FullPatchData.push_back( patchbytes[ 3 ] );
 
-			FullPatchData.push_back( patchbytes[ 0 ] );
-			FullPatchData.push_back( patchbytes[ 1 ] );
-			FullPatchData.push_back( patchbytes[ 2 ] );
-			FullPatchData.push_back( patchbytes[ 3 ] );
+				FullPatchData.push_back( patchbytes[ 0 ] );
+				FullPatchData.push_back( patchbytes[ 1 ] );
+				FullPatchData.push_back( patchbytes[ 2 ] );
+				FullPatchData.push_back( patchbytes[ 3 ] );
+			}
+			else 
+			{
+				patchbytes = ( BYTE * )&mdlfix.ScaleX;
 
+
+				FullPatchData.push_back( patchbytes[ 0 ] );
+				FullPatchData.push_back( patchbytes[ 1 ] );
+				FullPatchData.push_back( patchbytes[ 2 ] );
+				FullPatchData.push_back( patchbytes[ 3 ] );
+
+				patchbytes = ( BYTE * )&mdlfix.ScaleY;
+
+				FullPatchData.push_back( patchbytes[ 0 ] );
+				FullPatchData.push_back( patchbytes[ 1 ] );
+				FullPatchData.push_back( patchbytes[ 2 ] );
+				FullPatchData.push_back( patchbytes[ 3 ] );
+
+				patchbytes = ( BYTE * )&mdlfix.ScaleZ;
+
+				FullPatchData.push_back( patchbytes[ 0 ] );
+				FullPatchData.push_back( patchbytes[ 1 ] );
+				FullPatchData.push_back( patchbytes[ 2 ] );
+				FullPatchData.push_back( patchbytes[ 3 ] );
+			}	
+			
 			FullPatchData.insert( FullPatchData.end( ), ( BYTE* )( HelperBytesPart3 ), ( BYTE* )( HelperBytesPart3 + sizeof( HelperBytesPart3 ) ) );
 
 			if ( !FoundGLBS )

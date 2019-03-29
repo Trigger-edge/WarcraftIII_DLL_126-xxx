@@ -528,8 +528,8 @@ namespace NWar3Frame
 			Wc3SimulateClickEvent = ( int( __thiscall * )( int btnaddr, int unk ) ) ( GameDll + 0x601F20 );
 			StartSpriteModelAnimated = ( int( __fastcall  * )( int spritemodel, int unknown_or_anim_id, void( __fastcall * SetAnimOffset )( int real_frame, float *a2, float unk_val ), int real_frame, float unk_or_start_off ) )( GameDll + 0x4E8720 );
 			UpdateFrameScale = ( void( __thiscall * )( int FrameAddr ) )( GameDll + 0x605700 );
-			SetFrameWidth = ( void( __thiscall * /*sub_6F605D90*/ )( int FrameAddr, float x ) )( GameDll + 0x605DB0 );
-			SetFrameHeight = (void( __thiscall * /*sub_6F605DB0*/ )( int FrameAddr, float y )) ( GameDll + 0x605D90 );
+			SetFrameWidth = ( void( __thiscall * /*sub_6F605D90*/ )( int FrameAddr, float x ) )( GameDll + 0x605D90 );
+			SetFrameHeight = (void( __thiscall * /*sub_6F605DB0*/ )( int FrameAddr, float y )) ( GameDll + 0x605DB0 );
 			SetTextFrameFont = (int( __thiscall * )( int FrameAddr, const char * font, float scale, int flag ))(  GameDll + 0x5FB960 );
 			CurrentFrameFocusedAddr = GameDll + 0xACE67C;
 			CFrameInitialized = true;
