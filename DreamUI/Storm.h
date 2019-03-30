@@ -46,7 +46,7 @@ namespace DreamStorm {
 	bool FileCloseFile(HANDLE hFile);
 	LANGID FileGetLocale();
 
-	void Init(HMODULE module);
+	void Init(HMODULE hModule);
 	void Cleanup();
 }
 #endif

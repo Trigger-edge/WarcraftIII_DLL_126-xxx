@@ -1,11 +1,12 @@
+#include "DotaClickHelper.h"
+
 #include "Main.h"
 #include <Input.h>
 #include <codecvt>
+#include <Timer.h>
 
-BOOL SetInfoObjDebugVal = TRUE;
 
 HWND Warcraft3Window = 0;
-
 
 WarcraftRealWNDProc WarcraftRealWNDProc_org = NULL;
 WarcraftRealWNDProc WarcraftRealWNDProc_ptr;
@@ -1063,68 +1064,6 @@ int __stdcall ShopHelper( BOOL enable )
 	ShopHelperEnabled = enable;
 	return enable;
 }
-
-int ChatEditBoxVtable = 0;
-
-
-BOOL IsChatActive( )
-{
-	return isChatBoxOn( );
-	//return  *(int*)pCurrentFrameFocusedAddr  && **(int**)pCurrentFrameFocusedAddr == GameDll + ChatEditBoxVtable;
-}
-
-BOOL IsGameFrameActive( )
-{
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__, __LINE__ );
-#endif
-
-
-	if ( IsChatActive( ) )
-	{
-		return FALSE;
-	}
-
-	BOOL a1 = TRUE, a2 = TRUE, a3 = FALSE;
-
-
-	int pGlAddr = GetGlobalClassAddr( );
-	if ( pGlAddr > 0 )
-	{
-		pGlAddr = *( int* )( pGlAddr + 0x3D0 );
-		if ( pGlAddr > 0 )
-		{
-			pGlAddr = *( int* )( pGlAddr + 0x164 );
-#ifdef DOTA_HELPER_LOG
-			AddNewLineToDotaHelperLog( __func__, __LINE__ );
-#endif
-			a1 = pGlAddr > 0;
-		}
-	}
-
-	pGlAddr = GetGlobalClassAddr( );
-	if ( pGlAddr > 0 )
-	{
-		pGlAddr = *( int* )( pGlAddr + 0x258 );
-		a2 = pGlAddr != 1;
-	}
-
-
-
-	if ( *( int* )pCurrentFrameFocusedAddr == 0 )
-	{
-		a3 = TRUE;
-	}
-
-
-
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__, __LINE__ );
-#endif
-	return a3 && a2 && a1;
-}
-
-
 BOOL rawimage_skipmouseevent = TRUE;
 
 int __stdcall RawImage_SkipMouseClick( BOOL enabled )
@@ -1204,7 +1143,8 @@ void  DisableTargetCurcor( )
 
 }
 
-void PressKeyWithDelay_timed( )
+
+void PressKeyWithDelay_timed( Timer *tm )
 {
 	if ( IsGame( ) && *IsWindowActive )
 	{
@@ -3307,17 +3247,6 @@ LRESULT __fastcall WarcraftWindowProcHooked( HWND hWnd, unsigned int _Msg, WPARA
 	{
 		TestValues[ 3 ]++;
 
-
-		if ( WM_TIMER )
-		{
-			switch ( wParam )
-			{
-			case 'atod':
-				PressKeyWithDelay_timed( );
-				break;
-			}
-		}
-
 		if ( Msg == WM_LBUTTONUP )
 		{
 			ProcessClickAtCustomFrames( );
@@ -4076,7 +4005,7 @@ void IssueFixerInit( )
 	MH_EnableHook( sub_6F339F80org );
 	MH_EnableHook( sub_6F33A010org );
 
-
+	
 	GetCameraHeight_org = pGetCameraHeight( GameDll + 0x3019A0 );
 	MH_CreateHook( GetCameraHeight_org, &GetCameraHeight_my, reinterpret_cast< void** >( &GetCameraHeight_ptr ) );
 	MH_EnableHook( GetCameraHeight_org );

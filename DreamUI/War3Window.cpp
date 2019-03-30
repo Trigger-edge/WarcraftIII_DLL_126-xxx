@@ -90,7 +90,7 @@ LRESULT __fastcall DetourWindowProc(
 )
 {
 	static bool Inited = false;
-	RECT orgRect;
+//	RECT orgRect;
 
 	if ( !Inited ) {
 		if ( TlsGetValue( GameTlsIndexGet( ) ) ) {

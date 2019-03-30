@@ -1,5 +1,6 @@
 #include "Main.h"
 #include "BlpReadWrite.h"
+#include "DotaClickHelper.h"
 
 #define MAX_IMAGES_COUNT 100000
 

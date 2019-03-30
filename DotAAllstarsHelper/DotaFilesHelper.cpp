@@ -2111,7 +2111,7 @@ BOOL __fastcall GameGetFile_my( const char * filename, int * OutDataPointer, uns
 		AddNewLineToDotaHelperLog( __func__,__LINE__ );
 #endif
 
-		return GameGetFile_ptr( filename, OutDataPointer, OutSize, unknown );
+		return NULL;
 	}
 
 	if ( !OutDataPointer || !OutSize )
@@ -2263,7 +2263,7 @@ std::string GetFileContent( std::string filename )
 
 	if ( t.tellg( ) > NULL )
 	{
-		str.reserve( t.tellg( ) );
+		str.reserve( (size_t)t.tellg( ) );
 		t.seekg( 0, std::ios::beg );
 
 		str.assign( ( std::istreambuf_iterator<char>( t ) ),

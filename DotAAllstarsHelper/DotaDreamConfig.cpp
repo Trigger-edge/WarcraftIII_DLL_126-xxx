@@ -1,4 +1,5 @@
 #include "Main.h"
+#include "DotaClickHelper.h"
 #include <Tools.h>
 #include <UISimpleFrame.h>
 #include <Button.h>

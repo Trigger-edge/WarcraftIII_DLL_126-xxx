@@ -6,10 +6,17 @@
 #include <stdint.h>
 #include "Crc32Dynamic.h"
 #include "Storm.h"
+
+
+#include "DotaClickHelper.h"
+
+
 #include <Tools.h>
 #include <EventData.h>
 #include <Game.h>
 #include <War3Window.h>
+#include <Timer.h>
+#include <Input.h>
 
 BOOL FileExist(const char * name)
 {
@@ -21,6 +28,11 @@ BOOL FileExist(const char * name)
 //DWORD GameDllsz = 0;
 //DWORD StormDLLsz = 0;
 
+
+BOOL SetInfoObjDebugVal = TRUE;
+
+#pragma region All Offsets Here
+
 //  Game.dll
 int GameDll = 0;
 //	Storm.dll
@@ -29,12 +41,7 @@ HMODULE GameDllModule = 0;
 HMODULE StormDllModule = 0;
 
 
-#pragma region All Offsets Here
-
-
-
 char buffer[4096];
-
 
 int DrawSkillPanelOffset = 0;
 int DrawSkillPanelOverlayOffset = 0;
@@ -114,6 +121,70 @@ int GetGlobalClassAddr()
 		
 	return *(int*)pW3XGlobalClass;
 }
+
+
+
+int ChatEditBoxVtable = 0;
+
+
+BOOL IsChatActive( )
+{
+	return isChatBoxOn( );
+	//return  *(int*)pCurrentFrameFocusedAddr  && **(int**)pCurrentFrameFocusedAddr == GameDll + ChatEditBoxVtable;
+}
+
+BOOL IsGameFrameActive( )
+{
+#ifdef DOTA_HELPER_LOG
+	AddNewLineToDotaHelperLog( __func__, __LINE__ );
+#endif
+
+
+	if ( IsChatActive( ) )
+	{
+		return FALSE;
+	}
+
+	BOOL a1 = TRUE, a2 = TRUE, a3 = FALSE;
+
+
+	int pGlAddr = GetGlobalClassAddr( );
+	if ( pGlAddr > 0 )
+	{
+		pGlAddr = *( int* )( pGlAddr + 0x3D0 );
+		if ( pGlAddr > 0 )
+		{
+			pGlAddr = *( int* )( pGlAddr + 0x164 );
+#ifdef DOTA_HELPER_LOG
+			AddNewLineToDotaHelperLog( __func__, __LINE__ );
+#endif
+			a1 = pGlAddr > 0;
+		}
+	}
+
+	pGlAddr = GetGlobalClassAddr( );
+	if ( pGlAddr > 0 )
+	{
+		pGlAddr = *( int* )( pGlAddr + 0x258 );
+		a2 = pGlAddr != 1;
+	}
+
+
+
+	if ( *( int* )pCurrentFrameFocusedAddr == 0 )
+	{
+		a3 = TRUE;
+	}
+
+
+
+#ifdef DOTA_HELPER_LOG
+	AddNewLineToDotaHelperLog( __func__, __LINE__ );
+#endif
+	return a3 && a2 && a1;
+}
+
+
 
 #pragma optimize("",off)
 
@@ -573,6 +644,8 @@ void InitHook()
 
 	//MH_CreateHook( Wc3DrawStage_org, &Wc3DrawStage_my, reinterpret_cast< void** >( &Wc3DrawStage_ptr ) );
 	//MH_EnableHook( Wc3DrawStage_org );
+
+	GetTimer( 0.20, PressKeyWithDelay_timed, true, TimeType::TimeGame )->start( );
 
 
 #ifdef DOTA_HELPER_LOG
@@ -2265,9 +2338,6 @@ unsigned int __stdcall InitDotaHelper(int)
 	memset(hpbarscaleUnitY, 0, sizeof(hpbarscaleUnitY));
 	memset(hpbarscaleTowerY, 0, sizeof(hpbarscaleTowerY));
 
-	if (Warcraft3Window)
-		KillTimer(Warcraft3Window, 'atod');
-
 	Warcraft3Window = 0;
 	EnableSelectHelper = FALSE;
 	AutoSelectHero = FALSE;
@@ -2666,10 +2736,6 @@ unsigned int __stdcall InitDotaHelper(int)
 
 	ChatEditBoxVtable = 0x93A7A4;
 
-	if (Warcraft3Window)
-		SetTimer(Warcraft3Window, 'atod', 20, 0);
-
-
 	SelectUnitReal = (void(__thiscall *)(int pPlayerSelectData, int pUnit, int id, int unk1, int unk2, int unk3))(GameDll + 0x424B80);
 	UpdatePlayerSelection = (void(__thiscall *)(int pPlayerSelectData, int unk))(GameDll + 0x425490);
 	ClearSelection = (int(__cdecl *)(void))(GameDll + 0x3BBAA0);
@@ -2830,35 +2896,22 @@ BOOL __stdcall DllMain(HINSTANCE Module, unsigned int reason, LPVOID)
 		Storm::Init(StormDllModule);
 
 		Warcraft3_Process = GetCurrentProcess();
-		// NEXT 3 LINES ONLY FOR TEST !!!
+		// NEXT LINES ONLY FOR TEST !!!
 		 //TestModeActivated = TRUE;
 		 //InitDotaHelper( 0x27a );
 		 ////DisableFeatures( 0xEFFF );
 		 //MainFuncWork = TRUE;
 		// EnableErrorHandler( 0);
-
-
-	
-
-
-
 	}
 	else if (reason == DLL_PROCESS_DETACH)
 	{
-		
-		if (Warcraft3Window)
-			KillTimer(Warcraft3Window, 'atod');
-
 		TerminateStarted = TRUE;
 
-
-
-		if (!GetModuleHandleA(GameDllName) || !GetModuleHandleA(StormDllName) || !GetModuleHandleA(StormDllName))
+		if (!GetProcAddress( GameDllModule,"GameMain") || !GetProcAddress( StormDllModule, ( LPCSTR )266 ) )
 		{
 			// Unable to cleanup, need just terminate process :(
 			ExitProcess(0);
 		}
-
 
 #ifdef DOTA_HELPER_LOG
 		// Unable to cleanup, need just terminate process :(
@@ -2866,54 +2919,9 @@ BOOL __stdcall DllMain(HINSTANCE Module, unsigned int reason, LPVOID)
 		//ExitProcess( 0 );
 #endif
 
-
-		UnloadHWNDHandler(TRUE);
-
-		ClearCustomsBars();
-
-		FreeAllVectors();
-
-
-		Uninitd3d8Hook(FALSE);
-
-		UninitOpenglHook();
-
-		FreeAllIHelpers();
-
-
-
-		RestoreAllOffsets();
-
-
-		UninitializeHook();
-
-
-		while (mutedplayers.size())
-		{
-			char * fMemAddr = mutedplayers.back();
-			if (fMemAddr)
-				free(fMemAddr);
-			mutedplayers.pop_back();
-		}
-
-
-
-		if (!FreeExecutableMemoryList.empty())
-		{
-			for (LPVOID lpAddr : FreeExecutableMemoryList)
-				VirtualFree(lpAddr, 0, MEM_RELEASE);
-			FreeExecutableMemoryList.clear();
-		}
-
-
-
-		ManaBarSwitch(FALSE);
-
-		UninitializeDreamDotaAPI();
-
+		DisableAllHooks( );
 		MH_DisableHook( MH_ALL_HOOKS );
 		MH_Uninitialize( );
-
 	}
 	return TRUE;
 }

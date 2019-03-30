@@ -21,20 +21,20 @@ namespace DreamStorm {
 	void* AddrFileCloseFile;
 	void* AddrFileGetLocale;
 
-	void Init(HMODULE module) {
-		StormModule = module;
-		FileOpenArchive = (PROTOTYPE_FileArchiveOpen)GetProcAddress(module, (LPCSTR)266);
-		FileCloseArchive = (PROTOTYPE_FileArchiveClose)GetProcAddress(module, (LPCSTR)252);
-		StringGetHash = (PROTOTYPE_StringGetHash)GetProcAddress(module, (LPCSTR)590);
-		AddrMemAlloc = (void*)GetProcAddress(module, (LPCSTR)401);
-		AddrMemFree = (void*)GetProcAddress(module, (LPCSTR)403);
-		AddrMemGetSize = (void*)GetProcAddress(module, (LPCSTR)404);
-		AddrMemReAlloc = (void*)GetProcAddress(module, (LPCSTR)405);
-		AddrFileOpenFileEx = (void*)GetProcAddress(module, (LPCSTR)268); 
-		AddrFileGetFileSize = (void*)GetProcAddress(module, (LPCSTR)265); 
-		AddrFileReadFile = (void*)GetProcAddress(module, (LPCSTR)269); 
-		AddrFileCloseFile = (void*)GetProcAddress(module, (LPCSTR)253); 
-		AddrFileGetLocale = (void*)GetProcAddress(module, (LPCSTR)294);
+	void Init(HMODULE hModule) {
+		StormModule = hModule;
+		FileOpenArchive = (PROTOTYPE_FileArchiveOpen)GetProcAddress(hModule, (LPCSTR)266);
+		FileCloseArchive = (PROTOTYPE_FileArchiveClose)GetProcAddress(hModule, (LPCSTR)252);
+		StringGetHash = (PROTOTYPE_StringGetHash)GetProcAddress(hModule, (LPCSTR)590);
+		AddrMemAlloc = (void*)GetProcAddress(hModule, (LPCSTR)401);
+		AddrMemFree = (void*)GetProcAddress(hModule, (LPCSTR)403);
+		AddrMemGetSize = (void*)GetProcAddress(hModule, (LPCSTR)404);
+		AddrMemReAlloc = (void*)GetProcAddress(hModule, (LPCSTR)405);
+		AddrFileOpenFileEx = (void*)GetProcAddress(hModule, (LPCSTR)268); 
+		AddrFileGetFileSize = (void*)GetProcAddress(hModule, (LPCSTR)265); 
+		AddrFileReadFile = (void*)GetProcAddress(hModule, (LPCSTR)269); 
+		AddrFileCloseFile = (void*)GetProcAddress(hModule, (LPCSTR)253); 
+		AddrFileGetLocale = (void*)GetProcAddress(hModule, (LPCSTR)294);
 		StormAvailable = true;
 	}
 

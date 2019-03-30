@@ -32,8 +32,8 @@ BOOL CIniReader::ReadBOOLean( const char* szSection, const  char* szKey, BOOL bo
 	BOOL bolResult;
 	sprintf_s(szDefault, 255, "%s", bolDefaultValue ? "TRUE" : "FALSE");
 	GetPrivateProfileStringA(szSection, szKey, szDefault, szResult, 255, m_szFileName);
-	bolResult = (stricmp(szResult, "TRUE") == 0 ||
-		stricmp(szResult, "TRUE") == 0) ? TRUE : FALSE;
+	bolResult = (_stricmp(szResult, "TRUE") == 0 ||
+		_stricmp(szResult, "TRUE") == 0) ? TRUE : FALSE;
 	return bolResult;
 }
 char* CIniReader::ReadString( const char* szSection, const  char* szKey, const char* szDefaultValue)

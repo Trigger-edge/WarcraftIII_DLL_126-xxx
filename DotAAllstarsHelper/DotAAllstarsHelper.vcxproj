@@ -170,6 +170,7 @@
     <ClInclude Include="buffer.h" />
     <ClInclude Include="Common.h" />
     <ClInclude Include="Crc32Dynamic.h" />
+    <ClInclude Include="DotaClickHelper.h" />
     <ClInclude Include="fnv.h" />
     <ClInclude Include="fp_call.h" />
     <ClInclude Include="FunctionTemplate.h" />

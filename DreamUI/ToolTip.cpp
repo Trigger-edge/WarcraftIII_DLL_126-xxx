@@ -29,7 +29,7 @@ ToolTip* ToolTip::Create(
 	sf->setPadding(0.002f);
 	sf->applyTextureSettings();
 	//sf->setAbsolutePosition( UILayoutFrame::POSITION_BOTTOM_LEFT, 0.3f, 0.3f );
-	sf->setRelativePosition( POS_BL, parent, POS_BL, parent->baseLayoutFrame()->width + 0.01, 0 );
+	sf->setRelativePosition( POS_BL, parent, POS_BL, parent->baseLayoutFrame()->width + 0.01f, 0.0f );
 	/*sf->setRelativePosition(
 		UISimpleFrame::POSITION_LEFT,
 		parent,

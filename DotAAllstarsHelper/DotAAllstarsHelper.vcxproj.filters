@@ -207,5 +207,8 @@
     <ClInclude Include="IniWriter.h">
       <Filter>Headers</Filter>
     </ClInclude>
+    <ClInclude Include="DotaClickHelper.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
