@@ -16,18 +16,9 @@ int __stdcall Player( int slotid )
 {
 	if ( slotid < 0 || slotid > 15 )
 	{
-#ifdef DOTA_HELPER_LOG
-		AddNewLineToDotaHelperLog( __func__,__LINE__ );
-		AddNewLineToDotaHelperLog( __func__,__LINE__ );//( "ERROR! BAD PLAYER SLOT", __LINE__ );
-		AddNewLineToDotaHelperLog( "Error, bad player slot!", 0 );
-#ifndef DOTA_HELPER_LOG_NEW
-		MessageBoxA( 0, "Error, bad player slot!", "FATAL ERROR", 0 );
-		DumpExceptionInfoToFile( 0 );
-#endif
-#endif
 		return _Player( 0 );
 	}
-	
+
 	return playercache[ slotid ];
 }
 
@@ -54,9 +45,6 @@ int GetGlobalPlayerData( )
 
 int GetPlayerByNumber( int number )
 {
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
 	return player_real_cache[ number ];
 }
 
@@ -67,15 +55,6 @@ int _GetPlayerByNumber( int number )
 
 	if ( number < 0 || number > 15 )
 	{
-#ifdef DOTA_HELPER_LOG
-		AddNewLineToDotaHelperLog( __func__,__LINE__ );
-		AddNewLineToDotaHelperLog( __func__,__LINE__ );//( "ERROR! BAD PLAYER SLOT", __LINE__ );
-		AddNewLineToDotaHelperLog( "Error, bad player slot!", 0 );
-#ifndef DOTA_HELPER_LOG_NEW
-		MessageBoxA( 0, "Error, bad player slot!", "FATAL ERROR", 0 );
-		DumpExceptionInfoToFile( 0 );
-#endif
-#endif
 		return 0;
 	}
 
@@ -98,9 +77,6 @@ int _GetPlayerByNumber( int number )
 // Получить ID игрока
 int GetLocalPlayerId( )
 {
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
 	return player_local_id;
 }
 
@@ -127,32 +103,12 @@ vector<char *> mutedplayers;
 //sub_6F2FB480
 pOnChatMessage pOnChatMessage_org = NULL;
 pOnChatMessage pOnChatMessage_ptr;
-#ifdef DOTA_HELPER_LOG
-char GlobalChatMessageBuffer[ 1024 ];
-#endif
-
 void __fastcall pOnChatMessage_my( int a1, int unused, int PlayerID, char * message, int a4, float a5 )
 {
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
 	char * playername = GetPlayerName( PlayerID, 1 );
 
 	if ( playername && *playername != '\0' )
 	{
-
-#ifdef DOTA_HELPER_LOG
-		if ( message && *message != '\0' )
-		{
-			memset( GlobalChatMessageBuffer, 0, 1024 );
-			sprintf_s( GlobalChatMessageBuffer, "%s:%s", playername, message );
-			AddNewLineToDotaChatLog( GlobalChatMessageBuffer );
-}
-		else
-		{
-			AddNewLineToDotaHelperLog( __func__,__LINE__ );//( "Bad message", __LINE__ );
-		}
-#endif
 
 		for ( unsigned int i = 0; i < mutedplayers.size( ); i++ )
 		{
@@ -163,14 +119,8 @@ void __fastcall pOnChatMessage_my( int a1, int unused, int PlayerID, char * mess
 		}
 
 	}
-#ifdef DOTA_HELPER_LOG
-	else
-	{
-		AddNewLineToDotaHelperLog( __func__,__LINE__ );//( "Bad player", __LINE__ );
-	}
-#endif
 	pOnChatMessage_ptr( a1, unused, PlayerID, message, a4, a5 );
-			}
+}
 
 
 int __stdcall MutePlayer( const char * str )
@@ -221,21 +171,11 @@ BOOL IsPlayerObserver( int pid )
 BOOL _IsPlayerObserver( int pid )
 {
 	BOOL retval = FALSE;
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
 	if ( pid >= 0 && pid <= 15 )
 	{
 		int player = Player( pid );
 		retval = IsPlayerObs( player );
-#ifdef DOTA_HELPER_LOG
-		AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
 	}
-
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
 	return retval;
 }
 

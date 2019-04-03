@@ -989,40 +989,28 @@ void flip_vertically( unsigned char *pixels, const size_t width, const size_t he
 
 unsigned char * Scale_WithoutResize( unsigned char *pixels, const size_t width, const size_t height, const size_t newwidth, const size_t newheight, const size_t bytes_per_pixel )
 {
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
+
 	if ( newwidth < width )
 		return pixels;
 	if ( newheight < height )
 		return pixels;
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
+
 	unsigned char * outimage = ( unsigned char * )Storm::MemAlloc( newwidth * newheight * bytes_per_pixel );
 
 	memset( outimage, 0, newwidth * newheight * bytes_per_pixel );
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
+
 
 	size_t y = 0;
 
 	for ( ; y < height; y++ )
 	{
-#ifdef DOTA_HELPER_LOG
-		AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
+
 		unsigned char * offset1 = &pixels[ y * width * bytes_per_pixel ];
 		unsigned char * offset2 = &outimage[ y * newwidth * bytes_per_pixel ];
 		size_t copysize = width * bytes_per_pixel;
-#ifdef DOTA_HELPER_LOG
-		AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
+
 		std::memcpy( offset2, offset1, copysize );
-#ifdef DOTA_HELPER_LOG
-		AddNewLineToDotaHelperLog( __func__,__LINE__ );//( ( __func__ + std::to_string( y ) ).c_str( ), __LINE__ );
-#endif
+
 	}
 
 	Storm::MemFree( pixels );
@@ -1134,9 +1122,7 @@ unsigned long Blp2Raw( StormBuffer input, StormBuffer &output, int &width, int &
 	unsigned long textureSize = 0;
 	if ( input.buf == NULL || input.length == NULL || input.length < sizeof( BLPHeader ) )
 		return 0;
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
+
 
 	std::memcpy( &blph, input.buf, sizeof( BLPHeader ) );
 
@@ -1162,15 +1148,10 @@ unsigned long Blp2Raw( StormBuffer input, StormBuffer &output, int &width, int &
 
 	pictype = ( int )blph.alphaEncoding;
 
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
+
 	if ( blph.compress == 1 )
 	{
 
-#ifdef DOTA_HELPER_LOG
-		AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
 		if ( input.length < curpos + 256 * 4 )
 		{
 			return 0;
@@ -1185,9 +1166,7 @@ unsigned long Blp2Raw( StormBuffer input, StormBuffer &output, int &width, int &
 
 		if ( alphaflag > 0 && ( blph.alphaEncoding == 4 || blph.alphaEncoding == 3 ) )
 		{
-#ifdef DOTA_HELPER_LOG
-			AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
+
 			if ( input.length < curpos + blph.sizex * blph.sizey * 2 )
 				return 0;
 
@@ -1208,16 +1187,12 @@ unsigned long Blp2Raw( StormBuffer input, StormBuffer &output, int &width, int &
 			width = ( int )blph.sizex;
 			height = ( int )blph.sizey;
 
-#ifdef DOTA_HELPER_LOG
-			AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
+
 			return textureSize;
 		}
 		else if ( alphaflag > 0 && blph.alphaEncoding == 5 )
 		{
-#ifdef DOTA_HELPER_LOG
-			AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
+
 			if ( input.length < curpos + blph.sizex*blph.sizey )
 				return 0;
 
@@ -1235,16 +1210,11 @@ unsigned long Blp2Raw( StormBuffer input, StormBuffer &output, int &width, int &
 			width = ( int )blph.sizex;
 			height = ( int )blph.sizey;
 
-#ifdef DOTA_HELPER_LOG
-			AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
 			return textureSize;
 		}
 		else
 		{
-#ifdef DOTA_HELPER_LOG
-			AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
+
 			if ( input.length < curpos + blph.sizex * blph.sizey )
 				return 0;
 
@@ -1261,9 +1231,7 @@ unsigned long Blp2Raw( StormBuffer input, StormBuffer &output, int &width, int &
 			width = ( int )blph.sizex;
 			height = ( int )blph.sizey;
 
-#ifdef DOTA_HELPER_LOG
-			AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
+
 			return textureSize;
 		}
 
@@ -1272,9 +1240,6 @@ unsigned long Blp2Raw( StormBuffer input, StormBuffer &output, int &width, int &
 	else if ( blph.compress == 0 )
 	{
 
-#ifdef DOTA_HELPER_LOG
-		AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
 		unsigned long JPEGHeaderSize;
 		std::memcpy( &JPEGHeaderSize, input.buf + curpos, 4 );
 		JPEGHeaderSize = _blp_swap_int32( JPEGHeaderSize );
@@ -1292,30 +1257,22 @@ unsigned long Blp2Raw( StormBuffer input, StormBuffer &output, int &width, int &
 
 		curpos = blph.poffs[ 0 ];
 		std::memcpy( ( tempdata.buf + JPEGHeaderSize ), input.buf + curpos, blph.psize[ 0 ] );
-#ifdef DOTA_HELPER_LOG
-		AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
+
 
 		StormBuffer tmpout;
 
 		if ( !JPG2Raw( tempdata, tmpout, width, height, bpp, filename ) )
 		{
-#ifdef DOTA_HELPER_LOG
-			AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
+
 			tmpout.Clear( );
 			tempdata.Clear( );
 			width = 0;
 			height = 0;
 
-#ifdef DOTA_HELPER_LOG
-			AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
+
 			return  0;
 		}
-#ifdef DOTA_HELPER_LOG
-		AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
+
 
 
 		tempdata.Clear( );
@@ -1329,9 +1286,7 @@ unsigned long Blp2Raw( StormBuffer input, StormBuffer &output, int &width, int &
 
 		width = ( int )blph.sizex;
 		height = ( int )blph.sizey;
-#ifdef DOTA_HELPER_LOG
-		AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
+
 		return textureSize;
 	}
 

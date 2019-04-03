@@ -637,6 +637,14 @@ void LoadDotaConfig( )
 
 }
 
+void __stdcall ShowConfigEditButton( BOOL show )
+{
+	if ( show )
+		ShowConfigButton->_backdrop->show( ); 
+	else 
+		ShowConfigButton->_backdrop->hide( );
+}
+
 void InitConfigWindow( const Event * )
 {
 	if ( !ConfigWindowInitialized )
@@ -657,9 +665,13 @@ void InitConfigWindow( const Event * )
 			0.011f
 		);
 
+
 		ShowConfigButton->setText( "Show dota config" );
 		ShowConfigButton->setAbsolutePosition( UILayoutFrame::POSITION_BOTTOM_RIGHT,
 			0.79f, 0.155f );
+
+		ShowConfigButton->_backdrop->hide( );
+
 		MainDispatcher( )->listen( EVENT_KEY_DOWN, ConfigWindowKeyDown );
 
 

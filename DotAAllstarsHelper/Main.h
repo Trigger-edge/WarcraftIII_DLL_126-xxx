@@ -1,14 +1,10 @@
 ﻿#pragma once
-//#define DOTA_HELPER_LOG
-
 #define _WIN32_WINNT 0x0501 
 #define WINVER 0x0501 
 #define NTDDI_VERSION 0x05010000
 #define VC_EXTRALEAN
 #define WIN32_LEAN_AND_MEAN
 //#define PSAPI_VERSION 1
-
-//#define DOTA_HELPER_LOG_NEW
 
 #pragma region Includes
 
@@ -127,6 +123,11 @@ extern pLoadFrameDefList LoadFrameDefList;
 inline string ToLower( string str )
 {
 	std::transform( str.begin( ), str.end( ), str.begin( ), tolower );
+	return str;
+}
+inline string ToUpper( string str )
+{
+	std::transform( str.begin( ), str.end( ), str.begin( ), toupper );
 	return str;
 }
 
@@ -270,32 +271,6 @@ extern BOOL bDllLogEnable;
 
 extern LPTOP_LEVEL_EXCEPTION_FILTER OriginFilter;
 
-#ifndef DOTA_HELPER_LOG_NEW
-#ifdef DOTA_HELPER_LOG
-
-void __cdecl DumpExceptionInfoToFile( _EXCEPTION_POINTERS * ExceptionInfo );
-
-extern void ResetTopLevelExceptionFilter( );
-
-typedef LONG( __fastcall * StormErrorHandler )( int a1, void( *a2 )( int, const char *, ... ), int a3, BYTE *a4, LPSYSTEMTIME a5 );
-extern StormErrorHandler StormErrorHandler_org;
-
-typedef void( __fastcall * ProcessNetEvents )( void * data, int unused_, int Event );
-extern ProcessNetEvents ProcessNetEvents_org;
-typedef void( __fastcall * BlizzardDebug1 ) ( const char*str );
-extern BlizzardDebug1 BlizzardDebug1_org;
-typedef void( __cdecl * BlizzardDebug2 )( const char * src, int lineid, const char * classname );
-extern BlizzardDebug2 BlizzardDebug2_org;
-typedef void( __cdecl * BlizzardDebug3 )( const char *format, ... );
-extern BlizzardDebug3 BlizzardDebug3_org;
-typedef void( __cdecl * BlizzardDebug4 )( BOOL type1, const char *format, ... );
-extern BlizzardDebug4 BlizzardDebug4_org;
-typedef void( __cdecl * BlizzardDebug5 )( const char *format, ... );
-extern BlizzardDebug5 BlizzardDebug5_org;
-typedef void( __cdecl * BlizzardDebug6 )( const char *format, ... );
-extern BlizzardDebug6 BlizzardDebug6_org;
-#endif
-#endif
 #pragma endregion
 
 

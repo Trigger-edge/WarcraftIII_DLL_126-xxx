@@ -73,14 +73,15 @@ public:
 	UISimpleFrame*			controlCoverPushed;
 	UISimpleFrame*			controlCoverDisabled;
 
+	UISimpleFrame*			_backdrop;
+	UISimpleButton*			_control;
+
 	static void Init();
 	static void Cleanup();
 private:
 	static uint32_t			indexTotal;
 
 	uint32_t				index;
-	UISimpleFrame*			_backdrop;
-	UISimpleButton*			_control;
 	ButtonCallback			_controlCallback;
 	Label*					_caption;
 	float					_fontHeight;

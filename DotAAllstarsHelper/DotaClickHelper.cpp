@@ -683,9 +683,6 @@ BOOL IsNULLButtonFound( int pButton )
 
 int __stdcall GetSkillPanelButton( int idx )
 {
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__, __LINE__ );
-#endif
 
 	if ( GetSelectedUnit( GetLocalPlayerId( ) ) )
 	{
@@ -716,9 +713,7 @@ int __stdcall GetItemPanelButton( int idx )
 {
 	if ( GetSelectedUnit( GetLocalPlayerId( ) ) )
 	{
-#ifdef DOTA_HELPER_LOG
-		AddNewLineToDotaHelperLog( __func__, __LINE__ );
-#endif
+
 		int pclass = GetGlobalClassAddr( );
 		if ( pclass > 0 )
 		{
@@ -956,9 +951,7 @@ BOOL __stdcall SimpleButtonClick( int simplebtnaddr, BOOL LeftMouse )
 
 BOOL PressSkillPanelButton( int idx, BOOL RightClick )
 {
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__, __LINE__ );
-#endif
+
 	int button = GetSkillPanelButton( idx );
 	if ( button > 0 && IsCommandButton( button ) )
 	{
@@ -974,9 +967,7 @@ BOOL PressSkillPanelButton( int idx, BOOL RightClick )
 
 BOOL PressItemPanelButton( int idx, BOOL RightClick )
 {
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__, __LINE__ );
-#endif
+
 	int button = GetItemPanelButton( idx );
 	if ( button > 0 && IsCommandButton( button ) )
 	{
@@ -992,9 +983,7 @@ BOOL PressItemPanelButton( int idx, BOOL RightClick )
 
 BOOL PressHeroPanelButton( int idx, BOOL RightClick )
 {
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__, __LINE__ );
-#endif
+
 	int button = GetHeroButton( idx );
 	if ( button > 0 && IsCommandButton( button ) )
 	{
@@ -2757,9 +2746,7 @@ BOOL ProcessRegisteredHotkeys( HWND & hWnd, unsigned int & Msg, WPARAM & wParam,
 				if ( Msg == WM_KEYDOWN /*&& !( lParam & 0x40000000 )*/ )
 				{
 
-#ifdef DOTA_HELPER_LOG
-					AddNewLineToDotaHelperLog( __func__, __LINE__ );
-#endif
+
 					//BytesToSend.push_back( 0x50 );
 					//// packet header
 					//BytesToSend.push_back( 0xFF );
@@ -2790,18 +2777,14 @@ BOOL ProcessRegisteredHotkeys( HWND & hWnd, unsigned int & Msg, WPARAM & wParam,
 					*( int* )&SendKeyEvent[ 2 ] += 4;
 					SendPacket( ( BYTE* )&SendKeyEvent[ 0 ], SendKeyEvent.size( ) );
 					SendKeyEvent.clear( );
-#ifdef DOTA_HELPER_LOG
-					AddNewLineToDotaHelperLog( __func__, __LINE__ );
-#endif
+
 					//*KeyboardAddrForKey = ( int ) wParam;
 					//*KeyboardAddrForKeyEvent = ( int ) Msg;
 					//	TriggerExecute( KeyboardTriggerHandle );
 				}
 				else if ( Msg == WM_KEYUP )
 				{
-#ifdef DOTA_HELPER_LOG
-					AddNewLineToDotaHelperLog( __func__, __LINE__ );
-#endif
+
 					SendKeyEvent.push_back( 0x50 );
 					// header custom packets
 					SendKeyEvent.push_back( 0xFF );
@@ -2824,16 +2807,12 @@ BOOL ProcessRegisteredHotkeys( HWND & hWnd, unsigned int & Msg, WPARAM & wParam,
 					*( int* )&SendKeyEvent[ 2 ] += 4;
 					SendPacket( ( BYTE* )&SendKeyEvent[ 0 ], SendKeyEvent.size( ) );
 					SendKeyEvent.clear( );
-#ifdef DOTA_HELPER_LOG
-					AddNewLineToDotaHelperLog( __func__, __LINE__ );
-#endif
+
 					//*KeyboardAddrForKey = ( int ) wParam;
 					//*KeyboardAddrForKeyEvent = ( int ) Msg;
 					//TriggerExecute( KeyboardTriggerHandle );
 				}
-#ifdef DOTA_HELPER_LOG
-				AddNewLineToDotaHelperLog( __func__, __LINE__ );
-#endif
+
 				return TRUE;
 			}
 
@@ -3029,12 +3008,7 @@ LRESULT __fastcall WarcraftWindowProcHooked( HWND hWnd, unsigned int _Msg, WPARA
 	//	}
 	//	DebugMsgShow = FALSE;
 	//}
-#ifdef DOTA_HELPER_LOG
-	if ( wParam == '0' && Msg == WM_KEYUP )
-	{
-		Storm::ShowAllLeaks( );
-	}
-#endif
+
 
 	if ( !IsGame( ) )
 	{
@@ -3181,66 +3155,16 @@ LRESULT __fastcall WarcraftWindowProcHooked( HWND hWnd, unsigned int _Msg, WPARA
 		}
 	}
 
-	
+
 
 
 	TestValues[ 2 ]++;
-
-	//if (wParam == VK_ESCAPE && Msg == WM_KEYUP)
-	//{
-	//	if (ConfigWindowCreated)
-	//	{
-	//		ShowConfigWindow("");
-
-	//	}
-	//}
-
-
-
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__, __LINE__ );
-#endif
-
 
 
 	if ( Msg == WM_MOUSEMOVE )
 	{
 		GlobalMousePos = MAKEPOINTS( lParam );
 	}
-
-
-
-	//#ifdef DOTA_HELPER_LOG
-	//	if ( Msg == WM_KEYUP && wParam == '0' )
-	//	{
-	//		ScanJassStringForErrors( 1 );
-	//		char tmpst[ 100 ];
-	//		sprintf_s( tmpst, "%i strings found", GetJassStringCount( 1 ) );
-	//		MessageBoxA( 0, tmpst, tmpst, 0 );
-	//	}
-	//#endif
-
-
-	//#ifdef DOTA_HELPER_LOG
-	//if ( Msg == WM_KEYUP && wParam == '0' )
-	//{
-	//	int unitaddr = GetSelectedUnit( GetLocalPlayerId( ) );
-	//	if ( unitaddr > 0 )
-	//	{
-	//		unsigned int abilscount = 0;
-	//		int * abils = FindUnitAbils( unitaddr, &abilscount, 0, 0 );
-	//		for ( unsigned int i = 0; i < abilscount; i++ )
-	//		{
-	//			char tmpdat[ 100 ];
-	//			int pData = *( int* )( abils[ i ] + 0x54 );
-	//			if ( pData != 0 )
-	//			{
-	//				sprintf_s( tmpdat, "A/A [%i]: %X / %X", i, *( int* )( pData + 0x30 ), *( int* )( pData + 0x34 ) );
-	//			}
-	//		}
-	//	}
-	//}
-	//#endif
 
 
 	if ( *IsWindowActive || ForceLvl2 )
@@ -3325,6 +3249,7 @@ LRESULT __fastcall WarcraftWindowProcHooked( HWND hWnd, unsigned int _Msg, WPARA
 		}
 
 		if ( AutoSelectHero )
+		{
 			if ( Msg == WM_KEYDOWN && wParam >= VK_F1 && wParam <= VK_F5 )
 			{
 				LPARAM lpFKEYScanKeyUP = ( LPARAM )( 0xC0000001 | ( LPARAM )( MapVirtualKey( wParam, 0 ) << 16 ) );
@@ -3332,8 +3257,9 @@ LRESULT __fastcall WarcraftWindowProcHooked( HWND hWnd, unsigned int _Msg, WPARA
 
 				WarcraftRealWNDProc_ptr( hWnd, WM_KEYDOWN, wParam, lpFKEYScanKeyDOWN );
 				WarcraftRealWNDProc_ptr( hWnd, WM_KEYUP, wParam, lpFKEYScanKeyUP );
-			}
 
+			}
+		}
 
 		if ( ( Msg == WM_KEYDOWN || Msg == WM_KEYUP ) && ( _wParam == VK_SHIFT || _wParam == VK_LSHIFT || _wParam == VK_RSHIFT ) )
 		{
@@ -3513,15 +3439,12 @@ LRESULT __fastcall WarcraftWindowProcHooked( HWND hWnd, unsigned int _Msg, WPARA
 				if ( SetInfoObjDebugVal && ( Msg == WM_KEYUP || Msg == WM_KEYDOWN ) )
 				{
 					PrintText( "ProcessSelectActionHotkeys ok" );
-			}
+				}
 
 				for ( int & keyCode : BlockedKeyCodes )
 				{
 					if ( keyCode == ( int )wParam )
 					{
-#ifdef DOTA_HELPER_LOG
-						AddNewLineToDotaHelperLog( __func__, __LINE__ );
-#endif
 						return DefWindowProc( hWnd, Msg, wParam, lParam );
 					}
 
@@ -3535,14 +3458,6 @@ LRESULT __fastcall WarcraftWindowProcHooked( HWND hWnd, unsigned int _Msg, WPARA
 				if ( ( wParam >= 0x41 && wParam <= 0x5A ) ||
 					( wParam >= VK_NUMPAD1 && wParam <= VK_NUMPAD8 ) )
 				{
-					/*if ( ( wParam >= 0x41 && wParam <= 0x5A ) || ( wParam >= VK_NUMPAD1 && wParam <= VK_NUMPAD8 ) )
-					{*/
-
-
-#ifdef DOTA_HELPER_LOG
-					AddNewLineToDotaHelperLog( __func__, __LINE__ );
-#endif
-
 
 
 					int selectedunits = GetSelectedUnitCountBigger( GetLocalPlayerId( ) );
@@ -3557,10 +3472,6 @@ LRESULT __fastcall WarcraftWindowProcHooked( HWND hWnd, unsigned int _Msg, WPARA
 								( unitowner != GetLocalPlayerId( ) && !GetPlayerAlliance( Player( unitowner ), Player( GetLocalPlayerId( ) ), 6 ) ) )
 							{
 
-								/*sprintf_s( processdoubleclic, "%s", "2" );
-								PrintText( processdoubleclic );*/
-
-								//PressHeroPanelButton( 0, FALSE );
 								WarcraftRealWNDProc_ptr( hWnd, WM_KEYDOWN, VK_F1, lpF1ScanKeyDOWN );
 								WarcraftRealWNDProc_ptr( hWnd, WM_KEYUP, VK_F1, lpF1ScanKeyUP );
 
@@ -3572,11 +3483,6 @@ LRESULT __fastcall WarcraftWindowProcHooked( HWND hWnd, unsigned int _Msg, WPARA
 								tmpDelayPress.NeedPressMsg = 0;
 								tmpDelayPress.TimeOut = 60;
 								DelayedPressList_pushback( tmpDelayPress );
-
-#ifdef DOTA_HELPER_LOG
-								AddNewLineToDotaHelperLog( __func__, __LINE__ );
-#endif
-
 
 								return WarcraftRealWNDProc_ptr( hWnd, Msg, wParam, lParam );
 							}
@@ -3598,26 +3504,21 @@ LRESULT __fastcall WarcraftWindowProcHooked( HWND hWnd, unsigned int _Msg, WPARA
 									if ( wParam >= VK_NUMPAD1 && wParam <= VK_NUMPAD8 )
 									{
 										LastPressedKeysTime[ wParam ] = 0;
-#ifdef DOTA_HELPER_LOG
-										AddNewLineToDotaHelperLog( __func__, __LINE__ );
-#endif
 										return DefWindowProc( hWnd, Msg, wParam, lParam );
 									}
 								}
 
-								}
 							}
+						}
 						else
+						{
 							LastPressedKeysTime[ wParam ] = GetTickCount( );
 						}
 
-
-#ifdef DOTA_HELPER_LOG
-					AddNewLineToDotaHelperLog( __func__, __LINE__ );
-#endif
-
 					}
+
 				}
+			}
 
 			if ( Msg == WM_LBUTTONDOWN )
 			{
@@ -3640,13 +3541,12 @@ LRESULT __fastcall WarcraftWindowProcHooked( HWND hWnd, unsigned int _Msg, WPARA
 						//PressHeroPanelButton( 0, FALSE );
 						WarcraftRealWNDProc_ptr( hWnd, WM_KEYDOWN, VK_F1, lpF1ScanKeyDOWN );
 						WarcraftRealWNDProc_ptr( hWnd, WM_KEYUP, VK_F1, lpF1ScanKeyUP );
-#ifdef DOTA_HELPER_LOG
-						AddNewLineToDotaHelperLog( __func__, __LINE__ );
-#endif
+
 					}
 				}
 			}
 		}
+
 		if ( Msg == WM_KEYDOWN )
 		{
 			if ( SetInfoObjDebugVal )
@@ -3655,6 +3555,7 @@ LRESULT __fastcall WarcraftWindowProcHooked( HWND hWnd, unsigned int _Msg, WPARA
 			}
 		}
 	}
+
 	else
 	{
 
@@ -3670,18 +3571,11 @@ LRESULT __fastcall WarcraftWindowProcHooked( HWND hWnd, unsigned int _Msg, WPARA
 		{
 			if ( Msg == WM_RBUTTONDOWN || Msg == WM_KEYDOWN || Msg == WM_KEYUP )
 			{
-#ifdef DOTA_HELPER_LOG
-				AddNewLineToDotaHelperLog( __func__, __LINE__ );
-#endif
 				return DefWindowProc( hWnd, Msg, wParam, lParam );
 			}
 		}
 	}
 
-
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__, __LINE__ );
-#endif
 
 	return WarcraftRealWNDProc_ptr( hWnd, Msg, wParam, lParam );
 }
@@ -3965,11 +3859,6 @@ int sub_6F33A010Offset = 0;
 // Включить фикс шифта для приказов
 void IssueFixerInit( )
 {
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__, __LINE__ );
-#endif
-
-
 	IssueWithoutTargetOrderorg = ( IssueWithoutTargetOrder )( GameDll + IssueWithoutTargetOrderOffset );
 	MH_CreateHook( IssueWithoutTargetOrderorg, &IssueWithoutTargetOrdermy, reinterpret_cast< void** >( &IssueWithoutTargetOrderptr ) );
 
@@ -4005,23 +3894,16 @@ void IssueFixerInit( )
 	MH_EnableHook( sub_6F339F80org );
 	MH_EnableHook( sub_6F33A010org );
 
-	
+
 	GetCameraHeight_org = pGetCameraHeight( GameDll + 0x3019A0 );
 	MH_CreateHook( GetCameraHeight_org, &GetCameraHeight_my, reinterpret_cast< void** >( &GetCameraHeight_ptr ) );
 	MH_EnableHook( GetCameraHeight_org );
 
-
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__, __LINE__ );
-#endif
 }
 
 // Отключить фикс шифта для приказов
 void IssueFixerDisable( )
 {
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__, __LINE__ );
-#endif
 
 	memset( LastPressedKeysTime, 0, sizeof( LastPressedKeysTime ) );
 
@@ -4550,7 +4432,6 @@ std::string CovertKeyCodeToString( unsigned int val )
 // конвертировать строку в код клавиши (комбинации клавиш)
 unsigned int CovertStringToKeyCode( std::string code )
 {
-
 	if ( code.length( ) == 0 )
 		return 0;
 
@@ -4576,7 +4457,7 @@ unsigned int CovertStringToKeyCode( std::string code )
 	}
 	else arg2 = &code[ 0 ];
 
-	int vkeyout = _StrToVKey( arg2 );
+	int vkeyout = _StrToVKey( ToUpper( arg2 ) );
 
 	outcode += vkeyout;
 
@@ -4599,7 +4480,7 @@ int __stdcall ConvertKeyStringToKeyCode( const char * str )
 }
 
 // конвертировать код клавиши в строку
-const char * __stdcall ConvertKeyCodeToKeyString( int code )
+const char * __stdcall ConvertKeyCodeToKeyString( unsigned int code )
 {
 	tmpkeycode = CovertKeyCodeToString( code );
 	return tmpkeycode.c_str( );

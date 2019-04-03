@@ -50,51 +50,6 @@ float mpbaroffsetUnitY[ 20 ];
 float mpbarscaleTowerX[ 20 ];
 float mpbarscaleTowerY[ 20 ];
 float mpbaroffsetTowerY[ 20 ];
-#ifdef DOTA_HELPER_LOG
-
-void __stdcall MPBARLOG1( )
-{
-	AddNewLineToDotaHelperLog( __func__, __LINE__ );//;
-}
-
-
-void __stdcall MPBARLOG2( )
-{
-	AddNewLineToDotaHelperLog( __func__, __LINE__ );//;
-}
-
-
-void __stdcall MPBARLOG3( )
-{
-	AddNewLineToDotaHelperLog( __func__, __LINE__ );//;
-}
-
-void __stdcall MPBARLOG4( )
-{
-	AddNewLineToDotaHelperLog( __func__, __LINE__ );//;
-}
-
-
-void __stdcall MPBARLOG5( )
-{
-	AddNewLineToDotaHelperLog( __func__, __LINE__ );//;
-}
-
-
-void __stdcall MPBARLOG6( )
-{
-	AddNewLineToDotaHelperLog( __func__, __LINE__ );//;
-}
-
-
-void __stdcall MPBARLOG7( )
-{
-	AddNewLineToDotaHelperLog( __func__, __LINE__ );//;
-}
-
-
-#endif
-
 
 void __stdcall SetMPBarXScaleForPlayer( unsigned int playerflag, float heroscale,
 	float unitscale, float towerscale )
@@ -179,26 +134,12 @@ int __stdcall InMPBarWhiteList( int unitaddr )
 int __stdcall  SetMPBarConfigForPlayer( int unitaddr )
 {
 	int retval = 0;
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__, __LINE__ );//;
-#endif
-
-
 	if ( !unitaddr || IsEnemy( unitaddr ) || IsUnitIllusion( unitaddr ) )
 		return 0;
-
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__, __LINE__ );//;
-#endif
-
 	int unitslot = GetUnitOwnerSlot( unitaddr );
 	if ( unitslot > 15 || unitslot < 0 )
 		return 0;
 
-
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__, __LINE__ );//;
-#endif
 
 	aMPBarSizeX = aMPBarSizeX_default;
 	aMPBarSizeY = aMPBarSizeY_default;
@@ -282,11 +223,6 @@ int __stdcall  SetMPBarConfigForPlayer( int unitaddr )
 
 		return 1;
 	}
-
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__, __LINE__ );//;
-#endif
-
 	return 0;
 }
 

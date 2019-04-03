@@ -121,11 +121,6 @@ int __stdcall ShowConfigWindow(const char * filename)
 
 	sprintf_s(ConfigPath, MAX_PATH, "%s", filename);
 
-
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog(__func__, __LINE__);//;
-#endif
-
 	if (!ConfigWindowCreated && filename && filename[0] != '\0')
 	{
 		ConfigFrameAddr = CreateNewFrameAndShow("DotaConfigEditor");
@@ -243,9 +238,6 @@ pWc3ControlClickButton Wc3ControlClickButton_org;
 int __fastcall Wc3ControlClickButton_my(int btnaddr, int, int unk)
 {
 	int retval = Wc3ControlClickButton_ptr(btnaddr, unk);
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog(__func__, __LINE__);//;
-#endif
 	if (GlyphButtonCreated && GlyphButtonAddr)
 	{
 		int GlyphButtonItemFrame = GetFrameItemAddress("GlyphItemButton", 0);
@@ -257,8 +249,5 @@ int __fastcall Wc3ControlClickButton_my(int btnaddr, int, int unk)
 			}
 		}
 	}
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog(__func__, __LINE__);//;
-#endif
 	return retval;
 }

@@ -124,9 +124,6 @@
     <ClCompile Include="DotaFPSHelper.cpp">
       <Filter>Src</Filter>
     </ClCompile>
-    <ClCompile Include="DotaConfigEditor.cpp">
-      <Filter>Src</Filter>
-    </ClCompile>
     <ClCompile Include="DreamDotaUI.cpp">
       <Filter>Src</Filter>
     </ClCompile>

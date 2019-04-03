@@ -20,7 +20,7 @@ vector<FileRedirectStruct> FileRedirectList;
 BOOL NeedDumpFilesToDisk = FALSE;
 int __stdcall DumpFilesToDisk( BOOL enabled )
 {
-	MessageBoxA(0,"ОШИБКА OSHIBKA ERROR"," ",0);
+	MessageBoxA( 0, "ОШИБКА OSHIBKA ERROR", " ", 0 );
 	//NeedDumpFilesToDisk = enabled;
 	return enabled;
 }
@@ -65,9 +65,6 @@ BOOL IsMemInCache( int addr )
 
 void FreeAllIHelpers( )
 {
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
 	if ( !ICONMDLCACHELIST.empty( ) )
 	{
 		for ( ICONMDLCACHE & ih : ICONMDLCACHELIST )
@@ -81,22 +78,13 @@ void FreeAllIHelpers( )
 
 		ICONMDLCACHELIST.clear( );
 	}
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
 	if ( !FileRedirectList.empty( ) )
 		FileRedirectList.clear( );
 
 	if ( !FakeFileList.empty( ) )
 		FakeFileList.clear( );
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
 	ClearAllRawImages( );
 
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
 }
 
 
@@ -136,11 +124,6 @@ int idddd = 0;
 
 void ApplyTerrainFilter( string filename, int * OutDataPointer, size_t * OutSize, BOOL IsTga )
 {
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
-
-
 	char * originfiledata = ( char * )( int )*OutDataPointer;
 	size_t sz = *OutSize;
 
@@ -230,10 +213,6 @@ int __stdcall ApplyTerrainFilterDirectly( char * filename, int * OutDataPointer,
 
 void ApplyIconFilter( string filename, int * OutDataPointer, size_t * OutSize )
 {
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
-
 	char * originfiledata = ( char * )( int )*OutDataPointer;
 	size_t sz = *OutSize;
 
@@ -244,28 +223,8 @@ void ApplyIconFilter( string filename, int * OutDataPointer, size_t * OutSize )
 	InBuffer.buf = ( char* )originfiledata;
 	InBuffer.length = sz;
 	StormBuffer OutBuffer;
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__,__LINE__ );
+	rawImageSize = Blp2Raw( InBuffer, OutBuffer, w, h, bpp, mipmaps, alphaflag, compress, alphaenconding, filename.c_str( ) );
 
-
-
-	try
-	{
-#endif
-		rawImageSize = Blp2Raw( InBuffer, OutBuffer, w, h, bpp, mipmaps, alphaflag, compress, alphaenconding, filename.c_str( ) );
-#ifdef DOTA_HELPER_LOG
-	}
-	catch ( ... )
-	{
-		rawImageSize = 0;
-		PrintText( "|cFFFF0000ERROR IN FILE HELPER!|c:BLP can not be converted!", 60.0f );
-		PrintText( ( "File path: " + filename ).c_str( ), 60.0f );
-	}
-
-#endif
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
 	if ( rawImageSize > 0 && OutBuffer.buf && OutBuffer.length && w == 64 && h == 64 )
 	{
 		//MessageBoxA( 0, "CreateFilterImage", " ", 0 );
@@ -327,15 +286,9 @@ void ApplyIconFilter( string filename, int * OutDataPointer, size_t * OutSize )
 		}
 
 		StormBuffer ResultBuffer;
-#ifdef DOTA_HELPER_LOG
-		AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
 		CreatePalettedBLP( OutBuffer, ResultBuffer, 256, filename.c_str( ), w, h, bpp, alphaflag, mipmaps );
 
 		OutBuffer.Clear( );
-#ifdef DOTA_HELPER_LOG
-		AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
 		if ( ResultBuffer.buf != NULL )
 		{
 			ICONMDLCACHE tmpih;
@@ -348,9 +301,6 @@ void ApplyIconFilter( string filename, int * OutDataPointer, size_t * OutSize )
 				Storm::MemFree( ( void* )*OutDataPointer );*/
 			*OutDataPointer = ( int )tmpih.buf;
 			*OutSize = tmpih.size;
-#ifdef DOTA_HELPER_LOG
-			AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
 
 			if ( NeedDumpFilesToDisk )
 			{
@@ -375,23 +325,7 @@ void ApplyIconFilter( string filename, int * OutDataPointer, size_t * OutSize )
 
 			}
 		}
-#ifdef DOTA_HELPER_LOG
-		else
-		{
-			AddNewLineToDotaHelperLog( __func__,__LINE__ );
-		}
-#endif
 	}
-#ifdef DOTA_HELPER_LOG
-	else if ( !rawImageSize )
-		MessageBoxA( 0, "Convert error.", " Success ! ", 0 );
-	else if ( !OutBuffer.buf || !OutBuffer.length )
-		MessageBoxA( 0, "StormBuffer futall error.", " Success ! ", 0 );
-	else if ( w != 64 || h != 64 )
-		MessageBoxA( 0, "Width/Height of image not 64x64.", " Success ! ", 0 );
-	else if ( w != 64 || h != 64 )
-		MessageBoxA( 0, "Width/Height of image not 64x64.", " Success ! ", 0 );
-#endif
 }
 
 
@@ -400,9 +334,6 @@ void ApplyIconFrameFilter( string filename, int * OutDataPointer, size_t * OutSi
 
 void ApplyTestFilter( string filename, int * OutDataPointer, size_t * OutSize )
 {
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
 
 	ICONMDLCACHE tmpih;
 
@@ -512,8 +443,8 @@ void ApplyTestFilter( string filename, int * OutDataPointer, size_t * OutSize )
 			tmpih.hashlen = filename.length( );
 			tmpih._hash = GetBufHash( filename.c_str( ), tmpih.hashlen );
 			ICONMDLCACHELIST.push_back( tmpih );
-		/*	if ( !IsMemInCache( *OutDataPointer ) && NeedReleaseUnusedMemory )
-				Storm::MemFree( ( void* )*OutDataPointer );*/
+			/*	if ( !IsMemInCache( *OutDataPointer ) && NeedReleaseUnusedMemory )
+					Storm::MemFree( ( void* )*OutDataPointer );*/
 			*OutDataPointer = ( int )tmpih.buf;
 			*OutSize = tmpih.size;
 		}
@@ -530,9 +461,6 @@ const char * CommandButtonsDisabledIconSignature = "CommandButtonsDisabled\\DIS"
 BOOL FixDisabledIconPath( string _filename, int * OutDataPointer, size_t * OutSize, BOOL unknown )
 {
 	string filename = _filename;
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
 
 	BOOL CreateDarkIcon = FALSE;
 	BOOL result = FALSE;
@@ -703,9 +631,6 @@ vector<BYTE> FullPatchData;
 
 void ProcessNodeAnims( BYTE * ModelBytes, size_t _offset, vector<int *> & TimesForReplace )
 {
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
 	Mdx_Track tmpTrack;
 	size_t offset = _offset;
 	if ( memcmp( &ModelBytes[ offset ], "KGTR", 4 ) == 0 )
@@ -741,8 +666,8 @@ void ProcessNodeAnims( BYTE * ModelBytes, size_t _offset, vector<int *> & TimesF
 		{
 			TimesForReplace.push_back( ( int * )&ModelBytes[ offset ] );
 			offset += ( tmpTrack.InterpolationType > 1 ? 40 : 16 );
-		}
 	}
+}
 
 
 	if ( memcmp( &ModelBytes[ offset ], "KGAO", 4 ) == 0 )
@@ -794,9 +719,6 @@ BYTE HelperBytesPart3[ ] = { 0xFF,0xFF,0xFF,0xFF,
 
 void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL unknown )
 {
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
 	BYTE * ModelBytes = ( BYTE* )*OutDataPointer;
 	size_t sz = *OutSize;
 
@@ -851,15 +773,15 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 			}
 
 
-		/*	if ( IsKeyPressed( '0' ) && FileExist( ".\\Test1234.mdx" ) )
-			{
-				FILE *f;
-				fopen_s( &f, ".\\Test1234.mdx", "wb" );
-				fwrite( ModelBytes, sz, 1, f );
-				fclose( f );
-				MessageBoxA( 0, "Ok dump", "DUMP", 0 );
-			}
-*/
+			/*	if ( IsKeyPressed( '0' ) && FileExist( ".\\Test1234.mdx" ) )
+				{
+					FILE *f;
+					fopen_s( &f, ".\\Test1234.mdx", "wb" );
+					fwrite( ModelBytes, sz, 1, f );
+					fclose( f );
+					MessageBoxA( 0, "Ok dump", "DUMP", 0 );
+				}
+	*/
 
 			ModelSequenceValueList.erase( ModelSequenceValueList.begin( ) + ( int )i );
 
@@ -1528,7 +1450,7 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 
 			float scaleall = mdlfix.Scale;
 
-			if (scaleall != 0.0f)
+			if ( scaleall != 0.0f )
 			{
 				patchbytes = ( BYTE * )&mdlfix.Scale;
 
@@ -1548,7 +1470,7 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 				FullPatchData.push_back( patchbytes[ 2 ] );
 				FullPatchData.push_back( patchbytes[ 3 ] );
 			}
-			else 
+			else
 			{
 				patchbytes = ( BYTE * )&mdlfix.ScaleX;
 
@@ -1571,8 +1493,8 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 				FullPatchData.push_back( patchbytes[ 1 ] );
 				FullPatchData.push_back( patchbytes[ 2 ] );
 				FullPatchData.push_back( patchbytes[ 3 ] );
-			}	
-			
+			}
+
 			FullPatchData.insert( FullPatchData.end( ), ( BYTE* )( HelperBytesPart3 ), ( BYTE* )( HelperBytesPart3 + sizeof( HelperBytesPart3 ) ) );
 
 			if ( !FoundGLBS )
@@ -1607,24 +1529,15 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 
 
 			ICONMDLCACHE * tmpih = Storm::MemAllocStruct<ICONMDLCACHE>( );
-#ifdef DOTA_HELPER_LOG
-			AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
 			StormBuffer ResultBuffer;
 			ResultBuffer.buf = ( char * )Storm::MemAlloc( FullPatchData.size( ) );
 			ResultBuffer.length = FullPatchData.size( );
-#ifdef DOTA_HELPER_LOG
-			AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
 			std::memcpy( &ResultBuffer.buf[ 0 ], &FullPatchData[ 0 ], FullPatchData.size( ) );
 
 			tmpih->buf = ResultBuffer.buf;
 			tmpih->size = ResultBuffer.length;
 			tmpih->hashlen = filename.length( );
 			tmpih->_hash = GetBufHash( filename.c_str( ), tmpih->hashlen );
-#ifdef DOTA_HELPER_LOG
-			AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
 			ICONMDLCACHELIST.push_back( *tmpih );
 
 			if ( NeedReleaseUnusedMemory )
@@ -1637,9 +1550,6 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 			sz = tmpih->size;
 
 			Storm::MemFree( tmpih );
-#ifdef DOTA_HELPER_LOG
-			AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
 			ModelScaleList.erase( ModelScaleList.begin( ) + ( int )i );
 
 		}
@@ -1659,13 +1569,13 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 			if ( GameGetFile_ptr( mdlfix.patchPath.c_str( ), &PatchFileData, &PatchFileSize, unknown ) )
 			{
 				FullPatchData.insert( FullPatchData.end( ), ( char* )( PatchFileData ), ( char* )( PatchFileData + PatchFileSize ) );
-			}
+		}
 
 
 			ModelPatchList.erase( ModelPatchList.begin( ) + ( int )i );
 
-		}
 	}
+}
 
 	if ( !FullPatchData.empty( ) )
 	{
@@ -1677,9 +1587,6 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 		if ( FoundOldHelper )
 		{
 			StormBuffer ResultBuffer;
-#ifdef DOTA_HELPER_LOG
-			AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
 			ResultBuffer.buf = ( char * )Storm::MemAlloc( tmpih->size + FullPatchData.size( ) );
 
 			ResultBuffer.length = tmpih->size + FullPatchData.size( );
@@ -1688,29 +1595,17 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 
 			std::memcpy( &ResultBuffer.buf[ sz ], &FullPatchData[ 0 ], FullPatchData.size( ) );
 
-#ifdef DOTA_HELPER_LOG
-			AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
 			Storm::MemFree( tmpih->buf );
 			tmpih->buf = ResultBuffer.buf;
 			tmpih->size = ResultBuffer.length;
 			*OutDataPointer = ( int )tmpih->buf;
 			*OutSize = tmpih->size;
-#ifdef DOTA_HELPER_LOG
-			AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
 		}
 		else
 		{
-#ifdef DOTA_HELPER_LOG
-			AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
 			StormBuffer ResultBuffer;
 			ResultBuffer.buf = ( char * )Storm::MemAlloc( sz + FullPatchData.size( ) );
 			ResultBuffer.length = sz + FullPatchData.size( );
-#ifdef DOTA_HELPER_LOG
-			AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
 			std::memcpy( &ResultBuffer.buf[ 0 ], ModelBytes, sz );
 			std::memcpy( &ResultBuffer.buf[ sz ], &FullPatchData[ 0 ], FullPatchData.size( ) );
 
@@ -1719,9 +1614,6 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 
 			tmpih->hashlen = filename.length( );
 			tmpih->_hash = GetBufHash( filename.c_str( ), tmpih->hashlen );
-#ifdef DOTA_HELPER_LOG
-			AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
 			ICONMDLCACHELIST.push_back( *tmpih );
 
 			if ( NeedReleaseUnusedMemory )
@@ -1778,9 +1670,9 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 							*( float* )&ModelBytes[ offset ] = mdlfix.Z;
 							offset += 4;
 							*( float* )&ModelBytes[ offset ] = mdlfix.Radius;
-						}
-						offset = newoffset + 4;
 					}
+						offset = newoffset + 4;
+				}
 					else
 					{
 						offset += 4;
@@ -1788,11 +1680,11 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 					}
 					offset += 4;
 				}
-			}
+		}
 
 			ModelCollisionFixList.erase( ModelCollisionFixList.begin( ) + ( int )i );
 
-		}
+	}
 
 	}
 
@@ -1890,36 +1782,21 @@ void PrintLog( const char * str )
 
 BOOL ProcessFile( string filename, int * OutDataPointer, size_t * OutSize, BOOL unknown, BOOL IsFileExistOld )
 {
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
 	BOOL IsFileExist = IsFileExistOld;
 
 	if ( !OutDataPointer || !OutSize || filename.length( ) < 3 )
 	{
-#ifdef DOTA_HELPER_LOG
-		AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
 		return IsFileExist;
 	}
 
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
 	ICONMDLCACHE tmpih;
 	BOOL FoundOldHelper = GetFromIconMdlCache( filename, &tmpih );
 	if ( FoundOldHelper )
 	{
 		*OutDataPointer = ( int )tmpih.buf;
 		*OutSize = tmpih.size;
-#ifdef DOTA_HELPER_LOG
-		AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
 		return TRUE;
 	}
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
 
 	for ( RawImageStruct & s : ListOfRawImages )
 	{
@@ -1927,9 +1804,6 @@ BOOL ProcessFile( string filename, int * OutDataPointer, size_t * OutSize, BOOL 
 		{
 			if ( ToLower( filename ) == ToLower( s.filename ) )
 			{
-#ifdef DOTA_HELPER_LOG
-				AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
 				*OutDataPointer = ( int )s.ingamebuffer.buf;
 				*OutSize = s.ingamebuffer.length;
 				return TRUE;
@@ -1937,16 +1811,9 @@ BOOL ProcessFile( string filename, int * OutDataPointer, size_t * OutSize, BOOL 
 		}
 	}
 
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
 
 
 	string FileExtension = ToLower( fs::path( filename ).extension( ).string( ) );
-
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
 
 
 	if ( FileExtension == string( ".tga" ) )
@@ -1993,14 +1860,8 @@ BOOL ProcessFile( string filename, int * OutDataPointer, size_t * OutSize, BOOL 
 				size_t DataSize = *OutSize;
 
 				StormBuffer ResultBuffer;
-#ifdef DOTA_HELPER_LOG
-				AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
 				ResultBuffer.buf = ( char * )Storm::MemAlloc( DataSize );
 				ResultBuffer.length = DataSize;
-#ifdef DOTA_HELPER_LOG
-				AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
 				std::memcpy( &ResultBuffer.buf[ 0 ], DataPointer, DataSize );
 
 				tmpih2.buf = ResultBuffer.buf;
@@ -2018,7 +1879,7 @@ BOOL ProcessFile( string filename, int * OutDataPointer, size_t * OutSize, BOOL 
 				if ( FileExtension == string( ".tga" ) )
 				{
 
-				}
+			}
 				else if ( FileExtension == string( ".blp" ) )
 				{
 					if ( !IsFileExist )
@@ -2031,14 +1892,14 @@ BOOL ProcessFile( string filename, int * OutDataPointer, size_t * OutSize, BOOL 
 						/*if ( strstr( filename.c_str( ), "terrainart" ) == filename.c_str( ) ||
 						strstr( filename.c_str( ), "replaceabletextures\\cliff" ) == filename.c_str( ) )
 						ApplyTerrainFilter( filename, OutDataPointer, OutSize, FALSE );*/
-					}
 				}
+	}
 				else if ( FileExtension == string( ".mdx" ) )
 				{
 					if ( IsFileExist )
 					{
 						ProcessMdx( filename, OutDataPointer, OutSize, unknown );
-					}
+				}
 					else
 					{
 						//return GameGetFile_ptr( "Objects\\InvalidObject\\InvalidObject.mdx", OutDataPointer, OutSize, unknown );
@@ -2052,9 +1913,9 @@ BOOL ProcessFile( string filename, int * OutDataPointer, size_t * OutSize, BOOL 
 
 
 				return TRUE;
-			}
+					}
 
-		}
+}
 	}
 
 	if ( !IsFileExist && IsFileExistOld )
@@ -2090,56 +1951,24 @@ BOOL __fastcall GameGetFile_my( const char * filename, int * OutDataPointer, uns
 	//	outfile.close( );
 	//}
 
-	if ( !(IsGame( )) && !MainFuncWork )
+	if ( !( IsGame( ) ) && !MainFuncWork )
 	{
-#ifdef DOTA_HELPER_LOG
-		AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
-
 		return IsFileExist;
-	}
-
-
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
+}
 
 	if ( TerminateStarted )
 	{
-
-#ifdef DOTA_HELPER_LOG
-		AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
-
 		return NULL;
 	}
 
 	if ( !OutDataPointer || !OutSize )
 	{
-#ifdef DOTA_HELPER_LOG
-		AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
 		return GameGetFile_ptr( filename, OutDataPointer, OutSize, unknown );
 	}
 
 
-
-#ifdef DOTA_HELPER_LOG
-	if ( filename && *filename != '\0' )
-		AddNewLineToDotaHelperLog( __func__,__LINE__ );
-	else
-		AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
-
-
-
 	if ( filename == NULL || *filename == '\0' )
 	{
-
-#ifdef DOTA_HELPER_LOG
-		AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
-
 		return IsFileExist;
 	}
 
@@ -2153,46 +1982,7 @@ BOOL __fastcall GameGetFile_my( const char * filename, int * OutDataPointer, uns
 		}
 	}
 
-#ifdef DOTA_HELPER_LOG
-	if ( !IsFileExist )
-	{
-
-		AddNewLineToDotaHelperLog( __func__,__LINE__ );
-
-	}
-	else
-	{
-
-		AddNewLineToDotaHelperLog( __func__,__LINE__ );
-
-	}
-
-	try
-	{
-#endif
-		IsFileExist = ProcessFile( filename, OutDataPointer, OutSize, unknown, IsFileExist );
-#ifdef DOTA_HELPER_LOG
-	}
-	catch ( std::exception e )
-	{
-		MessageBoxA( 0, e.what( ), "ProcessFile Перехвачена ошибка! Catch Error!", 0 );
-	}
-	catch ( ... )
-	{
-		MessageBoxA( 0, "Неизвестная ошибка.", "ProcessFile Перехвачена ошибка! Catch Error!", 0 );
-	}
-
-	if ( !IsFileExist )
-	{
-		AddNewLineToDotaHelperLog( __func__,__LINE__ );
-	}
-	else
-	{
-		AddNewLineToDotaHelperLog( __func__,__LINE__ );
-	}
-#endif
-
-
+	IsFileExist = ProcessFile( filename, OutDataPointer, OutSize, unknown, IsFileExist );
 
 	return IsFileExist;
 }
@@ -2202,19 +1992,9 @@ BOOL __fastcall GameGetFile_my( const char * filename, int * OutDataPointer, uns
 //iconpath + _frame.blp
 int __stdcall CreateIconFrameMask( const char * iconpath )
 {
-
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__,__LINE__ );
-	cout << "CreateIconFrameMask:" << iconpath << endl;
-#endif
-
 	ApplyIconFrameFilter( iconpath, 0, 0 );
 
 
-
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
 	return TRUE;
 }
 
@@ -2256,19 +2036,19 @@ int __stdcall CreateIconFrameMask( const char * iconpath )
 
 std::string GetFileContent( std::string filename )
 {
-	std::ifstream t( filename  );
+	std::ifstream t( filename );
 	std::string str;
 
 	t.seekg( 0, std::ios::end );
 
 	if ( t.tellg( ) > NULL )
 	{
-		str.reserve( (size_t)t.tellg( ) );
+		str.reserve( ( size_t )t.tellg( ) );
 		t.seekg( 0, std::ios::beg );
 
 		str.assign( ( std::istreambuf_iterator<char>( t ) ),
 			std::istreambuf_iterator<char>( ) );
-	}
+}
 
 	return str;
 }

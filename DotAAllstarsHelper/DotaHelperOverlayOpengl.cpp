@@ -174,10 +174,6 @@ void DrawOverlayGl( )
 	if ( !GlobalDc || !(IsGame( )) ) {
 		return;
 	}
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
-
 	if ( !DotaGlobalOverlay_OPENGL )
 		DotaGlobalOverlay_OPENGL = wglCreateContext( GlobalDc );
 

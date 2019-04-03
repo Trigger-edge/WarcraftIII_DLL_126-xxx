@@ -130,7 +130,6 @@
     <ClCompile Include="DotaAllstarsHelper.cpp" />
     <ClCompile Include="DotaChatHelper.cpp" />
     <ClCompile Include="DotaClickHelper.cpp" />
-    <ClCompile Include="DotaConfigEditor.cpp" />
     <ClCompile Include="DotaCustomFrames.cpp" />
     <ClCompile Include="DotaCustomMinimap.cpp" />
     <ClCompile Include="DotaDebugHelpers.cpp" />

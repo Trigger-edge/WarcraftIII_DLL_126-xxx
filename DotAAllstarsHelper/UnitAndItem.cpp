@@ -130,9 +130,6 @@ std::vector<int> GetUnitsFromGroup( int grouphandle )
 // Является ли юнит героем
 BOOL __stdcall IsHero( int unitaddr )
 {
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__, __LINE__ );//;
-#endif
 	if ( unitaddr > 0 )
 	{
 		unsigned int ishero = *( unsigned int* )( unitaddr + 48 );
@@ -169,9 +166,6 @@ BOOL __stdcall IsUnitIllusion( int unitaddr )
 // Проверяет юнит или не юнит
 BOOL __stdcall IsNotBadUnit( int unitaddr, BOOL onlymem )
 {
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__, __LINE__ );//;
-#endif
 	if ( unitaddr > 0 )
 	{
 		int xaddraddr = ( int )&UnitVtable;
@@ -255,18 +249,12 @@ BOOL __stdcall IsNotBadUnit( int unitaddr, BOOL onlymem )
 // Проверяет враг юнит локальному игроку или нет
 BOOL __stdcall IsEnemy( int UnitAddr )
 {
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__, __LINE__ );//;
-#endif
 	if ( UnitAddr > 0 && IsNotBadUnit( UnitAddr ) )
 	{
 		int unitownerslot = GetUnitOwnerSlot( ( int )UnitAddr );
 
 		if ( GetLocalPlayerId( ) == unitownerslot || IsPlayerObserver( GetLocalPlayerId( ) ) )
 		{
-#ifdef DOTA_HELPER_LOG
-			AddNewLineToDotaHelperLog( __func__, __LINE__ );//;
-#endif
 			return FALSE;
 		}
 
@@ -277,29 +265,17 @@ BOOL __stdcall IsEnemy( int UnitAddr )
 
 			if ( Player1 == Player2 )
 			{
-#ifdef DOTA_HELPER_LOG
-				AddNewLineToDotaHelperLog( __func__, __LINE__ );//;
-#endif
 				return FALSE;
 			}
 			if ( Player1 == 0 || Player2 == 0 )
 			{
-#ifdef DOTA_HELPER_LOG
-				AddNewLineToDotaHelperLog( __func__, __LINE__ );//;
-#endif
 				return FALSE;
 			}
 
 			BOOL retval = IsPlayerEnemy( Player1, Player2 );
-#ifdef DOTA_HELPER_LOG
-			AddNewLineToDotaHelperLog( __func__, __LINE__ );//;
-#endif
 			return retval;
 		}
 	}
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__, __LINE__ );//;
-#endif
 	return FALSE;
 }
 
@@ -339,9 +315,6 @@ BOOL __stdcall IsNotBadItem( int itemaddr, BOOL extracheck )
 
 int GetSelectedUnitCountBigger( int slot )
 {
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__, __LINE__ );//;
-#endif
 	int plr = GetPlayerByNumber( slot );
 	if ( plr > 0 )
 	{
@@ -364,9 +337,6 @@ int GetSelectedUnitCountBigger( int slot )
 
 int GetSelectedUnit( int slot )
 {
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( __func__, __LINE__ );//;
-#endif
 	if ( slot >= 0 && slot <= 15 )
 	{
 		int plr = GetPlayerByNumber( slot );
@@ -379,9 +349,6 @@ int GetSelectedUnit( int slot )
 			}
 		}
 	}
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaChatLog( to_string( slot ).c_str( ) );
-#endif
 
 	return NULL;
 }
@@ -461,9 +428,6 @@ int * FindUnitAbils( int unitaddr, unsigned int * count, int abilcode, int abilb
 	*count = 0;
 	if ( unitaddr > 0 )
 	{
-#ifdef DOTA_HELPER_LOG
-		AddNewLineToDotaHelperLog( __func__, __LINE__ );//;
-#endif
 		int pAddr1 = unitaddr + 0x1DC;
 		int pAddr2 = unitaddr + 0x1E0;
 

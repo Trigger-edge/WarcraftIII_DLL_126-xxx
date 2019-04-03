@@ -32,21 +32,14 @@ namespace Storm {
 
 	template <typename Type>
 	Type* MemAllocStruct( void* userData = NULL ) {
-#ifdef DOTA_HELPER_LOG
-		AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
+
 		Type* rv = reinterpret_cast< Type* >( MemAlloc( sizeof( Type ) ) );
-#ifdef DOTA_HELPER_LOG
-		AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
+
 		return rv;
 	}
 
 	template <typename Type>
 	void* MemGetUserData( Type* addr ) {
-#ifdef DOTA_HELPER_LOG
-		AddNewLineToDotaHelperLog( __func__,__LINE__ );
-#endif
 
 		return NULL;
 	}

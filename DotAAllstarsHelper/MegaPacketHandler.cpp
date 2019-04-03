@@ -32,12 +32,6 @@ int __fastcall CNetCommandTeamChangeAlliance_my(int a1, int a2, CDataStore * pac
 
 		if (PacketInitialized)
 		{
-#ifdef DOTA_HELPER_LOG
-			AddNewLineToDotaHelperLog(__func__, __LINE__);
-#endif
-
-
-
 			int recvbytes = Handle_Jass_Packet(packetraw + packetdata->recvbytes - 1, packetdata->sizePacket - packetdata->recvbytes + 1, pid);
 
 			while (recvbytes > 0)
@@ -48,12 +42,6 @@ int __fastcall CNetCommandTeamChangeAlliance_my(int a1, int a2, CDataStore * pac
 			}
 
 			packetdata->recvbytes -= 1;
-
-
-
-#ifdef DOTA_HELPER_LOG
-			AddNewLineToDotaHelperLog(__func__, __LINE__);
-#endif
 		}
 
 		return 1;
@@ -79,9 +67,6 @@ GAME_SendPacket_p GAME_SendPacket = NULL;
 
 void SendPacket(unsigned char * packetData, unsigned int  size)
 {
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog(__func__, __LINE__);
-#endif
 	// @warning: this function thread-unsafe, do not use it in other thread.
 	// note: this is very useful function, in fact this function
 	// does wc3 ingame action, so you can use it for anything you want,
@@ -99,9 +84,6 @@ void SendPacket(unsigned char * packetData, unsigned int  size)
 	if (!GAME_SendPacket)
 		GAME_SendPacket = (GAME_SendPacket_p)(pGAME_SendPacket);
 	GAME_SendPacket(&packet, 0);
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog(__func__, __LINE__);
-#endif
 }
 
 

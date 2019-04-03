@@ -184,7 +184,7 @@ controlCoverNormal( ), controlCoverPushed( ), controlCoverDisabled( )
 	button->eventObserver->setData<Button*>( &button );
 	button->index = indexTotal++;
 
-	UISimpleFrame *sf = UISimpleFrame::Create( parent );
+	UISimpleFrame * sf = UISimpleFrame::Create( parent );
 	sf->setWidth( width );
 	sf->setHeight( height );
 	sf->show( );//默认没有纹理
@@ -340,7 +340,7 @@ void Button::setText( const char *text ) {
 	_org_text = text;
 }
 void Button::setText( std::string text ) {
-	if ( !this  ) return;
+	if ( !this ) return;
 	_caption->setText( "%s", text.c_str( ) );
 	_org_text = text;
 }

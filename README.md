@@ -779,4 +779,9 @@ Key codes:
 	 "PA1" =  PA1 key
 	 "OCLEAR" =  Clear key
 ```
-
+```
+// конвертировать строку в код клавиши (комбинации клавиш)
+int __stdcall ConvertKeyStringToKeyCode( const char * str )
+// конвертировать код клавиши в строку
+const char * __stdcall ConvertKeyCodeToKeyString( unsigned int code )
+```
