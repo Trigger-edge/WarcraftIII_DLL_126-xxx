@@ -41,8 +41,9 @@ struct RawImageStruct
 	int height;
 
 	StormBuffer img;
-
+	StormBuffer imgFlipped;
 	StormBuffer ingamebuffer;
+
 	BOOL ingame;
 	string filename;
 	BOOL used_for_overlay;
@@ -80,6 +81,7 @@ struct RawImageStruct
 	int drawdevice;
 
 	BOOL UseImageCoords;
+	BOOL Flipped;
 
 	RawImageStruct( )
 	{
@@ -93,6 +95,7 @@ struct RawImageStruct
 		RawImageCustomId = 0;
 		//img = StormBuffer( );
 		ingamebuffer = StormBuffer( );
+		imgFlipped = StormBuffer( );
 		ingame = FALSE;
 		filename = string( );
 		used_for_overlay = FALSE;
@@ -112,5 +115,6 @@ struct RawImageStruct
 		MoveTime2 = 0;
 		SleepTime = 0;
 		StartTimer = 0;
+		Flipped = FALSE;
 	}
 };

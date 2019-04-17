@@ -27,18 +27,7 @@ char RootPath[MAX_PATH];
 
 int GetGameVersion() { return (int)VersionGame; }
 
-static CRITICAL_SECTION g_at_cs;
-typedef std::set<DWORD> active_threads_set_t;
-static active_threads_set_t g_active_threads;
-
-void newhandler() {
-	MessageBox(NULL, "Bad alloc!", NULL, MB_ICONERROR);
-	ExitProcess(-1);
-}
-
 __declspec(noinline) void Init(HMODULE _GameDll) {
-
-	std::set_new_handler(newhandler);
 
 	ModuleStorm = GetModuleHandleA("Storm.dll");
 	ModuleGame = _GameDll;
@@ -48,7 +37,6 @@ __declspec(noinline) void Init(HMODULE _GameDll) {
 
 		Offset_Init(VersionGame, (DWORD)ModuleGame);
 
-		//Ëæ»úÖÖ×Ó
 		srand((unsigned int)(time(NULL)));
 
 
@@ -57,18 +45,10 @@ __declspec(noinline) void Init(HMODULE _GameDll) {
 		ObjectHookManager_Init();
 		
 		Tools_Init();
-		
-	//	Hook_Init();
-	
+
 		War3Window_Init();
 		
 		Input_Init();
-	
-		// RefreshManager_Init();
-		
-	//	WindowResizer::Init();
-		
-		InitializeCriticalSection(&g_at_cs);
 
 		Inited = true;
 	}
@@ -83,11 +63,9 @@ __declspec(noinline) void Init(HMODULE _GameDll) {
 __declspec(noinline) void Cleanup() {
 	
 	if (Inited) { 
-		DeleteCriticalSection(&g_at_cs);
 		DreamStorm::Cleanup();
 		ObjectHookManager_Cleanup();
 		War3Window_Cleanup();
-		//RefreshManager_Cleanup();
 	}
 
 }

@@ -140,7 +140,9 @@ void Input_Init( ) {
 	InputObserverObject = InputObserverGet( );
 }
 
-void Input_Update( war3::CEvent* evt ) {
+bool GlobalSkipInputSingleShot = false;
+
+bool Input_Update( war3::CEvent* evt ) {
 	uint32_t evtId = evt->id;
 	int keyCode;
 	war3::CKeyEvent* keyEvent;
@@ -151,26 +153,6 @@ void Input_Update( war3::CEvent* evt ) {
 		keyCode = keyEvent->keyCode;
 		KeySetDown( keyCode, true );
 
-		//ScrollLockËøÊó±ê
-		//if (keyCode == ProfileFetchInt("Misc", "HotkeyLockMouse", KEYCODE::KEY_SCROLLLOCK)) {
-		//	MessageBeep(MB_ICONINFORMATION);
-		//	ToggleCursorLock();
-		//	//evt->id = 0;
-		//	break;
-		//}
-
-		//ALT + ENTER ÇÐ»»ÆÁÄ»
-		if ( keyCode == KEYCODE::KEY_ENTER
-			&&	KeyIsDown( KEYCODE::KEY_ALT )
-			&& !KeyIsDown( KEYCODE::KEY_SHIFT )
-			&& !KeyIsDown( KEYCODE::KEY_CONTROL )
-			//&&	ProfileFetchInt("Misc", "AllowSwitchWindowed", 1)>0
-			) {
-
-			ToggleFullscreen( );
-			evt->id = 0;
-			break;
-		}
 
 		if ( IsInGame( ) ) {
 			if ( !isChatBoxOn( ) ) {
@@ -327,6 +309,14 @@ void Input_Update( war3::CEvent* evt ) {
 		}
 		break;
 	}
+
+	if ( GlobalSkipInputSingleShot )
+	{
+		GlobalSkipInputSingleShot = false;
+		return false;
+	}
+
+	return true;
 }
 
 bool isChatBoxOn( ) {

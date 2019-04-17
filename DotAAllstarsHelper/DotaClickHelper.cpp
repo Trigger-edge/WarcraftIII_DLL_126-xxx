@@ -1,11 +1,9 @@
 #include "DotaClickHelper.h"
-
+#include <War3Window.h>
 #include "Main.h"
 #include <Input.h>
 #include <codecvt>
 #include <Timer.h>
-
-
 HWND Warcraft3Window = 0;
 
 WarcraftRealWNDProc WarcraftRealWNDProc_org = NULL;
@@ -376,6 +374,13 @@ int __stdcall TriggerRegisterPlayerKeyboardEvent( int KeyCode )
 
 	RegisteredKeyCodes.push_back( KeyCode );
 	return 0;
+}
+
+BOOL bTriggerRegisterPlayerKeyboardBlock = TRUE;
+
+void __stdcall TriggerRegisterPlayerKeyboardBlock( BOOL enabled )
+{
+	bTriggerRegisterPlayerKeyboardBlock = enabled;
 }
 
 int __stdcall BlockKeyAction( int KeyCode )
@@ -1362,17 +1367,6 @@ POINTS GlobalMousePos = { 0,0 };
 bool InitTestValues = false;
 unsigned int TestValues[ 10 ];
 
-
-int _stdcall GetMouseX( int )
-{
-	return GlobalMousePos.x;
-}
-int _stdcall GetMouseY( int )
-{
-	return GlobalMousePos.y;
-}
-
-
 void GetMousePosition( float * x, float * y, float * z )
 {
 #ifdef BOTDEBUG
@@ -1412,6 +1406,26 @@ void GetMousePosition( float * x, float * y, float * z )
 	}
 }
 
+
+int _stdcall GetMouseX( int )
+{
+	return GlobalMousePos.x;
+}
+
+int _stdcall GetMouseY( int )
+{
+	return GlobalMousePos.y;
+}
+
+float _stdcall GetMouseFrameX( int )
+{
+	return GetMousePosition( )->x;
+}
+
+float _stdcall GetMouseFrameY( int )
+{
+	return GetMousePosition( )->y;
+}
 
 float __stdcall GetMouseIngameX( int )
 {
@@ -1552,7 +1566,6 @@ std::string NeedToBuyMessage = "We need to buy > %s";
 std::string ItemAbiltPlayerHasItem = "%s has > %s";
 std::string NeedMoreMana = "Need %i mana for > %s";
 std::string IgotSilence = "Can't use %s while silenced";
-
 
 int ignorelist[ ] = { 1,2,3 };
 
@@ -2736,17 +2749,29 @@ BOOL SkipKeyboardAndMouseWhenTeleport( HWND & hWnd, unsigned int & Msg, WPARAM &
 BOOL ProcessRegisteredHotkeys( HWND & hWnd, unsigned int & Msg, WPARAM & wParam, LPARAM & lParam )
 {
 
-
-	if ( Msg == WM_KEYDOWN || Msg == WM_KEYUP || Msg == WM_RBUTTONDOWN || Msg == WM_RBUTTONUP )
+	if ( Msg == WM_KEYDOWN || Msg == WM_KEYUP ||
+		Msg == WM_LBUTTONDOWN || Msg == WM_MBUTTONDOWN || Msg == WM_RBUTTONDOWN ||
+		Msg == WM_LBUTTONUP || Msg == WM_MBUTTONUP || Msg == WM_RBUTTONUP )
 	{
-		for ( int & keyCode : RegisteredKeyCodes )
+		for ( int keyCode : RegisteredKeyCodes )
 		{
-			if ( keyCode == ( int )wParam )
+			bool keycodefound = true;
+			if ( keyCode != ( int )wParam )
 			{
-				if ( Msg == WM_KEYDOWN /*&& !( lParam & 0x40000000 )*/ )
+				keycodefound = false;
+				keyCode = keyCode - 0x1000;
+			}
+
+			if ( keycodefound || keyCode == WM_KEYDOWN || keyCode == WM_KEYUP ||
+				keyCode == WM_LBUTTONDOWN || keyCode == WM_MBUTTONDOWN || keyCode == WM_RBUTTONDOWN ||
+				keyCode == WM_LBUTTONUP || keyCode == WM_MBUTTONUP || keyCode == WM_RBUTTONUP )
+			{
+				if ( Msg == WM_KEYDOWN || Msg == WM_LBUTTONDOWN || Msg == WM_MBUTTONDOWN || Msg == WM_RBUTTONDOWN )
 				{
-
-
+					if ( SetInfoObjDebugVal )
+					{
+						PrintText( "KEY_DOWN" );
+					}
 					//BytesToSend.push_back( 0x50 );
 					//// packet header
 					//BytesToSend.push_back( 0xFF );
@@ -2781,10 +2806,14 @@ BOOL ProcessRegisteredHotkeys( HWND & hWnd, unsigned int & Msg, WPARAM & wParam,
 					//*KeyboardAddrForKey = ( int ) wParam;
 					//*KeyboardAddrForKeyEvent = ( int ) Msg;
 					//	TriggerExecute( KeyboardTriggerHandle );
+					return bTriggerRegisterPlayerKeyboardBlock;
 				}
-				else if ( Msg == WM_KEYUP )
+				else if ( Msg == WM_KEYUP || Msg == WM_LBUTTONUP || Msg == WM_MBUTTONUP || Msg == WM_RBUTTONUP )
 				{
-
+					if ( SetInfoObjDebugVal )
+					{
+						PrintText( "KEY_UP" );
+					}
 					SendKeyEvent.push_back( 0x50 );
 					// header custom packets
 					SendKeyEvent.push_back( 0xFF );
@@ -2811,11 +2840,16 @@ BOOL ProcessRegisteredHotkeys( HWND & hWnd, unsigned int & Msg, WPARAM & wParam,
 					//*KeyboardAddrForKey = ( int ) wParam;
 					//*KeyboardAddrForKeyEvent = ( int ) Msg;
 					//TriggerExecute( KeyboardTriggerHandle );
+					return bTriggerRegisterPlayerKeyboardBlock;
 				}
-
-				return TRUE;
+				else
+				{
+					if ( SetInfoObjDebugVal )
+					{
+						PrintText( "UNKNOWN_KEY_EVENT" );
+					}
+				}
 			}
-
 		}
 	}
 
@@ -2932,6 +2966,13 @@ BOOL FixNumpad( HWND & hWnd, unsigned int & Msg, WPARAM & wParam, WPARAM & _wPar
 
 LRESULT __fastcall WarcraftWindowProcHooked( HWND hWnd, unsigned int _Msg, WPARAM _wParam, LPARAM lParam )
 {
+	if ( Warcraft3Window != hWnd && hWnd != NULL )
+	{
+		Warcraft3Window = hWnd;
+		SetWar3Window( hWnd );
+	}
+
+	DreamUI_WarWindow3Proc( hWnd, _Msg, _wParam, lParam );
 
 	if ( !InitTestValues )
 	{
@@ -3341,13 +3382,17 @@ LRESULT __fastcall WarcraftWindowProcHooked( HWND hWnd, unsigned int _Msg, WPARA
 					}
 				}
 			}
-
-			if ( SetInfoObjDebugVal && ( Msg == WM_KEYUP || Msg == WM_KEYDOWN ) )
+			if ( SetInfoObjDebugVal )
 			{
-				PrintText( "ProcessRegisteredHotkeys..." );
+				if ( Msg == WM_KEYDOWN || Msg == WM_KEYUP ||
+					Msg == WM_LBUTTONDOWN || Msg == WM_MBUTTONDOWN || Msg == WM_RBUTTONDOWN ||
+					Msg == WM_LBUTTONUP || Msg == WM_MBUTTONUP || Msg == WM_RBUTTONUP )
+				{
+					char tempDebugMsg[ 256 ];
+					sprintf_s( tempDebugMsg, "DEBUG MSG:%X WPARAM:%X LPARAM:%X", _Msg, _wParam, lParam );
+					PrintText( tempDebugMsg );
+				}
 			}
-
-
 			if ( ProcessRegisteredHotkeys( hWnd, Msg, wParam, lParam ) )
 			{
 				return DefWindowProc( hWnd, Msg, wParam, lParam );

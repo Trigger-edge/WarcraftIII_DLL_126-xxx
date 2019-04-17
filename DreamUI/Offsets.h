@@ -143,6 +143,11 @@ void* Offset(int offset);
 
 
 #define FOCUSED_FRAME 135
+
+
+#define COMMANDBUTTON_CONSTRUCT 136
+#define COMMANDBUTTON_SETSOMEFLOAT 137
+
 /*<! END Offset !>*/
 
 #endif

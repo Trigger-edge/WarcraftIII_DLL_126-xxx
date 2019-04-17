@@ -24,6 +24,7 @@ int __stdcall SetMaxFps( int fps )
 
 bool WGLExtensionSupported( const char *extension_name )
 {
+	return false;
 	// this is pointer to function which returns pointer to string with list of all wgl extensions
 	PFNWGLGETEXTENSIONSSTRINGEXTPROC _wglGetExtensionsStringEXT = NULL;
 
@@ -43,6 +44,7 @@ bool WGLExtensionSupported( const char *extension_name )
 
 void __stdcall EnableVsync( BOOL enable )
 {
+	return;
 	PFNWGLSWAPINTERVALEXTPROC       wglSwapIntervalEXT = NULL;
 	PFNWGLGETSWAPINTERVALEXTPROC    wglGetSwapIntervalEXT = NULL;
 

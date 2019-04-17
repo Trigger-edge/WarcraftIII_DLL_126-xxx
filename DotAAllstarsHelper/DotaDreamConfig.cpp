@@ -259,8 +259,6 @@ void ToggleConfigWindowState( Button *btn )
 			ShowConfigButton->setText( "Hide dota config" );
 		}
 	}
-
-
 }
 
 void ConfigWindowKeyDown( const Event * evt )

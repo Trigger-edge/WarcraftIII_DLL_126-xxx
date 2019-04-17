@@ -4,6 +4,7 @@
 #include <string>
 #include <tlhelp32.h>
 #include <iostream>
+#define GL_GLEXT_PROTOTYPES
 #include <gl\gl.h>
 #include <gl\glu.h>
 
@@ -14,19 +15,21 @@ typedef BOOL( __stdcall * wglSwapLayerBuffers_p )( HDC, UINT );
 wglSwapLayerBuffers_p wglSwapLayerBuffers_org;
 wglSwapLayerBuffers_p wglSwapLayerBuffers_ptr;
 
-//GLint maxviewport[ 2 ];
-
 void DrawAllRawImages( )
 {
 	glEnable( GL_BLEND );
-	glMatrixMode( GL_PROJECTION );
-	glLoadIdentity( );
 	float ScreenX = *GetWindowXoffset;
 	float ScreenY = *GetWindowYoffset;
 
+
 	glViewport( 0, 0, ( GLsizei )ScreenX, ( GLsizei )ScreenY );
+	glMatrixMode( GL_PROJECTION );
+	glLoadIdentity( );
+
 	glOrtho( 0.0, ScreenX, ScreenY, 0, -1.0, 1.0 );
 	glMatrixMode( GL_MODELVIEW );
+	glLoadIdentity( );
+
 	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
 	float scalex = ScreenX / DefaultSceenWidth;
@@ -35,31 +38,28 @@ void DrawAllRawImages( )
 
 	//scalex *= DesktopScreen_Width / DefaultSceenWidth;
 	//scaley *= DesktopScreen_Height / DefaultSceenHeight;
-
+	glPixelZoom( scalex, -scaley );
 
 	for ( auto & img : ListOfRawImages )
 	{
 		if ( !img.used_for_overlay )
 			continue;
 
-		glLoadIdentity( );
-
 		//	glTranslatef( ScreenX *img.overlay_x, ScreenY *img.overlay_y, 0.0f );
 
 			//float AspectRatio = DesktopScreen_Height / DesktopScreen_Width;
 			//float AspectRatio2 = DesktopScreen_Width / DesktopScreen_Height;
 
-		glPixelZoom( scalex, -scaley );
+		
+		if ( !img.Flipped  || img.needResetTexture )
+		{
+			img.needResetTexture = FALSE;
+			img.imgFlipped.Clear( );
+			img.imgFlipped.Clone( img.img );
+			img.Flipped = TRUE;
+			flip_vertically( reinterpret_cast< BYTE* >( &img.imgFlipped.buf[ 0 ] ), img.width, img.height, 4 );
+		}
 
-
-
-
-		StormBuffer tmpBuf = StormBuffer( );
-#ifdef OLD_CODE
-		tmpBuf.Clone( img.img );
-#else 
-		 
-#endif
 
 		if ( img.MoveTime1 )
 		{
@@ -135,13 +135,12 @@ void DrawAllRawImages( )
 
 
 		glRasterPos3f( ScreenX *img.overlay_x, ScreenY *img.overlay_y, 0.0f );
-		flip_vertically( reinterpret_cast< BYTE* >( &tmpBuf[ 0 ] ), img.width, img.height, 4 );
-		glDrawPixels( img.width, img.height, GL_BGRA_EXT, GL_UNSIGNED_BYTE, tmpBuf.buf );
-		tmpBuf.Clear( );
+		glDrawPixels( img.width, img.height, GL_BGRA_EXT, GL_UNSIGNED_BYTE, img.imgFlipped.buf );
 
 	}
 
 	glDisable( GL_BLEND );
+	glFlush( );
 }
 
 HGLRC DotaGlobalOverlay_OPENGL = NULL;

@@ -3,10 +3,11 @@
 #include <process.h>
 #include "SystemTools.h"
 #include "DreamUI.h"
+#include "War3Window.h"
 
 static HFONT LoadingFont = NULL;
 HMODULE hMdl;
-bool Initialized = false;
+//bool Initialized = false;
 
 //DWORD WINAPI INITTHREAD(LPVOID)
 //{
@@ -15,17 +16,18 @@ bool Initialized = false;
 //	return 0;
 //}
 
-void InitializeDreamUI(HMODULE _GameDll)
+void InitializeDreamUI(HMODULE _GameDll, HWND war3hwnd)
 {
-	if (!Initialized)
-	{
+	//if (!Initialized)
+	//{
+		SetWar3Window( war3hwnd );
 		if (!SystemTools::Init()) {
 			return;
 		}
 		Init(_GameDll);
-		Initialized = true;
+		//Initialized = true;
 		//CreateThread(0, 0, INITTHREAD, 0, 0, 0);
-	}
+	//}
 }
 
 void UnitializeDreamUI()
@@ -36,5 +38,5 @@ void UnitializeDreamUI()
 		LoadingFont = NULL;
 	}
 	SystemTools::Cleanup();
-	Initialized = false;
+	//Initialized = false;
 }

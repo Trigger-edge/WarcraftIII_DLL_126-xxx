@@ -39,7 +39,7 @@ namespace DreamStorm {
 	}
 
 	void Cleanup() {
-		
+		StormAvailable = false;
 	}
 
 	std::map<void*, void*> MemUserDataMap;

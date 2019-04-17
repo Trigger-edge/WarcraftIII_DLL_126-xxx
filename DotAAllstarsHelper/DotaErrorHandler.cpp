@@ -341,20 +341,20 @@ void InitTopLevelExceptionFilter()
 {
 	//SetUnhandledExceptionFilter( 0 );
 	//SetUnhandledExceptionFilter( TopLevelExceptionFilter );
-	AddVectoredExceptionHandler(0, DotaVectoredToSehHandler);
+	//AddVectoredExceptionHandler(0, DotaVectoredToSehHandler);
 }
 
 void ResetTopLevelExceptionFilter()
 {
-	SetUnhandledExceptionFilter(OriginFilter);
+	//SetUnhandledExceptionFilter(OriginFilter);
 }
 
 void __stdcall DisableErrorHandler(int)
 {
-	ResetTopLevelExceptionFilter();
+	//ResetTopLevelExceptionFilter();
 }
 void __stdcall EnableErrorHandler(int)
 {
-	InitTopLevelExceptionFilter();
+	//InitTopLevelExceptionFilter();
 
 }

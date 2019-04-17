@@ -19,7 +19,7 @@ void GameUIButtonClick (void *button, int mouseCode, bool sendAsProgramm);
 void GameUIKeyPress (int keyCode, bool down, bool sendAsProgramm);
 
 void Input_Init();
-void Input_Update(war3::CEvent* evt);
+bool Input_Update(war3::CEvent* evt);
 void ItemClick_Report(war3::CEvent *evt);
 
 bool KeyIsDown(const uint32_t keyCode);
@@ -30,5 +30,6 @@ void* PositionGetButton(float x, float y, bool ignoreTooLarge = true);
 void* PositionGetButton(MousePosition *pos, bool ignoreTooLarge = true);
 war3::CCommandButton* HotkeyGetButton(uint32_t key);
 bool IsCancelPanelOn();
+extern bool GlobalSkipInputSingleShot;
 
 #endif

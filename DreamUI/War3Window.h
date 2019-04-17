@@ -8,15 +8,9 @@ void AddWindowProc( CustomWndProc proc );
 HWND GetWar3Window( );
 void War3Window_Init( );
 void War3Window_Cleanup( );
-void LockCursor( );
-void UnlockCursor( );
-bool ToggleCursorLock( );
-void EnableFullscreen( );
-void DisableFullscreen( );
-bool ToggleFullscreen( );
-bool IsFullscreen( );
 bool KeyIsDown( const uint32_t keyCode );
-
+void SetWar3Window( HWND war3hwnd );
+LRESULT __fastcall DreamUI_WarWindow3Proc(HWND hwnd, UINT uMsg,	WPARAM wParam,LPARAM lParam);
 float War3WindowRatioX( );
 float War3WindowRatioY( );
 #endif

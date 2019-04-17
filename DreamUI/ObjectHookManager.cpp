@@ -180,7 +180,6 @@ ObjectHookManager* GetObjectHookManager() {
 
 void ObjectHookManager_Init() {
 	InitAnalysisVtable<MAX_ANALYSIS>(VtableAnalysis);
-
 	Manager = new ObjectHookManager();
 }
 

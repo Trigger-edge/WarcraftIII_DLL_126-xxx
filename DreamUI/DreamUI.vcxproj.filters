@@ -186,6 +186,9 @@
     <ClCompile Include="EditBoxButton.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
+    <ClCompile Include="UICommandButton.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Action.h">
@@ -432,6 +435,9 @@
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
     <ClInclude Include="EditBoxButton.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="UICommandButton.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
   </ItemGroup>

@@ -6,7 +6,7 @@
 
 BOOL DreamDotaInitialized = FALSE;
 
-void InitializeDreamDotaAPI( BOOL config, HMODULE _GameDll )
+void InitializeDreamDotaAPI( BOOL config, HMODULE _GameDll, HWND war3hwnd )
 {
 	if ( config )
 	{
@@ -14,22 +14,27 @@ void InitializeDreamDotaAPI( BOOL config, HMODULE _GameDll )
 
 		if ( !DreamDotaInitialized )
 		{
-			InitializeDreamUI( _GameDll );
+			InitializeDreamUI( _GameDll, war3hwnd );
 			DreamDotaInitialized = TRUE;
 		}
 	}
 	else
 	{
 		if ( !DreamDotaInitialized )
-			InitializeDreamUI( _GameDll );
-		DreamDotaInitialized = TRUE;
+		{
+			InitializeDreamUI( _GameDll, war3hwnd );
+			DreamDotaInitialized = TRUE;
+		}
 	}
 }
 
 void UninitializeDreamDotaAPI( )
 {
 	if ( DreamDotaInitialized )
+	{
+		DreamDotaInitialized = FALSE;
 		UnitializeDreamUI( );
+	}
 }
 
 

@@ -123,7 +123,7 @@ int __stdcall CreateRawImage( int width, int height, RGBAPix defaultcolor )
 	tmpRawImage.height = height;
 	tmpRawImage.filename = string( );
 	tmpRawImage.RawImage = resultid;
-
+	tmpRawImage.Flipped = FALSE;
 
 	ListOfRawImages.push_back( tmpRawImage );
 
@@ -203,6 +203,8 @@ int __stdcall LoadRawImage( const char * filename )
 			tmpRawImage.height = h;
 			tmpRawImage.filename = filename;
 			tmpRawImage.RawImage = resultid;
+			tmpRawImage.Flipped = FALSE;
+
 			ListOfRawImages.push_back( tmpRawImage );
 		}
 		else
@@ -228,6 +230,8 @@ int __stdcall LoadRawImage( const char * filename )
 				tmpRawImage.height = h;
 				tmpRawImage.filename = filename;
 				tmpRawImage.RawImage = resultid;
+				tmpRawImage.Flipped = FALSE;
+
 				ListOfRawImages.push_back( tmpRawImage );
 
 				PrintText( "FU##! Error filetype :O" );

@@ -191,3 +191,9 @@ ConvertKeyCodeToKeyString
 FindProcess
 SetMpBarWhiteListUnitTypeID
 ShowConfigEditButton
+UnloadAllOldHelpers
+TriggerRegisterPlayerKeyboardBlock
+AddSpellBonusItem
+GetMouseFrameX
+GetMouseFrameY
+SetMagicCampValue

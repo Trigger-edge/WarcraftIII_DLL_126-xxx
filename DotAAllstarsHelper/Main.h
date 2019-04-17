@@ -537,6 +537,6 @@ void CurrentEditBoxMoveCursorLeft( );
 void CurrentEditBoxMoveCursorRight( );
 void CurrentEditBoxEnterText( std::wstring text );
 
-void InitializeDreamDotaAPI(BOOL config,HMODULE _GameDll);
+void InitializeDreamDotaAPI(BOOL config,HMODULE _GameDll, HWND war3hwnd);
 void UninitializeDreamDotaAPI();
 void RegisterConfigWindow();

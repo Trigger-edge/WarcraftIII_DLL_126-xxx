@@ -147,12 +147,15 @@ OBSERVER_EVENT_HANDLER(NetEventHook) {
 void* OrgInputEventHandler;
 OBSERVER_EVENT_HANDLER(InputEventHook) {
 	//OutputDebug("InputEvent ID = 0x%X, Name = %s", EVENT->id, RTTIClassNameGet(EVENT));
-	Input_Update(EVENT);
-	return dreamaero::generic_this_call<uint32_t>(
-		OrgInputEventHandler,
-		OBSERVER,
-		EVENT
-	);
+	if ( Input_Update( EVENT ) )
+	{
+		return dreamaero::generic_this_call<uint32_t>(
+			OrgInputEventHandler,
+			OBSERVER,
+			EVENT
+			);
+	}
+	return NULL;
 }
 
 OBSERVER_EVENT_HANDLER(TestEventHandler) {

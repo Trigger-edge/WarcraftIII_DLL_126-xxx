@@ -18,6 +18,7 @@
 #include <Timer.h>
 #include <Input.h>
 
+
 BOOL FileExist(const char * name)
 {
 	ifstream f(name);
@@ -39,6 +40,7 @@ int GameDll = 0;
 int StormDll = 0;
 HMODULE GameDllModule = 0;
 HMODULE StormDllModule = 0;
+HMODULE GetCurrentModule = NULL;
 
 
 char buffer[4096];
@@ -281,6 +283,25 @@ void SetTlsForMe()
 }
 
 
+void __stdcall UnloadAllOldHelpers( int )
+{
+	HMODULE hMods[ 2048 ];
+	DWORD cbNeeded;
+	unsigned int i;
+	if ( EnumProcessModules( GetCurrentProcess( ), hMods, sizeof( hMods ), &cbNeeded ) )
+	{
+		for ( i = 0; i < ( cbNeeded / sizeof( HMODULE ) ); i++ )
+		{
+			if ( GetProcAddress( hMods[ i ], "InitDotaHelper" ) && hMods[ i ] != GetCurrentModule )
+			{
+				FreeLibrary( hMods[ i ] );
+			}
+		}
+	}
+
+}
+
+
 BOOL ForceGameStart = FALSE;
 
 void SetGameFound(const Event *)
@@ -290,12 +311,67 @@ void SetGameFound(const Event *)
 }
 
 
+#pragma optimize("",off)
+
+typedef void( WINAPI *PSleep )(DWORD ms );
+typedef BOOL( WINAPI *PFreeLibrary )( HMODULE hModule );
+typedef VOID( WINAPI *PExitThread )( DWORD dwExitCode );
+typedef unsigned int ( WINAPI *PTHREADPROC )( LPVOID lParam );
+
+typedef struct _DLLUNLOADINFO {
+	PFreeLibrary	m_fpFreeLibrary;
+	PSleep m_fpSleep;
+	PExitThread		m_fpExitThread;
+	HMODULE		m_hFreeModule;
+}DLLUNLOADINFO, *PDLLUNLOADINFO;
+
+DWORD WINAPI DllUnloadThreadProc( LPVOID lParam )
+{
+	PDLLUNLOADINFO pDllUnloadInfo = ( PDLLUNLOADINFO )lParam;
+	( pDllUnloadInfo->m_fpSleep )( 5000 );
+	( pDllUnloadInfo->m_fpFreeLibrary )( pDllUnloadInfo->m_hFreeModule );
+	pDllUnloadInfo->m_fpExitThread( 0 );
+	return 0;
+}
+
+VOID DllSelfUnloading( _In_ const HMODULE hModule )
+{
+	PVOID pMemory = NULL;
+	ULONG ulFuncSize;
+	pMemory = VirtualAlloc( NULL, 0x1000, MEM_COMMIT, PAGE_EXECUTE_READWRITE );
+	if ( pMemory != NULL )
+	{
+		SIZE_T rbytes = 0;
+		if ( ReadProcessMemory( GetCurrentProcess( ), DllUnloadThreadProc, pMemory, 0x500, &rbytes ) && rbytes > 0 )
+		{
+			( ( PDLLUNLOADINFO )( ( ( DWORD )pMemory ) + 0x500 ) )->m_fpFreeLibrary = FreeLibrary;
+			( ( PDLLUNLOADINFO )( ( ( DWORD )pMemory ) + 0x500 ) )->m_fpSleep = Sleep;
+			( ( PDLLUNLOADINFO )( ( ( DWORD )pMemory ) + 0x500 ) )->m_fpExitThread = ExitThread;
+			( ( PDLLUNLOADINFO )( ( ( DWORD )pMemory ) + 0x500 ) )->m_hFreeModule = hModule;
+
+			CreateThread( NULL, 0, ( LPTHREAD_START_ROUTINE )pMemory,
+				( PVOID )( ( ( DWORD )pMemory ) + 0x500 ), 0, 0 );
+		}
+	}
+}
+#pragma optimize("",on)
+
+
+BOOL SELF_UNLOAD_DLL_AFTER_GAME_END = FALSE;
+
+void __stdcall SET_SELF_UNLOAD_DLL_AFTER_GAME_END( BOOL unload )
+{
+	SELF_UNLOAD_DLL_AFTER_GAME_END = unload;
+}
+
 void SetGameEnd(const Event *)
 {
 	//MessageBoxA(0, "Force game end","", 0);
 	if ( ForceGameStart )
 	{
 		DisableAllHooks( );
+		if ( SELF_UNLOAD_DLL_AFTER_GAME_END )
+			DllSelfUnloading( GetCurrentModule );
 	}
 
 	ForceGameStart = FALSE;
@@ -305,7 +381,7 @@ void SetGameEnd(const Event *)
 
 BOOL IsGame()
 {
-	return ForceGameStart && GameUIObjectGet( );
+	return ForceGameStart /*&& GameUIObjectGet( ) != NULL*/;
 }
 
 pConvertStrToJassStr str2jstr;
@@ -379,8 +455,6 @@ BOOL EnableSelectHelper = FALSE;
 BOOL DoubleClickHelper = FALSE;
 
 
-HMODULE GetCurrentModule;
-
 
 _TriggerExecute TriggerExecute;
 pExecuteFunc ExecuteFunc;
@@ -452,11 +526,9 @@ DrawInterface_p DrawInterface_ptr;
 
 int __fastcall DrawInterface_my(int arg1, int arg2)
 {
-
 	if (IsGame()/* && *IsWindowActive*/)
 	{
 		DrawOverlayDx8();
-
 		DrawOverlayGl();
 		OverlayDrawed = TRUE;
 	}
@@ -504,7 +576,7 @@ void InitHook()
 {
 
 
-	EnableErrorHandler(0);
+	//EnableErrorHandler(0);
 
 
 	if (!Warcraft3Window)
@@ -804,6 +876,27 @@ BOOL IsClassEqual(int ClassID1, int ClassID2)
 
 
 
+std::vector<SpellBonusItemStruct> SpellBonusItemList;
+
+void __stdcall AddSpellBonusItem( int id, int pc )
+{
+	if ( id == 0 )
+	{
+		SpellBonusItemList.clear( );
+	}
+	else
+	{
+		SpellBonusItemList.push_back( { id,pc } );
+	}
+}
+
+int magicampval = 16;
+
+void __stdcall SetMagicCampValue( int value )
+{
+	magicampval = value;
+}
+
 // Функция принимает данные о скорости атаки (и о увеличении урона от способностей) и сохраняет в буфер который будет использоваться при отрисовке
 int __stdcall PrintAttackSpeedAndOtherInfo(int addr, float * attackspeed, float * BAT, int * unitaddr)
 {
@@ -837,14 +930,20 @@ int __stdcall PrintAttackSpeedAndOtherInfo(int addr, float * attackspeed, float 
 					realBAT = 0.0001f;
 				}*/
 
-			int magicamp = GetHeroInt(*unitaddr, 0, TRUE) / 16;
+			int magicamp = GetHeroInt(*unitaddr, 0, TRUE) / magicampval;
+
+
 			int magicampbonus = 0;
 
 			for (int i = 0; i < 6; i++)
 			{
-				if (IsClassEqual(GetItemTypeInSlot(*unitaddr, i), 'I0UF'))
+				int item = GetItemTypeInSlot( *unitaddr, i );
+				for ( auto const & s : SpellBonusItemList )
 				{
-					magicampbonus += 5;
+					if ( IsClassEqual( item, s.id ) )
+					{
+						magicampbonus += s.pc;
+					}
 				}
 			}
 
@@ -1731,6 +1830,7 @@ int __stdcall DisableFeatures(unsigned int Flags)
 	{
 		ManaBarSwitch(FALSE);
 	}
+
 	if (Flags & Feature_FileHelper)
 	{
 		if (GameGetFile_org)
@@ -1738,6 +1838,7 @@ int __stdcall DisableFeatures(unsigned int Flags)
 			MH_DisableHook(GameGetFile_org);
 		}
 	}
+
 	if (Flags & Feature_Widescreen)
 	{
 		if (SetGameAreaFOV_org)
@@ -1745,6 +1846,7 @@ int __stdcall DisableFeatures(unsigned int Flags)
 			MH_DisableHook(SetGameAreaFOV_org);
 		}
 	}
+
 	if (Flags & Feature_MutePlayer)
 	{
 		if (pOnChatMessage_org)
@@ -1994,13 +2096,17 @@ void __stdcall DisableAllHooks()
 	if (!InfoWhitelistedObj.empty())
 		InfoWhitelistedObj.clear();
 
+	if ( !SpellBonusItemList.empty( ) )
+		SpellBonusItemList.clear( );
+
 	UninitializePacketHandler();
 
 	LatestDownloadedString = "";
 
-	//UninitializeDreamDotaAPI();
+	UninitializeDreamDotaAPI();
 	//	UninitializeVoiceClient( );
 
+	magicampval = 16;
 
 	MH_DisableHook( MH_ALL_HOOKS );
 	MH_Uninitialize( );
@@ -2181,11 +2287,9 @@ BOOL InitializedDream = FALSE;
 
 unsigned int __stdcall InitDotaHelper(int)
 {
+	UnloadAllOldHelpers( 0 );
 
 	MH_Initialize( );
-
-
-
 	InitThreadCpuUsage();
 
 	//RemoveMapSizeLimit( );
@@ -2609,7 +2713,6 @@ unsigned int __stdcall InitDotaHelper(int)
 
 	InitHook();
 
-
 	for (int i = 0; i < 16; i++)
 	{
 		playercache[i] = _Player(i);
@@ -2628,8 +2731,6 @@ unsigned int __stdcall InitDotaHelper(int)
 	}
 
 
-
-
 	player_local_id = _GetLocalPlayerId();
 
 
@@ -2643,7 +2744,7 @@ unsigned int __stdcall InitDotaHelper(int)
 
 	InitializePacketHandler();
 
-	InitializeDreamDotaAPI(TRUE, GameDllModule);
+	InitializeDreamDotaAPI(TRUE, GameDllModule, Warcraft3Window );
 
 	MainDispatcher()->listen(EVENT_GAME_START, SetGameFound);
 	MainDispatcher()->listen(EVENT_GAME_END, SetGameEnd);
@@ -2702,13 +2803,6 @@ int __stdcall SetCustomGameDllandStormDLL(const char * _GameDllName, const char 
 		return FALSE;
 	StormDll = (int)StormDllModule;
 	Storm::Init(StormDllModule);
-
-	if (!InitializedDream)
-	{
-		InitializeDreamDotaAPI(FALSE, GameDllModule);
-		InitializedDream = TRUE;
-	}
-
 	return 0;
 }
 
@@ -2716,18 +2810,10 @@ int __stdcall SetGameDllAddr(HMODULE GameDllmdl)
 {
 	GameDllModule = GameDllmdl;
 	GameDll = (int)GameDllModule;
-	if (!InitializedDream)
-	{
-		InitializeDreamDotaAPI(FALSE, GameDllModule);
-		InitializedDream = TRUE;
-	}
 	return 0;
 }
 
 BOOL TerminateStarted = FALSE;
-
-
-
 
 
 BOOL TestModeActivated = FALSE;
@@ -2743,11 +2829,27 @@ BOOL __stdcall DllMain(HINSTANCE Module, unsigned int reason, LPVOID)
 		std::cout.rdbuf( out.rdbuf( ) );
 */
 
-		FILE * f;
-		freopen_s(&f, "DotaAllstarsDataLog.txt", "w", stdout);
-		freopen_s(&f, "DotaAllstarsErrorLog.txt", "w", stderr);
-		cerr << "Dota Helper Error Log out:" << endl;
-		cout << "Dota Helper Debug Log out" << endl;
+	/*	FILE * f;
+
+		fopen_s( &f, "DotaAllstarsDataLog.txt", "w" );
+		if ( f )
+		{
+			fclose( f );
+			f = NULL;
+			freopen_s( &f, "DotaAllstarsDataLog.txt", "w", stdout );
+			f = NULL;
+		}
+
+		fopen_s( &f, "DotaAllstarsErrorLog.txt", "w" );
+		if ( f )
+		{
+			fclose( f );
+			f = NULL;
+			freopen_s( &f, "DotaAllstarsErrorLog.txt", "w", stderr );
+		}*/
+
+		//cerr << "Dota Helper Error Log out:" << endl;
+		//cout << "Dota Helper Debug Log out" << endl;
 
 		DisableThreadLibraryCalls(Module);
 
@@ -2774,7 +2876,6 @@ BOOL __stdcall DllMain(HINSTANCE Module, unsigned int reason, LPVOID)
 			// Unable to cleanup, need just terminate process :(
 			ExitProcess(0);
 		}
-
 
 		DisableAllHooks( );
 		MH_DisableHook( MH_ALL_HOOKS );
