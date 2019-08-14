@@ -87,12 +87,12 @@ int __stdcall SetHPCustomHPBarUnit( unsigned int playerflag, int tid, unsigned i
 	{
 		if ( playerflag & currentflag )
 		{
-			bool needadd = true;
+			BOOL needadd = TRUE;
 			for ( unsigned int i = 0; i < CustomHPBarList[ playerid ].size( ); i++ )
 			{
 				if ( CustomHPBarList[ playerid ][ i ].unittypeid == tid )
 				{
-					needadd = false;
+					needadd = FALSE;
 					CustomHPBarList[ playerid ][ i ].color = color;
 					CustomHPBarList[ playerid ][ i ].scalex = xscale;
 					CustomHPBarList[ playerid ][ i ].scaley = yscale;
@@ -124,40 +124,22 @@ int __stdcall SetColorForUnit( unsigned int * coloraddr, BarStruct * BarStruct )
 	int retval = 0;
 	__asm mov retval, eax;
 
-	if ( BarStruct <= 0 )
+	if ( !BarStruct )
 	{
 		return retval;
 	}
-
-	char _bf[ 140 ];
-	sprintf_s( _bf, 140, "%s-color:%X-bar:%X", "SetColorForUnit", ( unsigned int )coloraddr, ( unsigned int )BarStruct );
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( _bf );
-#endif
-
 	if ( BarStruct->_BarClass != _BarVTable && BarStruct->_BarClass != ( int )BarVtableClone )
 	{
-#ifdef DOTA_HELPER_LOG
-		AddNewLineToDotaHelperLog( "SetColorForUnitEnd1" );
-#endif
-
 		return retval;
 	}
 	else
 	{
-#ifdef DOTA_HELPER_LOG
-		AddNewLineToDotaHelperLog( "SetColorForUnitOk1" );
-#endif
-
 	}
 
 
 	int unitaddr = BarStruct->unitaddr;
-	if ( unitaddr <= 0 || !IsNotBadUnit( unitaddr ) )
+	if ( !unitaddr || !IsNotBadUnit( unitaddr ) )
 	{
-#ifdef DOTA_HELPER_LOG
-		AddNewLineToDotaHelperLog( "SetColorForUnitEnd2" );
-#endif
 		return retval;
 	}
 
@@ -165,9 +147,6 @@ int __stdcall SetColorForUnit( unsigned int * coloraddr, BarStruct * BarStruct )
 
 	if ( unitslot > 15 || unitslot < 0 )
 	{
-#ifdef DOTA_HELPER_LOG
-		AddNewLineToDotaHelperLog( "SetColorForUnitEnd3" );
-#endif
 		return retval;
 	}
 
@@ -180,37 +159,22 @@ int __stdcall SetColorForUnit( unsigned int * coloraddr, BarStruct * BarStruct )
 			{
 				if ( CustomHPBarList[ unitslot ][ i ].scalex != 0.0 )
 				{
-#ifdef DOTA_HELPER_LOG
-					AddNewLineToDotaHelperLog( "ReplaceScaleX4" );
-#endif
 					BarStruct->ScaleX = CustomHPBarList[ unitslot ][ i ].scalex;
 				}
 
 				if ( CustomHPBarList[ unitslot ][ i ].scaley != 0.0 )
 				{
-#ifdef DOTA_HELPER_LOG
-					AddNewLineToDotaHelperLog( "ReplaceScaleY4" );
-#endif
 					BarStruct->ScaleY = CustomHPBarList[ unitslot ][ i ].scaley;
 				}
 
-				if ( ( int )coloraddr <= 0 )
+				if ( !coloraddr  )
 				{
-#ifdef DOTA_HELPER_LOG
-					AddNewLineToDotaHelperLog( "SetColorForUnitEnd4" );
-#endif
 					return retval;
 				}
 				if ( CustomHPBarList[ unitslot ][ i ].color != 0 )
 				{
-#ifdef DOTA_HELPER_LOG
-					AddNewLineToDotaHelperLog( "ReplaceColor4" );
-#endif
 					*coloraddr = CustomHPBarList[ unitslot ][ i ].color;
 				}
-#ifdef DOTA_HELPER_LOG
-				AddNewLineToDotaHelperLog( "SetColorForUnitEnd5" );
-#endif
 				return retval;
 			}
 		}
@@ -222,32 +186,20 @@ int __stdcall SetColorForUnit( unsigned int * coloraddr, BarStruct * BarStruct )
 		{
 			if ( hpbarscaleHeroX[ unitslot ] != 0.0 )
 			{
-#ifdef DOTA_HELPER_LOG
-				AddNewLineToDotaHelperLog( "ReplaceScaleX3" );
-#endif
 				BarStruct->ScaleX = hpbarscaleHeroX[ unitslot ];
 			}
 
 			if ( hpbarscaleHeroY[ unitslot ] != 0.0 )
 			{
-#ifdef DOTA_HELPER_LOG
-				AddNewLineToDotaHelperLog( "ReplaceScaleY3" );
-#endif
 				BarStruct->ScaleY = hpbarscaleHeroY[ unitslot ];
 			}
 		}
-		if ( ( int )coloraddr <= 0 )
+		if ( !coloraddr  )
 		{
-#ifdef DOTA_HELPER_LOG
-			AddNewLineToDotaHelperLog( "SetColorForUnitEnd6" );
-#endif
 			return retval;
 		}
 		if ( hpbarcolorsHero[ unitslot ] != 0 )
 		{
-#ifdef DOTA_HELPER_LOG
-			AddNewLineToDotaHelperLog( "ReplaceColor3" );
-#endif
 			*coloraddr = hpbarcolorsHero[ unitslot ];
 		}
 
@@ -258,32 +210,20 @@ int __stdcall SetColorForUnit( unsigned int * coloraddr, BarStruct * BarStruct )
 		{
 			if ( hpbarscaleTowerX[ unitslot ] != 0.0 )
 			{
-#ifdef DOTA_HELPER_LOG
-				AddNewLineToDotaHelperLog( "ReplaceScaleX2" );
-#endif
 				BarStruct->ScaleX = hpbarscaleTowerX[ unitslot ];
 			}
 
 			if ( hpbarscaleTowerY[ unitslot ] != 0.0 )
 			{
-#ifdef DOTA_HELPER_LOG
-				AddNewLineToDotaHelperLog( "ReplaceScaleY2" );
-#endif
 				BarStruct->ScaleY = hpbarscaleTowerY[ unitslot ];
 			}
 		}
-		if ( ( int )coloraddr <= 0 )
+		if ( !coloraddr  )
 		{
-#ifdef DOTA_HELPER_LOG
-			AddNewLineToDotaHelperLog( "SetColorForUnitEnd7" );
-#endif
 			return retval;
 		}
 		if ( hpbarcolorsTower[ unitslot ] != 0 )
 		{
-#ifdef DOTA_HELPER_LOG
-			AddNewLineToDotaHelperLog( "ReplaceColor2" );
-#endif
 			*coloraddr = hpbarcolorsTower[ unitslot ];
 		}
 	}
@@ -293,40 +233,25 @@ int __stdcall SetColorForUnit( unsigned int * coloraddr, BarStruct * BarStruct )
 		{
 			if ( hpbarscaleUnitX[ unitslot ] != 0.0 )
 			{
-#ifdef DOTA_HELPER_LOG
-				AddNewLineToDotaHelperLog( "ReplaceScaleX" );
-#endif
 				BarStruct->ScaleX = hpbarscaleUnitX[ unitslot ];
 			}
 
 			if ( hpbarscaleUnitY[ unitslot ] != 0.0 )
 			{
-#ifdef DOTA_HELPER_LOG
-				AddNewLineToDotaHelperLog( "ReplaceScaleY" );
-#endif
 				BarStruct->ScaleY = hpbarscaleUnitY[ unitslot ];
 			}
 		}
-		if ( ( int )coloraddr <= 0 )
+		if ( !coloraddr )
 		{
-#ifdef DOTA_HELPER_LOG
-			AddNewLineToDotaHelperLog( "SetColorForUnitEnd8" );
-#endif
 			return retval;
 		}
 
 		if ( hpbarcolorsUnit[ unitslot ] != 0 )
 		{
-#ifdef DOTA_HELPER_LOG
-			AddNewLineToDotaHelperLog( "ReplaceColor..." );
-#endif
 			*coloraddr = hpbarcolorsUnit[ unitslot ];
 		}
 	}
 
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( "SetColorForUnitEnd9" );
-#endif
 	return retval;
 }
 

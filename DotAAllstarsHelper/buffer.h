@@ -1,45 +1,155 @@
-#ifndef BUFFER_H
-#define BUFFER_H
+#pragma once
 
-typedef struct Buffer
+
+#include "Main.h"
+#include "Storm.h"
+
+#pragma pack(push,1)
+
+
+//extern int memoryleakcheck;
+
+void  __stdcall AddNewLineToJassLog( const char * s );
+void __stdcall  AddNewLineToDotaChatLog( const char * s );
+void __stdcall  AddNewLineToDotaHelperLog( const char * s, int line );//( const char * s, int line );
+void __stdcall  AddNewLineToJassNativesLog( const char * s );
+void __stdcall EnableErrorHandler( int );
+void __stdcall DisableErrorHandler( int );
+
+
+//extern int memoryleakcheck;
+
+class StormBuffer
 {
+private:
+
+public:
 	char *buf;
 	unsigned long length;
-	Buffer( )
+	bool NeedClear = false;
+	/*~StormBuffer( )
 	{
+	Clear( );
+	}*/
+	StormBuffer( )
+	{
+
 		buf = 0;
 		length = 0;
 	}
-	Buffer( unsigned long l )
+	StormBuffer( unsigned long l )
 	{
+
+		//	memoryleakcheck++;
 		length = l;
-		buf = new char[ l ];
+		buf = ( char * )Storm::MemAlloc( l + 1 );
+		NeedClear = true;
+		buf[ l ] = '\0';
 	}
-	Buffer( char* b, unsigned long l )
+	StormBuffer( char* b, unsigned long l )
 	{
+
 		buf = b;
 		length = l;
-	}
-} Buffer;
+}
+	void Resize( unsigned long l )
+	{
 
-typedef struct BufferList
+		Clear( );
+		buf = ( char * )Storm::MemAlloc( l + 1 );
+		NeedClear = true;
+		buf[ l ] = '\0';
+		length = l;
+
+	}
+
+	char * GetData( )
+	{
+
+		return buf;
+	}
+	char * GetData( int offset )
+	{
+
+		return buf + offset;
+	}
+
+	unsigned long GetSize( )
+	{
+
+		return length;
+	}
+
+	void Clear( )
+	{
+
+		//	memoryleakcheck--;
+		length = 0;
+		if ( buf != NULL )
+		{
+			if ( NeedClear )
+				Storm::MemFree( buf );
+		}
+		buf = NULL;
+	}
+
+	StormBuffer&  Clone( StormBuffer& CopyObject )
+	{
+
+		Resize( CopyObject.length );
+		std::memcpy( buf, CopyObject.GetData( ), length );
+		return ( *this );
+	}
+
+	StormBuffer& operator =( StormBuffer& CopyObject )
+	{
+
+		/*Resize( CopyObject.length );
+		std::memcpy( buf, CopyObject.GetData( ), length );*/
+		length = CopyObject.length;
+		buf = CopyObject.buf;
+		return ( *this );
+	}
+	StormBuffer& operator =( std::string& CopyString )
+	{
+
+		Resize( static_cast< INT >( CopyString.size( ) ) );
+		std::memcpy( buf, CopyString.c_str( ), length );
+		return ( *this );
+	}
+
+	CHAR& operator []( INT Index )
+	{
+
+		return buf[ Index ];
+	}
+
+
+	};
+
+typedef struct StormBufferList
 {
 	char **buf;
 	unsigned long length;
-	BufferList( )
+	StormBufferList( )
 	{
+
 		buf = 0;
 		length = 0;
 	}
-	BufferList( unsigned long l )
+	StormBufferList( unsigned long l )
 	{
-		buf = new char*[ l ];
+
+		buf = ( char** )Storm::MemAlloc( l );
 		length = l;
 	}
-	BufferList( char** b, unsigned long l )
+	StormBufferList( char** b, unsigned long l )
 	{
+
 		buf = b;
 		length = l;
 	}
-} BufferList;
-#endif
+	} StormBufferList;
+
+
+#pragma pack(pop)

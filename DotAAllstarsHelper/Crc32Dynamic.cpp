@@ -43,7 +43,7 @@ void CCrc32Dynamic::Init( void )
 //***********************************************
 void CCrc32Dynamic::Free( void )
 {
-	delete m_pdwCrc32Table;
+	delete [] m_pdwCrc32Table;
 	m_pdwCrc32Table = NULL;
 }
 
@@ -171,9 +171,6 @@ DWORD CCrc32Dynamic::FileCrc32Streams( char * szFilename, DWORD &dwCrc32 ) const
 //***********************************************
 DWORD CCrc32Dynamic::FileCrc32Win32( char * szFilename, DWORD &dwCrc32 ) const
 {
-	_ASSERTE( szFilename );
-	_ASSERTE( lstrlen( szFilename ) );
-
 	DWORD dwErrorCode = NO_ERROR;
 	HANDLE hFile = NULL;
 
@@ -224,9 +221,6 @@ DWORD CCrc32Dynamic::FileCrc32Win32( char * szFilename, DWORD &dwCrc32 ) const
 //***********************************************
 DWORD CCrc32Dynamic::FileCrc32Filemap( char * szFilename, DWORD &dwCrc32 ) const
 {
-	_ASSERTE( szFilename );
-	_ASSERTE( lstrlen( szFilename ) );
-
 	DWORD dwErrorCode = NO_ERROR;
 	HANDLE hFile = NULL, hFilemap = NULL;
 
@@ -323,9 +317,6 @@ DWORD CCrc32Dynamic::FileCrc32Filemap( char * szFilename, DWORD &dwCrc32 ) const
 //***********************************************
 DWORD CCrc32Dynamic::FileCrc32Assembly( char * szFilename, DWORD &dwCrc32 ) const
 {
-	_ASSERTE( szFilename );
-	_ASSERTE( lstrlen( szFilename ) );
-
 	DWORD dwErrorCode = NO_ERROR;
 	HANDLE hFile = NULL;
 
@@ -358,8 +349,8 @@ DWORD CCrc32Dynamic::FileCrc32Assembly( char * szFilename, DWORD &dwCrc32 ) cons
 				//		eax - CRC32 value
 				//		ebx - a lot of things
 				//		ecx - CRC32 value
-				//		edx - address of end of buffer
-				//		esi - address of start of buffer
+				//		edx - Address of end of buffer
+				//		esi - Address of start of buffer
 				//		edi - CRC32 table
 				__asm
 				{

@@ -1,14 +1,10 @@
 
 #include <experimental/filesystem>
 #include "Main.h"
-extern "C" { FILE __iob_func[ 3 ] = { *stdin,*stdout,*stderr }; }
-#pragma comment(lib,"legacy_stdio_definitions.lib")
-#include "blpaletter.h"
 
+#include "BlpReadWrite.h"
+#include "Storm.h"
 
-#define MASK_56 (((u_int64_t)1<<56)-1) /* i.e., (u_int64_t)0xffffffffffffff */
-
-#include "fnv.h"
 
 u_int64_t GetBufHash( const char * data, size_t data_len )
 {
@@ -18,25 +14,25 @@ u_int64_t GetBufHash( const char * data, size_t data_len )
 	return hash;
 }
 
-struct ICONMDLCACHE
-{
-	u_int64_t hash;
-	size_t hashlen;
-	char * buf;
-	size_t size;
-};
 
 vector<ICONMDLCACHE> ICONMDLCACHELIST;
 vector<FileRedirectStruct> FileRedirectList;
+BOOL NeedDumpFilesToDisk = FALSE;
+int __stdcall DumpFilesToDisk( BOOL enabled )
+{
+	MessageBoxA( 0, "ÎØÈÁÊÀ OSHIBKA ERROR", " ", 0 );
+	//NeedDumpFilesToDisk = enabled;
+	return enabled;
+}
 
 
-BOOL GetFromIconMdlCache( string filename, ICONMDLCACHE * iconhelperout )
+BOOL GetFromIconMdlCache( const string filename, ICONMDLCACHE * iconhelperout )
 {
 	size_t filelen = filename.length( );
 	u_int64_t hash = GetBufHash( filename.c_str( ), filelen );
-	for ( ICONMDLCACHE ih : ICONMDLCACHELIST )
+	for ( ICONMDLCACHE & ih : ICONMDLCACHELIST )
 	{
-		if ( ih.hashlen == filelen && ih.hash == hash )
+		if ( ih.hashlen == filelen && ih._hash == hash )
 		{
 			*iconhelperout = ih;
 			return TRUE;
@@ -45,9 +41,9 @@ BOOL GetFromIconMdlCache( string filename, ICONMDLCACHE * iconhelperout )
 	return FALSE;
 }
 
-BOOL IsFileRedirected( string filename )
+BOOL IsFileRedirected( const string filename )
 {
-	for ( FileRedirectStruct DotaRedirectHelp : FileRedirectList )
+	for ( FileRedirectStruct & DotaRedirectHelp : FileRedirectList )
 	{
 		if ( filename == DotaRedirectHelp.NewFilePath )
 		{
@@ -59,7 +55,7 @@ BOOL IsFileRedirected( string filename )
 
 BOOL IsMemInCache( int addr )
 {
-	for ( ICONMDLCACHE ih : ICONMDLCACHELIST )
+	for ( ICONMDLCACHE & ih : ICONMDLCACHELIST )
 	{
 		if ( ( int )ih.buf == addr )
 			return TRUE;
@@ -71,10 +67,14 @@ void FreeAllIHelpers( )
 {
 	if ( !ICONMDLCACHELIST.empty( ) )
 	{
-		for ( ICONMDLCACHE ih : ICONMDLCACHELIST )
+		for ( ICONMDLCACHE & ih : ICONMDLCACHELIST )
 		{
-			delete[ ] ih.buf;
+			if ( ih.buf && NeedReleaseUnusedMemory )
+				Storm::MemFree( ih.buf );
 		}
+
+
+		Storm::FreeAllMemory( );
 
 		ICONMDLCACHELIST.clear( );
 	}
@@ -83,77 +83,21 @@ void FreeAllIHelpers( )
 
 	if ( !FakeFileList.empty( ) )
 		FakeFileList.clear( );
-}
+	ClearAllRawImages( );
 
-
-
-void WINAPI SMemZero( LPVOID lpDestination, DWORD dwLength )
-{
-	DWORD dwPrevLen = dwLength;
-	LPDWORD lpdwDestination = ( LPDWORD )lpDestination;
-	LPBYTE lpbyDestination;
-
-	dwLength >>= 2;
-
-	while ( dwLength-- )
-		*lpdwDestination++ = 0;
-
-	lpbyDestination = ( LPBYTE )lpdwDestination;
-
-	dwLength = dwPrevLen;
-	dwLength &= 3;
-
-	while ( dwLength-- )
-		*lpbyDestination++ = 0;
-}
-
-LPVOID WINAPI SMemAlloc( LPVOID lpvMemory, DWORD dwSize )
-{
-	LPVOID lpMemory = VirtualAlloc( lpvMemory, dwSize, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE );// malloc( dwSize );
-	if ( lpMemory ) SMemZero( lpMemory, dwSize );
-	return lpMemory;
-}
-
-void WINAPI SMemFree( LPVOID lpvMemory )
-{
-	if ( lpvMemory ) VirtualFree( lpvMemory, 0, MEM_RELEASE );// Storm_403_org( lpvMemory, "delete", -1, 0 );
-}
-
-DWORD WINAPI SMemCopy( LPVOID lpDestination, LPCVOID lpSource, DWORD dwLength )
-{
-	DWORD dwPrevLen = dwLength;
-	LPDWORD lpdwDestination = ( LPDWORD )lpDestination, lpdwSource = ( LPDWORD )lpSource;
-	LPBYTE lpbyDestination, lpbySource;
-
-	dwLength >>= 2;
-
-	while ( dwLength-- )
-		*lpdwDestination++ = *lpdwSource++;
-
-	lpbyDestination = ( LPBYTE )lpdwDestination;
-	lpbySource = ( LPBYTE )lpdwSource;
-
-	dwLength = dwPrevLen;
-	dwLength &= 3;
-
-	while ( dwLength-- )
-		*lpbyDestination++ = *lpbySource++;
-
-	return dwPrevLen;
 }
 
 
 char MPQFilePath[ 4000 ];
 
-const char * DisabledIconSignature = "Disabled\\DIS";
-const char * DisabledIconSignature2 = "Disabled\\DISDIS";
-const char * CommandButtonsDisabledIconSignature = "CommandButtonsDisabled\\DIS";
 
 
 BOOL replaceAll( std::string& str, const std::string& from, const std::string& to )
 {
 	BOOL Replaced = FALSE;
 	if ( from.empty( ) )
+		return Replaced;
+	if ( str.empty( ) )
 		return Replaced;
 	size_t start_pos = 0;
 	while ( ( start_pos = str.find( from, start_pos ) ) != std::string::npos )
@@ -165,6 +109,13 @@ BOOL replaceAll( std::string& str, const std::string& from, const std::string& t
 	return Replaced;
 }
 
+BOOL NeedReleaseUnusedMemory = FALSE;
+
+int __stdcall FileHelperReleaseStorm( BOOL enabled )
+{
+	NeedReleaseUnusedMemory = enabled;
+	return enabled;
+}
 
 GameGetFile GameGetFile_org = NULL;
 GameGetFile GameGetFile_ptr;
@@ -173,28 +124,16 @@ int idddd = 0;
 
 void ApplyTerrainFilter( string filename, int * OutDataPointer, size_t * OutSize, BOOL IsTga )
 {
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( "ApplyTerrainFilter" );
-#endif
-	ICONMDLCACHE tmpih;
-	BOOL FoundOldHelper = GetFromIconMdlCache( filename.c_str( ), &tmpih );
-	if ( FoundOldHelper )
-	{
-		*OutDataPointer = ( int )tmpih.buf;
-		*OutSize = tmpih.size;
-		return;
-	}
-
 	char * originfiledata = ( char * )( int )*OutDataPointer;
 	size_t sz = *OutSize;
 
 
 	int w = 0, h = 0, bpp = 0, mipmaps = 0, alphaflag = 8, compress = 1, alphaenconding = 5;
 	unsigned long rawImageSize = 0;
-	Buffer InBuffer;
+	StormBuffer InBuffer;
 	InBuffer.buf = ( char* )originfiledata;
 	InBuffer.length = sz;
-	Buffer OutBuffer;
+	StormBuffer OutBuffer;
 	if ( IsTga )
 		rawImageSize = ( unsigned long )TGA2Raw( InBuffer, OutBuffer, w, h, bpp, filename.c_str( ) );
 	else
@@ -216,7 +155,7 @@ void ApplyTerrainFilter( string filename, int * OutDataPointer, size_t * OutSize
 				OutImage[ i ].G = 0;
 				OutImage[ i ].B = 0;
 			}
-			else if ( true /*OutImage[ i ].A == 0xFF*/ )
+			else if ( TRUE /*OutImage[ i ].A == 0xFF*/ )
 			{
 				if ( OutImage[ i ].R > 0 && OutImage[ i ].R < 250 )
 					OutImage[ i ].R += 5;
@@ -235,27 +174,27 @@ void ApplyTerrainFilter( string filename, int * OutDataPointer, size_t * OutSize
 		}
 
 
-		Buffer ResultBuffer;
+		StormBuffer ResultBuffer;
 
 		CreatePalettedBLP( OutBuffer, ResultBuffer, 256, filename.c_str( ), w, h, bpp, alphaflag, mipmaps );
 
 		if ( OutBuffer.buf != NULL )
 		{
 			OutBuffer.length = 0;
-			delete[ ] OutBuffer.buf;
+			Storm::MemFree( OutBuffer.buf );
 			OutBuffer.buf = 0;
 		}
 
 		if ( ResultBuffer.buf != NULL )
 		{
-			//	MessageBoxA( 0, "OK5", "OK5", 0 );
+			ICONMDLCACHE tmpih;
 			tmpih.buf = ResultBuffer.buf;
 			tmpih.size = ResultBuffer.length;
 			tmpih.hashlen = filename.length( );
-			tmpih.hash = GetBufHash( filename.c_str( ), tmpih.hashlen );
-			ICONMDLCACHELIST.push_back( tmpih );
-			if ( !IsMemInCache( *OutDataPointer ) )
-				Storm_403_org( ( void* )*OutDataPointer, "delete", -1, 0 );
+			tmpih._hash = GetBufHash( filename.c_str( ), tmpih.hashlen );
+			ICONMDLCACHELIST.push_back( tmpih );/*
+			if ( !IsMemInCache( *OutDataPointer ) && NeedReleaseUnusedMemory )
+				Storm::MemFree( ( void* )*OutDataPointer );*/
 			*OutDataPointer = ( int )tmpih.buf;
 			*OutSize = tmpih.size;
 		}
@@ -274,32 +213,21 @@ int __stdcall ApplyTerrainFilterDirectly( char * filename, int * OutDataPointer,
 
 void ApplyIconFilter( string filename, int * OutDataPointer, size_t * OutSize )
 {
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( "ApplyIconFilter" );
-#endif
-	ICONMDLCACHE tmpih;
-	BOOL FoundOldHelper = GetFromIconMdlCache( filename.c_str( ), &tmpih );
-	if ( FoundOldHelper )
-	{
-		*OutDataPointer = ( int )tmpih.buf;
-		*OutSize = tmpih.size;
-		return;
-	}
-
 	char * originfiledata = ( char * )( int )*OutDataPointer;
 	size_t sz = *OutSize;
 
 
 	int w = 0, h = 0, bpp = 0, mipmaps = 0, alphaflag = 0, compress = 0, alphaenconding = 0;
 	unsigned long rawImageSize = 0;
-	Buffer InBuffer;
+	StormBuffer InBuffer;
 	InBuffer.buf = ( char* )originfiledata;
 	InBuffer.length = sz;
-	Buffer OutBuffer;
-
+	StormBuffer OutBuffer;
 	rawImageSize = Blp2Raw( InBuffer, OutBuffer, w, h, bpp, mipmaps, alphaflag, compress, alphaenconding, filename.c_str( ) );
-	if ( rawImageSize > 0 )
+
+	if ( rawImageSize > 0 && OutBuffer.buf && OutBuffer.length && w == 64 && h == 64 )
 	{
+		//MessageBoxA( 0, "CreateFilterImage", " ", 0 );
 		BGRAPix * OutImage = ( BGRAPix* )OutBuffer.buf;
 		BGRAPix BlackPix;
 
@@ -357,14 +285,154 @@ void ApplyIconFilter( string filename, int * OutDataPointer, size_t * OutSize )
 			}
 		}
 
-		Buffer ResultBuffer;
+		StormBuffer ResultBuffer;
+		CreatePalettedBLP( OutBuffer, ResultBuffer, 256, filename.c_str( ), w, h, bpp, alphaflag, mipmaps );
+
+		OutBuffer.Clear( );
+		if ( ResultBuffer.buf != NULL )
+		{
+			ICONMDLCACHE tmpih;
+			tmpih.buf = ResultBuffer.buf;
+			tmpih.size = ResultBuffer.length;
+			tmpih.hashlen = filename.length( );
+			tmpih._hash = GetBufHash( filename.c_str( ), tmpih.hashlen );
+			ICONMDLCACHELIST.push_back( tmpih );
+			/*if ( !IsMemInCache( *OutDataPointer ) && NeedReleaseUnusedMemory )
+				Storm::MemFree( ( void* )*OutDataPointer );*/
+			*OutDataPointer = ( int )tmpih.buf;
+			*OutSize = tmpih.size;
+
+			if ( NeedDumpFilesToDisk )
+			{
+				//fs::create_directories( )
+
+				fs::path p( "DotaAllstars\\" + filename );
+				fs::path dir = p.parent_path( );
+
+				if ( dir.string( ).length( ) > 0 )
+				{
+					fs::create_directories( dir.string( ) );
+				}
+
+				FILE * f;
+				fopen_s( &f, ( "DotaAllstars\\" + filename ).c_str( ), "wb" );
+				if ( f )
+				{
+					fwrite( tmpih.buf, tmpih.size, 1, f );
+
+					fclose( f );
+				}
+
+			}
+		}
+	}
+}
+
+
+void ApplyIconFrameFilter( string filename, int * OutDataPointer, size_t * OutSize );
+
+
+void ApplyTestFilter( string filename, int * OutDataPointer, size_t * OutSize )
+{
+
+	ICONMDLCACHE tmpih;
+
+
+	char * originfiledata = ( char * )( int )*OutDataPointer;
+	size_t sz = *OutSize;
+
+
+	int w = 0, h = 0, bpp = 0, mipmaps = 0, alphaflag = 0, compress = 0, alphaenconding = 0;
+	unsigned long rawImageSize = 0;
+	StormBuffer InBuffer;
+	InBuffer.buf = ( char* )originfiledata;
+	InBuffer.length = sz;
+	StormBuffer OutBuffer;
+
+	rawImageSize = Blp2Raw( InBuffer, ( StormBuffer )OutBuffer, w, h, bpp, mipmaps, alphaflag, compress, alphaenconding, filename.c_str( ) );
+	if ( rawImageSize > 0 && w > 9 && h > 9 )
+	{
+		BGRAPix * OutImage = ( BGRAPix* )OutBuffer.buf;
+		BGRAPix BlackPix;
+
+		BlackPix.A = 0xFF;
+		BlackPix.R = 70;
+		BlackPix.G = 70;
+		BlackPix.B = 70;
+
+		BOOL FoundTransparentTexture = FALSE;
+
+		int id = 0;
+		vector<BGRAPix> BGRAPixList;
+		BGRAPixList.assign( &OutImage[ 0 ], &OutImage[ w*h - 1 ] );
+
+
+		for ( BGRAPix & pix : BGRAPixList )
+		{
+			int R = pix.R;
+			int G = pix.G;
+			int B = pix.B;
+
+			//pix.G = FixBounds( ( max( max( pix.R, pix.G ), pix.B ) + min( min( pix.R, pix.G ), pix.B ) ) / 2 );
+			//pix.B = FixBounds( ( max( max( pix.R, pix.G ), pix.B ) + min( min( pix.R, pix.G ), pix.B ) ) / 2 );
+			//pix.R = FixBounds( ( max( max( pix.R, pix.G), pix.B ) + min( min( pix.R, pix.G), pix.B ) ) / 2 );
+
+			pix.R = FixBounds( 0.2126*R + 0.7152*G + 0.0722*B );
+			pix.G = FixBounds( 0.2126*R + 0.7152*G + 0.0722*B );
+			pix.B = FixBounds( 0.2126*R + 0.7152*G + 0.0722*B );
+
+			/*pix.R = FixBounds( ( pix.R * .393 ) + ( pix.G *.769 ) + ( pix.B * .189 ) );
+			pix.G = FixBounds( ( pix.R * .349 ) + ( pix.G *.686 ) + ( pix.B * .168 ) );
+			pix.B = FixBounds( ( pix.R * .272 ) + ( pix.G *.534 ) + ( pix.B * .131 ) );
+			*/
+
+
+			id++;
+		}
+
+		std::memcpy( &OutImage[ 0 ], &BGRAPixList[ 0 ], 4 * w*h - 4 );
+
+		/*
+
+		for ( int x = 0; x < h; x++ )
+		{
+			for ( int y = 0; y < w; x++ )
+			{
+				BlackPix.A = OutImage[ x * h + y ].A;
+				if ( BlackPix.A < 0xFF )
+				{
+					FoundTransparentTexture = TRUE;
+					break;
+				}
+			}
+		}
+
+
+		if ( !FoundTransparentTexture )
+			std::fill( &OutImage[ 0 ], &OutImage[ h * w - 1 ], BlackPix );
+
+		BlackPix.R = 0;
+		BlackPix.G = 0;
+		BlackPix.B = 0;
+		*/
+		//
+		//for ( int x = 0; x < h; x++ )
+		//{
+		//	for ( int y = 0; y < w; x++ )
+		//	{
+		//		BlackPix.A = OutImage[ x * h + y ].A;
+		//		OutImage[ x * h + y ] = BlackPix;//âåðõ
+		//	}
+		//}
+
+		StormBuffer ResultBuffer;
 
 		CreatePalettedBLP( OutBuffer, ResultBuffer, 256, filename.c_str( ), w, h, bpp, alphaflag, mipmaps );
 
 		if ( OutBuffer.buf != NULL )
 		{
 			OutBuffer.length = 0;
-			delete[ ] OutBuffer.buf;
+			Storm::MemFree( OutBuffer.buf );
 			OutBuffer.buf = 0;
 		}
 
@@ -373,10 +441,10 @@ void ApplyIconFilter( string filename, int * OutDataPointer, size_t * OutSize )
 			tmpih.buf = ResultBuffer.buf;
 			tmpih.size = ResultBuffer.length;
 			tmpih.hashlen = filename.length( );
-			tmpih.hash = GetBufHash( filename.c_str( ), tmpih.hashlen );
+			tmpih._hash = GetBufHash( filename.c_str( ), tmpih.hashlen );
 			ICONMDLCACHELIST.push_back( tmpih );
-			if ( !IsMemInCache( *OutDataPointer ) )
-				Storm_403_org( ( void* )*OutDataPointer, "delete", -1, 0 );
+			/*	if ( !IsMemInCache( *OutDataPointer ) && NeedReleaseUnusedMemory )
+					Storm::MemFree( ( void* )*OutDataPointer );*/
 			*OutDataPointer = ( int )tmpih.buf;
 			*OutSize = tmpih.size;
 		}
@@ -384,22 +452,25 @@ void ApplyIconFilter( string filename, int * OutDataPointer, size_t * OutSize )
 
 }
 
+
+const char * DisabledIconSignature = "Disabled\\DIS";
+const char * DisabledIconSignature2 = "Disabled\\DISDIS";
+const char * CommandButtonsDisabledIconSignature = "CommandButtonsDisabled\\DIS";
+
+
 BOOL FixDisabledIconPath( string _filename, int * OutDataPointer, size_t * OutSize, BOOL unknown )
 {
 	string filename = _filename;
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( "FixDisabledIconPath" );
-#endif
 
 	BOOL CreateDarkIcon = FALSE;
 	BOOL result = FALSE;
+
+
 	if ( filename.find( DisabledIconSignature2 ) != string::npos )
 	{
 		if ( replaceAll( filename, DisabledIconSignature2, "\\" ) )
 		{
 			result = GameGetFile_ptr( filename.c_str( ), OutDataPointer, OutSize, unknown );
-			if ( result )
-				CreateDarkIcon = TRUE;
 		}
 	}
 
@@ -412,8 +483,6 @@ BOOL FixDisabledIconPath( string _filename, int * OutDataPointer, size_t * OutSi
 			if ( replaceAll( filename, DisabledIconSignature, "\\" ) )
 			{
 				result = GameGetFile_ptr( filename.c_str( ), OutDataPointer, OutSize, unknown );
-				if ( result )
-					CreateDarkIcon = TRUE;
 			}
 		}
 	}
@@ -426,8 +495,6 @@ BOOL FixDisabledIconPath( string _filename, int * OutDataPointer, size_t * OutSi
 			if ( replaceAll( filename, CommandButtonsDisabledIconSignature, "PassiveButtons\\" ) )
 			{
 				result = GameGetFile_ptr( filename.c_str( ), OutDataPointer, OutSize, unknown );
-				if ( result )
-					CreateDarkIcon = TRUE;
 			}
 		}
 	}
@@ -441,14 +508,12 @@ BOOL FixDisabledIconPath( string _filename, int * OutDataPointer, size_t * OutSi
 			if ( replaceAll( filename, CommandButtonsDisabledIconSignature, "AutoCastButtons\\" ) )
 			{
 				result = GameGetFile_ptr( filename.c_str( ), OutDataPointer, OutSize, unknown );
-				if ( result )
-					CreateDarkIcon = TRUE;
 			}
 		}
 	}
 
 
-	if ( CreateDarkIcon )
+	if ( result )
 	{
 		ApplyIconFilter( _filename, OutDataPointer, OutSize );
 	}
@@ -543,114 +608,26 @@ int __stdcall SetModelScale( const char * mdlpath, float Scale )
 	ModelScaleStruct tmpModelFix;
 	tmpModelFix.FilePath = mdlpath;
 	tmpModelFix.Scale = Scale;
+	tmpModelFix.ScaleX = 0.0f;
+	tmpModelFix.ScaleY = 0.0f;
+	tmpModelFix.ScaleZ = 0.0f;
 	ModelScaleList.push_back( tmpModelFix );
 	return 0;
 }
 
-
-
-struct Mdx_Texture        //NrOfTextures = ChunkSize / 268
+int __stdcall SetModelScaleEx( const char * mdlpath, float x, float y, float z )
 {
-	int ReplaceableId;
-	CHAR FileName[ 260 ];
-	unsigned int Flags;                       //#1 - WrapWidth
-									   //#2 - WrapHeight
-};
-
-struct Mdx_FLOAT3
-{
-	float x;
-	float y;
-	float z;
-};
-
-struct Mdx_Sequence      //NrOfSequences = ChunkSize / 132
-{
-	CHAR Name[ 80 ];
-
-	int IntervalStart;
-	int IntervalEnd;
-	FLOAT MoveSpeed;
-	unsigned int Flags;                       //0 - Looping
-									   //1 - NonLooping
-	FLOAT Rarity;
-	unsigned int SyncPoint;
-
-	FLOAT BoundsRadius;
-	Mdx_FLOAT3 MinimumExtent;
-	Mdx_FLOAT3 MaximumExtent;
-};
+	ModelScaleStruct tmpModelFix;
+	tmpModelFix.FilePath = mdlpath;
+	tmpModelFix.Scale = 0.0f;
+	tmpModelFix.ScaleX = x;
+	tmpModelFix.ScaleY = y;
+	tmpModelFix.ScaleZ = z;
+	ModelScaleList.push_back( tmpModelFix );
+	return 0;
+}
 
 vector<BYTE> FullPatchData;
-
-struct Mdx_SequenceTime
-{
-	int * IntervalStart;
-	int * IntervalEnd;
-};
-
-
-
-struct Mdx_Track
-{
-	int NrOfTracks;
-	int InterpolationType;             //0 - None
-										 //1 - Linear
-										 //2 - Hermite
-										 //3 - Bezier
-	unsigned int GlobalSequenceId;
-};
-
-struct Mdx_Tracks
-{
-	int NrOfTracks;
-	unsigned int GlobalSequenceId;
-
-};
-struct Mdx_Node
-{
-	unsigned int InclusiveSize;
-
-	CHAR Name[ 80 ];
-
-	unsigned int ObjectId;
-	unsigned int ParentId;
-	unsigned int Flags;                         //0        - Helper
-										 //#1       - DontInheritTranslation
-										 //#2       - DontInheritRotation
-										 //#4       - DontInheritScaling
-										 //#8       - Billboarded
-										 //#16      - BillboardedLockX
-										 //#32      - BillboardedLockY
-										 //#64      - BillboardedLockZ
-										 //#128     - CameraAnchored
-										 //#256     - Bone
-										 //#512     - Light
-										 //#1024    - EventObject
-										 //#2048    - Attachment
-										 //#4096    - ParticleEmitter
-										 //#8192    - CollisionShape
-										 //#16384   - RibbonEmitter
-										 //#32768   - Unshaded / EmitterUsesMdl
-										 //#65536   - SortPrimitivesFarZ / EmitterUsesTga
-										 //#131072  - LineEmitter
-										 //#262144  - Unfogged
-										 //#524288  - ModelSpace
-										 //#1048576 - XYQuad
-};
-
-struct Mdx_GeosetAnimation
-{
-	unsigned int InclusiveSize;
-
-	FLOAT Alpha;
-	unsigned int Flags;                       //#1 - DropShadow
-									   //#2 - Color
-	Mdx_FLOAT3 Color;
-
-	unsigned int GeosetId;
-
-};
 
 void ProcessNodeAnims( BYTE * ModelBytes, size_t _offset, vector<int *> & TimesForReplace )
 {
@@ -659,7 +636,7 @@ void ProcessNodeAnims( BYTE * ModelBytes, size_t _offset, vector<int *> & TimesF
 	if ( memcmp( &ModelBytes[ offset ], "KGTR", 4 ) == 0 )
 	{
 		offset += 4;
-		memcpy( &tmpTrack, &ModelBytes[ offset ], sizeof( Mdx_Track ) );
+		std::memcpy( &tmpTrack, &ModelBytes[ offset ], sizeof( Mdx_Track ) );
 		offset += sizeof( Mdx_Track );
 		for ( int i = 0; i < tmpTrack.NrOfTracks; i++ )
 		{
@@ -671,7 +648,7 @@ void ProcessNodeAnims( BYTE * ModelBytes, size_t _offset, vector<int *> & TimesF
 	if ( memcmp( &ModelBytes[ offset ], "KGRT", 4 ) == 0 )
 	{
 		offset += 4;
-		memcpy( &tmpTrack, &ModelBytes[ offset ], sizeof( Mdx_Track ) );
+		std::memcpy( &tmpTrack, &ModelBytes[ offset ], sizeof( Mdx_Track ) );
 		offset += sizeof( Mdx_Track );
 		for ( int i = 0; i < tmpTrack.NrOfTracks; i++ )
 		{
@@ -683,20 +660,20 @@ void ProcessNodeAnims( BYTE * ModelBytes, size_t _offset, vector<int *> & TimesF
 	if ( memcmp( &ModelBytes[ offset ], "KGSC", 4 ) == 0 )
 	{
 		offset += 4;
-		memcpy( &tmpTrack, &ModelBytes[ offset ], sizeof( Mdx_Track ) );
+		std::memcpy( &tmpTrack, &ModelBytes[ offset ], sizeof( Mdx_Track ) );
 		offset += sizeof( Mdx_Track );
 		for ( int i = 0; i < tmpTrack.NrOfTracks; i++ )
 		{
 			TimesForReplace.push_back( ( int * )&ModelBytes[ offset ] );
 			offset += ( tmpTrack.InterpolationType > 1 ? 40 : 16 );
-		}
 	}
+}
 
 
 	if ( memcmp( &ModelBytes[ offset ], "KGAO", 4 ) == 0 )
 	{
 		offset += 4;
-		memcpy( &tmpTrack, &ModelBytes[ offset ], sizeof( Mdx_Track ) );
+		std::memcpy( &tmpTrack, &ModelBytes[ offset ], sizeof( Mdx_Track ) );
 		offset += sizeof( Mdx_Track );
 		for ( int i = 0; i < tmpTrack.NrOfTracks; i++ )
 		{
@@ -708,7 +685,7 @@ void ProcessNodeAnims( BYTE * ModelBytes, size_t _offset, vector<int *> & TimesF
 	if ( memcmp( &ModelBytes[ offset ], "KGAC", 4 ) == 0 )
 	{
 		offset += 4;
-		memcpy( &tmpTrack, &ModelBytes[ offset ], sizeof( Mdx_Track ) );
+		std::memcpy( &tmpTrack, &ModelBytes[ offset ], sizeof( Mdx_Track ) );
 		offset += sizeof( Mdx_Track );
 		for ( int i = 0; i < tmpTrack.NrOfTracks; i++ )
 		{
@@ -736,14 +713,12 @@ BYTE HelperBytesPart2[ ] = { 0xFF,0xFF,0xFF,0xFF,0x00,0x01,0x00,0x00,0x4B,
 							0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00 };
 
 BYTE HelperBytesPart3[ ] = { 0xFF,0xFF,0xFF,0xFF,
-							 0xFF,0xFF,0xFF,0xFF };
+							 0xFF,0xFF,0xFF,0xFF
+};
 
 
 void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL unknown )
 {
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( "ProcessModel" );
-#endif
 	BYTE * ModelBytes = ( BYTE* )*OutDataPointer;
 	size_t sz = *OutSize;
 
@@ -774,7 +749,7 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 						while ( SequencesCount > 0 )
 						{
 							SequencesCount--;
-							memcpy( &tmpSequence, &ModelBytes[ offset ], sizeof( Mdx_Sequence ) );
+							std::memcpy( &tmpSequence, &ModelBytes[ offset ], sizeof( Mdx_Sequence ) );
 
 							if ( mdlfix.AnimationName.length( ) == 0 || mdlfix.AnimationName == tmpSequence.Name )
 							{
@@ -798,18 +773,18 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 			}
 
 
-			if ( IsKeyPressed( '0' ) && FileExist( ".\\Test1234.mdx" ) )
-			{
-				FILE *f;
-				fopen_s( &f, ".\\Test1234.mdx", "wb" );
-				fwrite( ModelBytes, sz, 1, f );
-				fclose( f );
-				MessageBoxA( 0, "Ok dump", "DUMP", 0 );
-			}
-
+			/*	if ( IsKeyPressed( '0' ) && FileExist( ".\\Test1234.mdx" ) )
+				{
+					FILE *f;
+					fopen_s( &f, ".\\Test1234.mdx", "wb" );
+					fwrite( ModelBytes, sz, 1, f );
+					fclose( f );
+					MessageBoxA( 0, "Ok dump", "DUMP", 0 );
+				}
+	*/
 
 			ModelSequenceValueList.erase( ModelSequenceValueList.begin( ) + ( int )i );
-			i--;
+
 		}
 
 	}
@@ -852,7 +827,7 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 						while ( SequencesCount > 0 )
 						{
 							SequencesCount--;
-							memcpy( &tmpSequence, &ModelBytes[ offset ], sizeof( Mdx_Sequence ) );
+							std::memcpy( &tmpSequence, &ModelBytes[ offset ], sizeof( Mdx_Sequence ) );
 
 
 							if ( mdlfix.AnimationName == tmpSequence.Name )
@@ -879,7 +854,7 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 						Mdx_Node tmpNode;
 						while ( newoffset > offset )
 						{
-							memcpy( &tmpNode, &ModelBytes[ offset ], sizeof( Mdx_Node ) );
+							std::memcpy( &tmpNode, &ModelBytes[ offset ], sizeof( Mdx_Node ) );
 							ProcessNodeAnims( ModelBytes, offset + sizeof( Mdx_Node ), TimesForReplace );
 							offset += tmpNode.InclusiveSize + 8;
 						}
@@ -893,7 +868,7 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 						Mdx_Node tmpNode;
 						while ( newoffset > offset )
 						{
-							memcpy( &tmpNode, &ModelBytes[ offset ], sizeof( Mdx_Node ) );
+							std::memcpy( &tmpNode, &ModelBytes[ offset ], sizeof( Mdx_Node ) );
 							ProcessNodeAnims( ModelBytes, offset + sizeof( Mdx_Node ), TimesForReplace );
 							offset += tmpNode.InclusiveSize;
 						}
@@ -909,7 +884,7 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 						{
 							size_t size_of_this_struct = *( size_t* )&ModelBytes[ offset ];
 							offset += 4;
-							memcpy( &tmpNode, &ModelBytes[ offset ], sizeof( Mdx_Node ) );
+							std::memcpy( &tmpNode, &ModelBytes[ offset ], sizeof( Mdx_Node ) );
 							ProcessNodeAnims( ModelBytes, offset + sizeof( Mdx_Node ), TimesForReplace );
 							offset += size_of_this_struct - 4;
 						}
@@ -925,7 +900,7 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 						{
 							size_t size_of_this_struct = *( size_t* )&ModelBytes[ offset ];
 							offset += 4;
-							memcpy( &tmpNode, &ModelBytes[ offset ], sizeof( Mdx_Node ) );
+							std::memcpy( &tmpNode, &ModelBytes[ offset ], sizeof( Mdx_Node ) );
 							ProcessNodeAnims( ModelBytes, offset + sizeof( Mdx_Node ), TimesForReplace );
 							offset += size_of_this_struct - 4;
 						}
@@ -941,7 +916,7 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 						{
 							size_t size_of_this_struct = *( size_t* )&ModelBytes[ offset ];
 							offset += 4;
-							memcpy( &tmpNode, &ModelBytes[ offset ], sizeof( Mdx_Node ) );
+							std::memcpy( &tmpNode, &ModelBytes[ offset ], sizeof( Mdx_Node ) );
 							ProcessNodeAnims( ModelBytes, offset + sizeof( Mdx_Node ), TimesForReplace );
 							offset += size_of_this_struct - 4;
 						}
@@ -957,7 +932,7 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 						{
 							size_t size_of_this_struct = *( size_t* )&ModelBytes[ offset ];
 							offset += 4;
-							memcpy( &tmpNode, &ModelBytes[ offset ], sizeof( Mdx_Node ) );
+							std::memcpy( &tmpNode, &ModelBytes[ offset ], sizeof( Mdx_Node ) );
 							ProcessNodeAnims( ModelBytes, offset + sizeof( Mdx_Node ), TimesForReplace );
 							offset += size_of_this_struct - 4;
 						}
@@ -971,7 +946,7 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 						offset += 4;
 						while ( newoffset > offset )
 						{
-							memcpy( &tmpGeosetAnimation, &ModelBytes[ offset ], sizeof( Mdx_GeosetAnimation ) );
+							std::memcpy( &tmpGeosetAnimation, &ModelBytes[ offset ], sizeof( Mdx_GeosetAnimation ) );
 							ProcessNodeAnims( ModelBytes, offset + sizeof( Mdx_GeosetAnimation ), TimesForReplace );
 
 							offset += tmpGeosetAnimation.InclusiveSize;
@@ -988,7 +963,7 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 						{
 							size_t size_of_this_struct = *( size_t* )&ModelBytes[ offset ];
 							offset += 4;
-							memcpy( &tmpNode, &ModelBytes[ offset ], sizeof( Mdx_Node ) );
+							std::memcpy( &tmpNode, &ModelBytes[ offset ], sizeof( Mdx_Node ) );
 							ProcessNodeAnims( ModelBytes, offset + sizeof( Mdx_Node ), TimesForReplace );
 							offset += size_of_this_struct - 4;
 						}
@@ -1003,13 +978,13 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 						Mdx_Tracks tmpTracks;
 						while ( newoffset > offset )
 						{
-							memcpy( &tmpNode, &ModelBytes[ offset ], sizeof( Mdx_Node ) );
+							std::memcpy( &tmpNode, &ModelBytes[ offset ], sizeof( Mdx_Node ) );
 							ProcessNodeAnims( ModelBytes, offset + sizeof( Mdx_Node ), TimesForReplace );
 							offset += tmpNode.InclusiveSize;
 							if ( memcmp( &ModelBytes[ offset ], "KEVT", 4 ) == 0 )
 							{
 								offset += 4;
-								memcpy( &tmpTracks, &ModelBytes[ offset ], sizeof( Mdx_Tracks ) );
+								std::memcpy( &tmpTracks, &ModelBytes[ offset ], sizeof( Mdx_Tracks ) );
 								offset += sizeof( Mdx_Tracks );
 								for ( int n = 0; n < tmpTracks.NrOfTracks; n++ )
 								{
@@ -1029,7 +1004,7 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 						Mdx_Node tmpNode;
 						while ( newoffset > offset )
 						{
-							memcpy( &tmpNode, &ModelBytes[ offset ], sizeof( Mdx_Node ) );
+							std::memcpy( &tmpNode, &ModelBytes[ offset ], sizeof( Mdx_Node ) );
 							ProcessNodeAnims( ModelBytes, offset + sizeof( Mdx_Node ), TimesForReplace );
 							offset += tmpNode.InclusiveSize;
 							unsigned int size_of_this_struct = *( unsigned int* )&ModelBytes[ offset ];
@@ -1081,14 +1056,14 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 				}
 
 
-				if ( IsKeyPressed( '0' ) && FileExist( ".\\Test1234.mdx" ) )
+				/*if ( IsKeyPressed( '0' ) && FileExist( ".\\Test1234.mdx" ) )
 				{
 					FILE *f;
 					fopen_s( &f, ".\\Test1234.mdx", "wb" );
 					fwrite( ModelBytes, sz, 1, f );
 					fclose( f );
 					MessageBoxA( 0, "Ok dump", "DUMP", 0 );
-				}
+				}*/
 
 			}
 
@@ -1098,7 +1073,7 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 				Sequences.clear( );
 
 			ModelSequenceReSpeedList.erase( ModelSequenceReSpeedList.begin( ) + ( int )i );
-			i--;
+
 		}
 
 	}
@@ -1141,7 +1116,7 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 
 			if ( TagFound )
 			{
-				memcpy( &ModelBytes[ TagStartOffset ], &ModelBytes[ TagStartOffset + TagSize + 4 ], sz - ( TagStartOffset + TagSize ) );
+				std::memcpy( &ModelBytes[ TagStartOffset ], &ModelBytes[ TagStartOffset + TagSize + 4 ], sz - ( TagStartOffset + TagSize ) );
 				memset( &ModelBytes[ sz - TagSize - 4 ], 0xFF, TagSize );
 
 				sz = sz - TagSize - 4;
@@ -1150,7 +1125,7 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 
 
 			ModelRemoveTagList.erase( ModelRemoveTagList.begin( ) + ( int )i );
-			i--;
+
 		}
 	}
 
@@ -1181,7 +1156,7 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 				offset += 4;
 				while ( offset < sz )
 				{
-					memcpy( TagName, &ModelBytes[ offset ], 4 );
+					std::memcpy( TagName, &ModelBytes[ offset ], 4 );
 					if ( memcmp( &ModelBytes[ offset ], strGLBS, 4 ) == 0 )
 					{
 						offset += 4;
@@ -1210,7 +1185,7 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 
 						while ( newoffset > offset )
 						{
-							memcpy( &tmpNode, &ModelBytes[ offset ], sizeof( Mdx_Node ) );
+							std::memcpy( &tmpNode, &ModelBytes[ offset ], sizeof( Mdx_Node ) );
 
 							if ( tmpNode.ObjectId != 0xFFFFFFFF && tmpNode.ObjectId > MaxObjectId )
 							{
@@ -1231,7 +1206,7 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 						Mdx_Node tmpNode;
 						while ( newoffset > offset )
 						{
-							memcpy( &tmpNode, &ModelBytes[ offset ], sizeof( Mdx_Node ) );
+							std::memcpy( &tmpNode, &ModelBytes[ offset ], sizeof( Mdx_Node ) );
 							if ( tmpNode.ObjectId != 0xFFFFFFFF && tmpNode.ObjectId > MaxObjectId )
 							{
 								MaxObjectId = tmpNode.ObjectId;
@@ -1254,7 +1229,7 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 						{
 							size_t size_of_this_struct = *( size_t* )&ModelBytes[ offset ];
 							offset += 4;
-							memcpy( &tmpNode, &ModelBytes[ offset ], sizeof( Mdx_Node ) );
+							std::memcpy( &tmpNode, &ModelBytes[ offset ], sizeof( Mdx_Node ) );
 							if ( tmpNode.ObjectId != 0xFFFFFFFF && tmpNode.ObjectId > MaxObjectId )
 							{
 								MaxObjectId = tmpNode.ObjectId;
@@ -1277,7 +1252,7 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 							size_t size_of_this_struct = *( size_t* )&ModelBytes[ offset ];
 							offset += 4;
 
-							memcpy( &tmpNode, &ModelBytes[ offset ], sizeof( Mdx_Node ) );
+							std::memcpy( &tmpNode, &ModelBytes[ offset ], sizeof( Mdx_Node ) );
 
 							if ( tmpNode.ObjectId != 0xFFFFFFFF && tmpNode.ObjectId > MaxObjectId )
 							{
@@ -1300,7 +1275,7 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 							{
 							offset += 4;
 							Mdx_Track tmpTrack;
-							memcpy( &tmpTrack, &ModelBytes[ offset ], sizeof( Mdx_Track ) );
+							std::memcpy( &tmpTrack, &ModelBytes[ offset ], sizeof( Mdx_Track ) );
 							offset += sizeof( Mdx_Track );
 							for ( DWORD i = 0; i < tmpTrack.NrOfTracks; i++ )
 							{
@@ -1322,7 +1297,7 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 						{
 							size_t size_of_this_struct = *( size_t* )&ModelBytes[ offset ];
 							offset += 4;
-							memcpy( &tmpNode, &ModelBytes[ offset ], sizeof( Mdx_Node ) );
+							std::memcpy( &tmpNode, &ModelBytes[ offset ], sizeof( Mdx_Node ) );
 							if ( tmpNode.ObjectId != 0xFFFFFFFF && tmpNode.ObjectId > MaxObjectId )
 							{
 								MaxObjectId = tmpNode.ObjectId;
@@ -1343,7 +1318,7 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 						{
 							size_t size_of_this_struct = *( size_t* )&ModelBytes[ offset ];
 							offset += 4;
-							memcpy( &tmpNode, &ModelBytes[ offset ], sizeof( Mdx_Node ) );
+							std::memcpy( &tmpNode, &ModelBytes[ offset ], sizeof( Mdx_Node ) );
 
 							if ( tmpNode.ObjectId != 0xFFFFFFFF && tmpNode.ObjectId > MaxObjectId )
 							{
@@ -1365,7 +1340,7 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 						{
 							size_t size_of_this_struct = *( size_t* )&ModelBytes[ offset ];
 							offset += 4;
-							memcpy( &tmpNode, &ModelBytes[ offset ], sizeof( Mdx_Node ) );
+							std::memcpy( &tmpNode, &ModelBytes[ offset ], sizeof( Mdx_Node ) );
 							if ( tmpNode.ObjectId != 0xFFFFFFFF && tmpNode.ObjectId > MaxObjectId )
 							{
 								MaxObjectId = tmpNode.ObjectId;
@@ -1385,7 +1360,7 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 						Mdx_Tracks tmpTracks;
 						while ( newoffset > offset )
 						{
-							memcpy( &tmpNode, &ModelBytes[ offset ], sizeof( Mdx_Node ) );
+							std::memcpy( &tmpNode, &ModelBytes[ offset ], sizeof( Mdx_Node ) );
 							if ( tmpNode.ObjectId != 0xFFFFFFFF && tmpNode.ObjectId > MaxObjectId )
 							{
 								MaxObjectId = tmpNode.ObjectId;
@@ -1396,9 +1371,9 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 							if ( memcmp( &ModelBytes[ offset ], "KEVT", 4 ) == 0 )
 							{
 								offset += 4;
-								memcpy( &tmpTracks, &ModelBytes[ offset ], sizeof( Mdx_Tracks ) );
+								std::memcpy( &tmpTracks, &ModelBytes[ offset ], sizeof( Mdx_Tracks ) );
 								offset += sizeof( Mdx_Tracks );
-								for ( int i = 0; i < tmpTracks.NrOfTracks; i++ )
+								for ( int n = 0; n < tmpTracks.NrOfTracks; n++ )
 								{
 									offset += 4;
 								}
@@ -1415,7 +1390,7 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 						Mdx_Node tmpNode;
 						while ( newoffset > offset )
 						{
-							memcpy( &tmpNode, &ModelBytes[ offset ], sizeof( Mdx_Node ) );
+							std::memcpy( &tmpNode, &ModelBytes[ offset ], sizeof( Mdx_Node ) );
 
 							if ( tmpNode.ObjectId != 0xFFFFFFFF && tmpNode.ObjectId > MaxObjectId )
 							{
@@ -1475,23 +1450,50 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 
 			float scaleall = mdlfix.Scale;
 
-			patchbytes = ( BYTE * )&scaleall;
+			if ( scaleall != 0.0f )
+			{
+				patchbytes = ( BYTE * )&mdlfix.Scale;
 
 
-			FullPatchData.push_back( patchbytes[ 0 ] );
-			FullPatchData.push_back( patchbytes[ 1 ] );
-			FullPatchData.push_back( patchbytes[ 2 ] );
-			FullPatchData.push_back( patchbytes[ 3 ] );
+				FullPatchData.push_back( patchbytes[ 0 ] );
+				FullPatchData.push_back( patchbytes[ 1 ] );
+				FullPatchData.push_back( patchbytes[ 2 ] );
+				FullPatchData.push_back( patchbytes[ 3 ] );
 
-			FullPatchData.push_back( patchbytes[ 0 ] );
-			FullPatchData.push_back( patchbytes[ 1 ] );
-			FullPatchData.push_back( patchbytes[ 2 ] );
-			FullPatchData.push_back( patchbytes[ 3 ] );
+				FullPatchData.push_back( patchbytes[ 0 ] );
+				FullPatchData.push_back( patchbytes[ 1 ] );
+				FullPatchData.push_back( patchbytes[ 2 ] );
+				FullPatchData.push_back( patchbytes[ 3 ] );
 
-			FullPatchData.push_back( patchbytes[ 0 ] );
-			FullPatchData.push_back( patchbytes[ 1 ] );
-			FullPatchData.push_back( patchbytes[ 2 ] );
-			FullPatchData.push_back( patchbytes[ 3 ] );
+				FullPatchData.push_back( patchbytes[ 0 ] );
+				FullPatchData.push_back( patchbytes[ 1 ] );
+				FullPatchData.push_back( patchbytes[ 2 ] );
+				FullPatchData.push_back( patchbytes[ 3 ] );
+			}
+			else
+			{
+				patchbytes = ( BYTE * )&mdlfix.ScaleX;
+
+
+				FullPatchData.push_back( patchbytes[ 0 ] );
+				FullPatchData.push_back( patchbytes[ 1 ] );
+				FullPatchData.push_back( patchbytes[ 2 ] );
+				FullPatchData.push_back( patchbytes[ 3 ] );
+
+				patchbytes = ( BYTE * )&mdlfix.ScaleY;
+
+				FullPatchData.push_back( patchbytes[ 0 ] );
+				FullPatchData.push_back( patchbytes[ 1 ] );
+				FullPatchData.push_back( patchbytes[ 2 ] );
+				FullPatchData.push_back( patchbytes[ 3 ] );
+
+				patchbytes = ( BYTE * )&mdlfix.ScaleZ;
+
+				FullPatchData.push_back( patchbytes[ 0 ] );
+				FullPatchData.push_back( patchbytes[ 1 ] );
+				FullPatchData.push_back( patchbytes[ 2 ] );
+				FullPatchData.push_back( patchbytes[ 3 ] );
+			}
 
 			FullPatchData.insert( FullPatchData.end( ), ( BYTE* )( HelperBytesPart3 ), ( BYTE* )( HelperBytesPart3 + sizeof( HelperBytesPart3 ) ) );
 
@@ -1516,62 +1518,40 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 			}
 
 
-			if ( IsKeyPressed( '0' ) && FileExist( ".\\Test1234.mdx" ) )
-			{
-				FILE *f;
-				fopen_s( &f, ".\\Test1234.mdx", "wb" );
-				fwrite( &FullPatchData[ 0 ], FullPatchData.size( ), 1, f );
-				fclose( f );
-				MessageBoxA( 0, "Ok dump", "DUMP", 0 );
-			}
+			//if ( IsKeyPressed( '0' ) && FileExist( ".\\Test1234.mdx" ) )
+			//{
+			//	FILE *f;
+			//	fopen_s( &f, ".\\Test1234.mdx", "wb" );
+			//	fwrite( &FullPatchData[ 0 ], FullPatchData.size( ), 1, f );
+			//	fclose( f );
+			//	MessageBoxA( 0, "Ok dump", "DUMP", 0 );
+			//}
 
 
-			ICONMDLCACHE * tmpih = new ICONMDLCACHE( );
-			BOOL FoundOldHelper = GetFromIconMdlCache( filename, tmpih );
+			ICONMDLCACHE * tmpih = Storm::MemAllocStruct<ICONMDLCACHE>( );
+			StormBuffer ResultBuffer;
+			ResultBuffer.buf = ( char * )Storm::MemAlloc( FullPatchData.size( ) );
+			ResultBuffer.length = FullPatchData.size( );
+			std::memcpy( &ResultBuffer.buf[ 0 ], &FullPatchData[ 0 ], FullPatchData.size( ) );
 
+			tmpih->buf = ResultBuffer.buf;
+			tmpih->size = ResultBuffer.length;
+			tmpih->hashlen = filename.length( );
+			tmpih->_hash = GetBufHash( filename.c_str( ), tmpih->hashlen );
+			ICONMDLCACHELIST.push_back( *tmpih );
 
-			if ( FoundOldHelper )
-			{
-				Buffer ResultBuffer;
-				ResultBuffer.buf = new char[ FullPatchData.size( ) ];
-				ResultBuffer.length = FullPatchData.size( );
+			if ( NeedReleaseUnusedMemory )
+				Storm::MemFree( ( void* )*OutDataPointer );
 
-				memcpy( &ResultBuffer.buf[ 0 ], &FullPatchData[ 0 ], FullPatchData.size( ) );
+			*OutDataPointer = ( int )tmpih->buf;
+			*OutSize = tmpih->size;
 
-				delete[ ] tmpih->buf;
-				tmpih->buf = ResultBuffer.buf;
-				tmpih->size = ResultBuffer.length;
-				*OutDataPointer = ( int )tmpih->buf;
-				*OutSize = tmpih->size;
-			}
-			else
-			{
-				Buffer ResultBuffer;
-				ResultBuffer.buf = new char[ FullPatchData.size( ) ];
-				ResultBuffer.length = FullPatchData.size( );
+			ModelBytes = ( BYTE * )tmpih->buf;
+			sz = tmpih->size;
 
-				memcpy( &ResultBuffer.buf[ 0 ], &FullPatchData[ 0 ], FullPatchData.size( ) );
-
-				tmpih->buf = ResultBuffer.buf;
-				tmpih->size = ResultBuffer.length;
-				tmpih->hashlen = filename.length( );
-				tmpih->hash = GetBufHash( filename.c_str( ), tmpih->hashlen );
-
-				ICONMDLCACHELIST.push_back( *tmpih );
-
-
-				Storm_403_org( ( void* )*OutDataPointer, "delete", -1, 0 );
-
-				*OutDataPointer = ( int )tmpih->buf;
-				*OutSize = tmpih->size;
-
-				ModelBytes = ( BYTE * )tmpih->buf;
-				sz = tmpih->size;
-			}
-
-
+			Storm::MemFree( tmpih );
 			ModelScaleList.erase( ModelScaleList.begin( ) + ( int )i );
-			i--;
+
 		}
 	}
 
@@ -1589,33 +1569,33 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 			if ( GameGetFile_ptr( mdlfix.patchPath.c_str( ), &PatchFileData, &PatchFileSize, unknown ) )
 			{
 				FullPatchData.insert( FullPatchData.end( ), ( char* )( PatchFileData ), ( char* )( PatchFileData + PatchFileSize ) );
-			}
+		}
+
 
 			ModelPatchList.erase( ModelPatchList.begin( ) + ( int )i );
-			i--;
-		}
+
 	}
+}
 
 	if ( !FullPatchData.empty( ) )
 	{
 
-		ICONMDLCACHE * tmpih = new ICONMDLCACHE( );
+		ICONMDLCACHE * tmpih = Storm::MemAllocStruct< ICONMDLCACHE>( );
 		BOOL FoundOldHelper = GetFromIconMdlCache( filename, tmpih );
 
 
 		if ( FoundOldHelper )
 		{
-			Buffer ResultBuffer;
-			ResultBuffer.buf = new char[ tmpih->size + FullPatchData.size( ) ];
+			StormBuffer ResultBuffer;
+			ResultBuffer.buf = ( char * )Storm::MemAlloc( tmpih->size + FullPatchData.size( ) );
 
 			ResultBuffer.length = tmpih->size + FullPatchData.size( );
 
-			memcpy( &ResultBuffer.buf[ 0 ], tmpih->buf, sz );
+			std::memcpy( &ResultBuffer.buf[ 0 ], tmpih->buf, sz );
 
-			memcpy( &ResultBuffer.buf[ sz ], &FullPatchData[ 0 ], FullPatchData.size( ) );
+			std::memcpy( &ResultBuffer.buf[ sz ], &FullPatchData[ 0 ], FullPatchData.size( ) );
 
-
-			delete[ ] tmpih->buf;
+			Storm::MemFree( tmpih->buf );
 			tmpih->buf = ResultBuffer.buf;
 			tmpih->size = ResultBuffer.length;
 			*OutDataPointer = ( int )tmpih->buf;
@@ -1623,23 +1603,21 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 		}
 		else
 		{
-			Buffer ResultBuffer;
-			ResultBuffer.buf = new char[ sz + FullPatchData.size( ) ];
+			StormBuffer ResultBuffer;
+			ResultBuffer.buf = ( char * )Storm::MemAlloc( sz + FullPatchData.size( ) );
 			ResultBuffer.length = sz + FullPatchData.size( );
-
-			memcpy( &ResultBuffer.buf[ 0 ], ModelBytes, sz );
-			memcpy( &ResultBuffer.buf[ sz ], &FullPatchData[ 0 ], FullPatchData.size( ) );
+			std::memcpy( &ResultBuffer.buf[ 0 ], ModelBytes, sz );
+			std::memcpy( &ResultBuffer.buf[ sz ], &FullPatchData[ 0 ], FullPatchData.size( ) );
 
 			tmpih->buf = ResultBuffer.buf;
 			tmpih->size = ResultBuffer.length;
 
 			tmpih->hashlen = filename.length( );
-			tmpih->hash = GetBufHash( filename.c_str( ), tmpih->hashlen );
-
+			tmpih->_hash = GetBufHash( filename.c_str( ), tmpih->hashlen );
 			ICONMDLCACHELIST.push_back( *tmpih );
 
-
-			Storm_403_org( ( void* )*OutDataPointer, "delete", -1, 0 );
+			if ( NeedReleaseUnusedMemory )
+				Storm::MemFree( ( void* )*OutDataPointer );
 
 
 			*OutDataPointer = ( int )tmpih->buf;
@@ -1658,7 +1636,7 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 			fclose( f );
 		}
 
-		delete tmpih;
+		Storm::MemFree( tmpih );
 		FullPatchData.clear( );
 	}
 
@@ -1692,9 +1670,9 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 							*( float* )&ModelBytes[ offset ] = mdlfix.Z;
 							offset += 4;
 							*( float* )&ModelBytes[ offset ] = mdlfix.Radius;
-						}
-						offset = newoffset + 4;
 					}
+						offset = newoffset + 4;
+				}
 					else
 					{
 						offset += 4;
@@ -1702,10 +1680,11 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 					}
 					offset += 4;
 				}
-			}
-			ModelCollisionFixList.erase( ModelCollisionFixList.begin( ) + ( int )i );
-			i--;
 		}
+
+			ModelCollisionFixList.erase( ModelCollisionFixList.begin( ) + ( int )i );
+
+	}
 
 	}
 
@@ -1737,7 +1716,7 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 						while ( TexturesCount > 0 )
 						{
 							TexturesCount--;
-							memcpy( &tmpTexture, &ModelBytes[ offset ], sizeof( Mdx_Texture ) );
+							std::memcpy( &tmpTexture, &ModelBytes[ offset ], sizeof( Mdx_Texture ) );
 							TextureID++;
 
 							if ( mdlfix.TextureID == TextureID )
@@ -1752,7 +1731,7 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 									tmpTexture.ReplaceableId = atoi( mdlfix.NewTexturePath.c_str( ) );
 									memset( tmpTexture.FileName, 0, 260 );
 								}
-								memcpy( &ModelBytes[ offset ], &tmpTexture, sizeof( Mdx_Texture ) );
+								std::memcpy( &ModelBytes[ offset ], &tmpTexture, sizeof( Mdx_Texture ) );
 							}
 							offset += sizeof( Mdx_Texture );
 						}
@@ -1767,8 +1746,10 @@ void ProcessMdx( string filename, int * OutDataPointer, size_t * OutSize, BOOL u
 				}
 			}
 
+
+
 			ModelTextureFixList.erase( ModelTextureFixList.begin( ) + ( int )i );
-			i--;
+
 		}
 
 	}
@@ -1801,55 +1782,144 @@ void PrintLog( const char * str )
 
 BOOL ProcessFile( string filename, int * OutDataPointer, size_t * OutSize, BOOL unknown, BOOL IsFileExistOld )
 {
-
-
 	BOOL IsFileExist = IsFileExistOld;
 
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( "ProcessFile" );
-#endif
-	int filenamelen = filename.length( );
-	if ( filenamelen > 4 )
+	if ( !OutDataPointer || !OutSize || filename.length( ) < 3 )
 	{
-		string FileExtension = ToLower( fs::path( filename ).extension( ).string( ) );
-
-#ifdef DOTA_HELPER_LOG
-		AddNewLineToDotaHelperLog( "ProcessFileStart..." );
-#endif
-
-
-		if ( FileExtension == string( ".tga" ) )
-		{
-
-		}
-		else if ( FileExtension == string( ".blp" ) )
-		{
-			if ( !IsFileExist )
-			{
-				IsFileExist = FixDisabledIconPath( filename, OutDataPointer, OutSize, unknown );
-			}
-			else
-			{
-				/*	if ( strstr( FilePathLower.c_str( ), "terrainart" ) == FilePathLower.c_str( ) ||
-						 strstr( FilePathLower.c_str( ), "replaceabletextures\\cliff" ) == FilePathLower.c_str( ) )
-						ApplyTerrainFilter( filename, OutDataPointer, OutSize, FALSE );*/
-			}
-		}
-		else if ( FileExtension == string( ".mdx" ) )
-		{
-			if ( IsFileExist )
-			{
-				ProcessMdx( filename, OutDataPointer, OutSize, unknown );
-			}
-			else
-			{
-				//return GameGetFile_ptr( "Objects\\InvalidObject\\InvalidObject.mdx", OutDataPointer, OutSize, unknown );
-			}
-		}
-
-
+		return IsFileExist;
 	}
 
+	ICONMDLCACHE tmpih;
+	BOOL FoundOldHelper = GetFromIconMdlCache( filename, &tmpih );
+	if ( FoundOldHelper )
+	{
+		*OutDataPointer = ( int )tmpih.buf;
+		*OutSize = tmpih.size;
+		return TRUE;
+	}
+
+	for ( RawImageStruct & s : ListOfRawImages )
+	{
+		if ( s.ingame )
+		{
+			if ( ToLower( filename ) == ToLower( s.filename ) )
+			{
+				*OutDataPointer = ( int )s.ingamebuffer.buf;
+				*OutSize = s.ingamebuffer.length;
+				return TRUE;
+			}
+		}
+	}
+
+
+
+	string FileExtension = ToLower( fs::path( filename ).extension( ).string( ) );
+
+
+	if ( FileExtension == string( ".tga" ) )
+	{
+
+	}
+	else if ( FileExtension == string( ".blp" ) )
+	{
+		if ( !IsFileExist )
+		{
+			IsFileExist = FixDisabledIconPath( filename, OutDataPointer, OutSize, unknown );
+		}
+		else
+		{
+			//ApplyTestFilter( filename, OutDataPointer, OutSize );
+			/*if ( strstr( filename.c_str( ), "terrainart" ) == filename.c_str( ) ||
+				strstr( filename.c_str( ), "replaceabletextures\\cliff" ) == filename.c_str( ) )
+				ApplyTerrainFilter( filename, OutDataPointer, OutSize, FALSE );*/
+		}
+	}
+	else if ( FileExtension == string( ".mdx" ) )
+	{
+		if ( IsFileExist )
+		{
+			ProcessMdx( filename, OutDataPointer, OutSize, unknown );
+		}
+		else
+		{
+			//return GameGetFile_ptr( "Objects\\InvalidObject\\InvalidObject.mdx", OutDataPointer, OutSize, unknown );
+		}
+	}
+
+
+	for ( FileRedirectStruct & DotaRedirectHelp : FileRedirectList )
+	{
+		if ( filename == DotaRedirectHelp.NewFilePath )
+		{
+			ICONMDLCACHE tmpih2 = ICONMDLCACHE( );
+
+			IsFileExist = GameGetFile_ptr( DotaRedirectHelp.RealFilePath.c_str( ), OutDataPointer, OutSize, unknown );
+			if ( IsFileExist )
+			{
+				char * DataPointer = ( char * )*OutDataPointer;
+				size_t DataSize = *OutSize;
+
+				StormBuffer ResultBuffer;
+				ResultBuffer.buf = ( char * )Storm::MemAlloc( DataSize );
+				ResultBuffer.length = DataSize;
+				std::memcpy( &ResultBuffer.buf[ 0 ], DataPointer, DataSize );
+
+				tmpih2.buf = ResultBuffer.buf;
+				tmpih2.size = ResultBuffer.length;
+
+				tmpih2.hashlen = DotaRedirectHelp.NewFilePath.length( );
+				tmpih2._hash = GetBufHash( DotaRedirectHelp.NewFilePath.c_str( ), tmpih2.hashlen );
+
+				ICONMDLCACHELIST.push_back( tmpih2 );
+
+				*OutDataPointer = ( int )tmpih2.buf;
+				*OutSize = tmpih2.size;
+
+
+				if ( FileExtension == string( ".tga" ) )
+				{
+
+			}
+				else if ( FileExtension == string( ".blp" ) )
+				{
+					if ( !IsFileExist )
+					{
+						IsFileExist = FixDisabledIconPath( filename, OutDataPointer, OutSize, unknown );
+					}
+					else
+					{
+						//ApplyTestFilter( filename, OutDataPointer, OutSize );
+						/*if ( strstr( filename.c_str( ), "terrainart" ) == filename.c_str( ) ||
+						strstr( filename.c_str( ), "replaceabletextures\\cliff" ) == filename.c_str( ) )
+						ApplyTerrainFilter( filename, OutDataPointer, OutSize, FALSE );*/
+				}
+	}
+				else if ( FileExtension == string( ".mdx" ) )
+				{
+					if ( IsFileExist )
+					{
+						ProcessMdx( filename, OutDataPointer, OutSize, unknown );
+				}
+					else
+					{
+						//return GameGetFile_ptr( "Objects\\InvalidObject\\InvalidObject.mdx", OutDataPointer, OutSize, unknown );
+					}
+				}
+
+
+
+				//ProcessFile( DotaRedirectHelp.NewFilePath, OutDataPointer, OutSize, unknown, IsFileExist );
+
+
+
+				return TRUE;
+					}
+
+}
+	}
+
+	if ( !IsFileExist && IsFileExistOld )
+		return IsFileExistOld;
 
 	return IsFileExist;
 }
@@ -1865,33 +1935,44 @@ void AddNewFakeFile( char * filename, BYTE * buffer, size_t FileSize )
 	FakeFileList.push_back( tmpstr );
 }
 
+
+
 BOOL __fastcall GameGetFile_my( const char * filename, int * OutDataPointer, unsigned int * OutSize, BOOL unknown )
 {
+	BOOL IsFileExist = GameGetFile_ptr( filename, OutDataPointer, OutSize, unknown );
 
 
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( string( "Start File Helper..[" ) + to_string( unknown ) + "]" );
-#endif
+	// ONLY FOR TEST
+	//if ( filename && filename[ 0 ] != '\0' )
+	//{
+	//	std::ofstream outfile;
+	//	outfile.open( "test.txt", std::ios_base::app );
+	//	outfile << filename << std::endl;
+	//	outfile.close( );
+	//}
+
+	if ( !( IsGame( ) ) && !MainFuncWork )
+	{
+		return IsFileExist;
+}
 
 	if ( TerminateStarted )
 	{
-
-#ifdef DOTA_HELPER_LOG
-		AddNewLineToDotaHelperLog( "TerminateStarted" );
-#endif
-
-		return GameGetFile_ptr( filename, OutDataPointer, OutSize, unknown );
+		return NULL;
 	}
 
 	if ( !OutDataPointer || !OutSize )
 	{
-#ifdef DOTA_HELPER_LOG
-		AddNewLineToDotaHelperLog( "Bad Pointers" );
-#endif
 		return GameGetFile_ptr( filename, OutDataPointer, OutSize, unknown );
 	}
 
-	for ( FakeFileStruct fs : FakeFileList )
+
+	if ( filename == NULL || *filename == '\0' )
+	{
+		return IsFileExist;
+	}
+
+	for ( FakeFileStruct & fs : FakeFileList )
 	{
 		if ( _stricmp( filename, fs.filename ) == 0 )
 		{
@@ -1901,151 +1982,30 @@ BOOL __fastcall GameGetFile_my( const char * filename, int * OutDataPointer, uns
 		}
 	}
 
-#ifdef DOTA_HELPER_LOG
-	if ( filename && *filename != '\0' )
-		AddNewLineToDotaHelperLog( string( "FileHelper:" ) + string( filename ) );
-	else
-		AddNewLineToDotaHelperLog( "FileHelper(BADFILENAME)" );
-#endif
-
-	BOOL IsFileExist = GameGetFile_ptr( filename, OutDataPointer, OutSize, unknown );
-
-
-
-	if ( !*InGame && !MainFuncWork )
-	{
-#ifdef DOTA_HELPER_LOG
-		AddNewLineToDotaHelperLog( "Game not found or main not set" );
-#endif
-
-		return IsFileExist;
-	}
-
-	if ( filename == NULL || *filename == '\0' )
-	{
-
-#ifdef DOTA_HELPER_LOG
-		AddNewLineToDotaHelperLog( "Bad file name" );
-#endif
-
-		return IsFileExist;
-	}
-
-	if ( !IsFileExist )
-	{
-#ifdef DOTA_HELPER_LOG
-		AddNewLineToDotaHelperLog( "NoFileFound" );
-#endif
-	}
-	else
-	{
-#ifdef DOTA_HELPER_LOG
-		AddNewLineToDotaHelperLog( "FileFound" );
-#endif
-	}
-
 	IsFileExist = ProcessFile( filename, OutDataPointer, OutSize, unknown, IsFileExist );
-
-
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( "ProcessFileENDING" );
-#endif
-
-	if ( !IsFileExist )
-	{
-#ifdef DOTA_HELPER_LOG
-		AddNewLineToDotaHelperLog( "NoFileFound" );
-#endif
-	}
-	else
-	{
-#ifdef DOTA_HELPER_LOG
-		AddNewLineToDotaHelperLog( "FileFound" );
-#endif
-	}
-
-	//if ( !IsFileExist )
-	//{
-	for ( FileRedirectStruct DotaRedirectHelp : FileRedirectList )
-	{
-		if ( filename == DotaRedirectHelp.NewFilePath )
-		{
-			ICONMDLCACHE * tmpih = new ICONMDLCACHE( );
-			BOOL FoundOldHelper = GetFromIconMdlCache( DotaRedirectHelp.NewFilePath, tmpih );
-
-			if ( !FoundOldHelper )
-			{
-				IsFileExist = GameGetFile_ptr( DotaRedirectHelp.RealFilePath.c_str( ), OutDataPointer, OutSize, unknown );
-				if ( IsFileExist )
-				{
-					char * DataPointer = ( char * )*OutDataPointer;
-					size_t DataSize = *OutSize;
-
-					Buffer ResultBuffer;
-					ResultBuffer.buf = new char[ DataSize ];
-					ResultBuffer.length = DataSize;
-
-					memcpy( &ResultBuffer.buf[ 0 ], DataPointer, DataSize );
-
-					tmpih->buf = ResultBuffer.buf;
-					tmpih->size = ResultBuffer.length;
-
-					tmpih->hashlen = DotaRedirectHelp.NewFilePath.length( );
-					tmpih->hash = GetBufHash( DotaRedirectHelp.NewFilePath.c_str( ), tmpih->hashlen );
-
-					ICONMDLCACHELIST.push_back( *tmpih );
-
-					*OutDataPointer = ( int )tmpih->buf;
-					*OutSize = tmpih->size;
-
-					IsFileExist = ProcessFile( DotaRedirectHelp.NewFilePath, OutDataPointer, OutSize, unknown, IsFileExist );
-
-					return IsFileExist;
-				}
-			}
-			else
-			{
-
-				*OutDataPointer = ( int )tmpih->buf;
-				*OutSize = tmpih->size;
-
-				IsFileExist = ProcessFile( DotaRedirectHelp.NewFilePath, OutDataPointer, OutSize, unknown, IsFileExist );
-
-				return TRUE;
-			}
-
-			delete[ ] tmpih;
-		}
-	}
-
-
-	//}
-
-	if ( !IsFileExist )
-	{
-#ifdef DOTA_HELPER_LOG
-		AddNewLineToDotaHelperLog( "Not found" );
-#endif
-		/*if ( filename && *filename != '\0' )
-		{
-			MessageBoxA( 0, filename, "File not found", 0 );
-		}*/
-	}
-
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( "ProcessFileEND" );
-#endif
-
-
 
 	return IsFileExist;
 }
+
+
+
+//iconpath + _frame.blp
+int __stdcall CreateIconFrameMask( const char * iconpath )
+{
+	ApplyIconFrameFilter( iconpath, 0, 0 );
+
+
+	return TRUE;
+}
+
+
+
 //Storm_279 Storm_279_org;
 //Storm_279 Storm_279_ptr;
 //int __stdcall Storm_279_my( const char * filename, int arg1, int arg2, size_t arg3, int arg4 )
 //{
 //
-//	if ( NeedOpenConfigWindow )
+//	if ( ConfigWindowCreated )
 //	{
 //		if ( ToLower( "UI\\FrameDef\\Glue\\DialogWar3.fdf" ) == ToLower( filename ) )
 //		{
@@ -2055,3 +2015,60 @@ BOOL __fastcall GameGetFile_my( const char * filename, int * OutDataPointer, uns
 //
 //	return Storm_279_ptr( filename, arg1, arg2, arg3, arg4 );
 //}
+
+
+
+/*
+
+	Draw images
+
+*/
+
+/*struct RawImageStruct
+{
+	int width;
+	int height;
+	StormBuffer img;
+	StormBuffer ingamebuffer;
+	BOOL ingame;
+	string filename;
+};*/
+
+std::string GetFileContent( std::string filename )
+{
+	std::ifstream t( filename );
+	std::string str;
+
+	t.seekg( 0, std::ios::end );
+
+	if ( t.tellg( ) > NULL )
+	{
+		str.reserve( ( size_t )t.tellg( ) );
+		t.seekg( 0, std::ios::beg );
+
+		str.assign( ( std::istreambuf_iterator<char>( t ) ),
+			std::istreambuf_iterator<char>( ) );
+}
+
+	return str;
+}
+
+
+std::vector<std::string> get_file_list( const fs::path & path, bool dotolower )
+{
+	std::vector<std::string> m_file_list;
+	if ( !path.empty( ) )
+	{
+		fs::path apk_path( path );
+		fs::recursive_directory_iterator end;
+
+		for ( fs::recursive_directory_iterator i( apk_path ); i != end; ++i )
+		{
+			const fs::path cp = ( *i );
+
+			m_file_list.push_back( dotolower ? ToLower( cp.string( ) ) : cp.string( ) );
+		}
+	}
+	return m_file_list;
+}
+

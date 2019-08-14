@@ -15,88 +15,81 @@ pShowThisFrame ShowThisFrame;
 pDestructThisFrame DestructThisFrame;//Without clean memory
 pGetFrameItemAddress GetFrameItemAddress;
 
+BOOL usedcustomframes = FALSE;
+
+char ConfigPath[MAX_PATH];
 
 
-char ConfigPath[ MAX_PATH ];
-
-
-void ReadAllConfig( )
+void ReadAllConfig()
 {
 
 }
 
 
-void WriteAllConfig( )
+void WriteAllConfig()
 {
 
 }
 
 
-void LoadNewFrameDef( const char * filename )
+void LoadNewFrameDef(const char * filename)
 {
-	LoadNewFrameDef_org( filename, LoadFramesVar1, LoadFramesVar2, DefaultCStatus );
+	usedcustomframes = TRUE;
+	LoadNewFrameDef_org(filename, LoadFramesVar1, LoadFramesVar2, DefaultCStatus);
 }
 
 
-int CreateNewFrameAndShow( const char * FrameName, BOOL Show = FALSE )
+int CreateNewFrameAndShow(const char * FrameName, BOOL Show = FALSE)
 {
-	int pGlobalGameClass = GetGlobalClassAddr( );
-	int FrameAddr = CreateNewFrame( FrameName, pGlobalGameClass, 0, 0, 0 );
-	if ( Show && FrameAddr )
+	int pGlobalGameClass = GetGlobalClassAddr();
+	int FrameAddr = CreateNewFrame(FrameName, pGlobalGameClass, 0, 0, 0);
+	if (Show && FrameAddr)
 	{
-		ShowThisFrame( FrameAddr );
+		ShowThisFrame(FrameAddr);
 	}
 	return FrameAddr;
 }
 
-void DestroyFrame( int FrameAddr, BOOL unk = TRUE )
+void DestroyFrame(int FrameAddr, BOOL unk = TRUE)
 {
-	DestructThisFrame( FrameAddr, unk );
+	DestructThisFrame(FrameAddr, unk);
 }
 
-void ShowFrameWithPos( int FrameAddr, float left, float bottom, BOOL unk = TRUE )
+void ShowFrameWithPos(int FrameAddr, float left, float bottom, BOOL unk = TRUE)
 {
-	SetFramePos( FrameAddr + 180, 6, left, bottom, TRUE );
-	ShowThisFrame( FrameAddr );
+	SetFramePos(FrameAddr + 180, 6, left, bottom, TRUE);
+	ShowThisFrame(FrameAddr);
 }
 
-void ShowFrameItemWithPos( int FrameAddr, float left, float bottom, BOOL unk = TRUE )
+void ShowFrameItemWithPos(int FrameAddr, float left, float bottom, BOOL unk = TRUE)
 {
-	SetFramePos( FrameAddr, 6, left, bottom, TRUE );
-	ShowThisFrame( FrameAddr );
-}
-
-
-void ShowFrameWithPosAligned( int FrameAddr, float left, float bottom, int align, BOOL unk = TRUE )
-{
-	SetFramePos( FrameAddr + 180, align, left, bottom, TRUE );
-	ShowThisFrame( FrameAddr );
-}
-
-void ShowFrameWithPosAlternativeAligned( int FrameAddr, float left, float bottom, int alignFirst, int alignTwo, BOOL unk = TRUE )
-{
-	int pGlobalGameClass = GetGlobalClassAddr( );
-	ShowFrameAlternative( FrameAddr + 180, alignFirst, pGlobalGameClass + 180, alignTwo, left, bottom, 1 );
-	ShowThisFrame( FrameAddr );
+	SetFramePos(FrameAddr, 6, left, bottom, TRUE);
+	ShowThisFrame(FrameAddr);
 }
 
 
-void ShowFrameWithPosAlternative( int FrameAddr, float left, float bottom )
+void ShowFrameWithPosAligned(int FrameAddr, float left, float bottom, int align, BOOL unk = TRUE)
 {
-	int pGlobalGameClass = GetGlobalClassAddr( );
-	ShowFrameAlternative( FrameAddr + 180, 6, pGlobalGameClass + 180, 6, left, bottom, 1 );
-	ShowThisFrame( FrameAddr );
+	SetFramePos(FrameAddr + 180, align, left, bottom, TRUE);
+	ShowThisFrame(FrameAddr);
+}
+
+void ShowFrameWithPosAlternativeAligned(int FrameAddr, float left, float bottom, int alignFirst, int alignTwo, BOOL unk = TRUE)
+{
+	int pGlobalGameClass = GetGlobalClassAddr();
+	ShowFrameAlternative(FrameAddr + 180, alignFirst, pGlobalGameClass + 180, alignTwo, left, bottom, 1);
+	ShowThisFrame(FrameAddr);
 }
 
 
-void __fastcall SimpleCallbackFunction( int, int, int )
+void ShowFrameWithPosAlternative(int FrameAddr, float left, float bottom)
 {
-	if ( NeedOpenConfigWindow )
-	{
-		NeedOpenConfigWindow = FALSE;
-		WriteAllConfig( );
-	}
+	int pGlobalGameClass = GetGlobalClassAddr();
+	ShowFrameAlternative(FrameAddr + 180, 6, pGlobalGameClass + 180, 6, left, bottom, 1);
+	ShowThisFrame(FrameAddr);
 }
+
+
 struct FrameDefStatus
 {
 	int FDefVtable;
@@ -109,41 +102,38 @@ FrameDefStatus fStatus;
 
 BOOL FrameDefFileUpdated = FALSE;
 
-void LoadCustomFramesIfNeed( )
+void LoadCustomFramesIfNeed()
 {
-	if ( !FrameDefFileUpdated )
+	if (!FrameDefFileUpdated)
 	{
 		FrameDefFileUpdated = TRUE;
-		LoadNewFrameDef( "CustomFrames.txt" );
+		LoadNewFrameDef("CustomFrames.txt");
 	}
-
 }
 
 
-BOOL NeedOpenConfigWindow = FALSE;
+BOOL ConfigWindowCreated = FALSE;
 int ConfigFrameAddr = 0;
 
-int __stdcall ShowConfigWindow( const char * filename )
+int __stdcall ShowConfigWindow(const char * filename)
 {
-	LoadCustomFramesIfNeed( );
+	LoadCustomFramesIfNeed();
 
+	sprintf_s(ConfigPath, MAX_PATH, "%s", filename);
 
-	sprintf_s( ConfigPath, MAX_PATH, "%s", filename );
-
-
-	if ( !NeedOpenConfigWindow )
+	if (!ConfigWindowCreated && filename && filename[0] != '\0')
 	{
-		ConfigFrameAddr = CreateNewFrameAndShow( "DotaConfigEditor");
-		if ( ConfigFrameAddr )
+		ConfigFrameAddr = CreateNewFrameAndShow("DotaConfigEditor");
+		if (ConfigFrameAddr)
 		{
-			ShowFrameWithPosAlternativeAligned( ConfigFrameAddr, 0.0f, 0.6f,2,8);
-			NeedOpenConfigWindow = TRUE;
+			ShowFrameWithPosAlternativeAligned(ConfigFrameAddr, 0.0f, 0.6f, 2, 8);
+			ConfigWindowCreated = TRUE;
 		}
 	}
 	else
 	{
-		NeedOpenConfigWindow = FALSE;
-		DestroyFrame( ConfigFrameAddr );
+		ConfigWindowCreated = FALSE;
+		DestroyFrame(ConfigFrameAddr);
 		ConfigFrameAddr = 0;
 	}
 	return TRUE;
@@ -156,33 +146,33 @@ BOOL GlyphButtonEnabled = TRUE;
 BOOL GlyphButtonCreated = FALSE;
 int GlyphButtonAddr = 0;
 
-JassString CallBackFuncName;
+jRCString CallBackFuncName;
 
-int __stdcall CreateGlyphButton( const char * callbackfunc, BOOL create )
+int __stdcall CreateGlyphButton(const char * callbackfunc, BOOL create)
 {
-	LoadCustomFramesIfNeed( );
+	LoadCustomFramesIfNeed();
 
-	if ( create && GlyphButtonCreated )
+	if (create && GlyphButtonCreated)
 	{
 		return 0;
 	}
 
-	if ( create )
+	if (create)
 	{
-		str2jstr( &CallBackFuncName, callbackfunc );
+		str2jstr(&CallBackFuncName, callbackfunc);
 
-		GlyphButtonAddr = CreateNewFrameAndShow( "GlyphButton" );
-		if ( GlyphButtonAddr )
+		GlyphButtonAddr = CreateNewFrameAndShow("GlyphButton");
+		if (GlyphButtonAddr)
 		{
 			GlyphButtonCreated = TRUE;
-			ShowFrameWithPos( GlyphButtonAddr, 0.155f, 0.006f );
+			ShowFrameWithPos(GlyphButtonAddr, 0.155f, 0.006f);
 		}
 	}
 
-	if ( !create && GlyphButtonCreated )
+	if (!create && GlyphButtonCreated)
 	{
 		GlyphButtonCreated = FALSE;
-		DestroyFrame( GlyphButtonAddr );
+		DestroyFrame(GlyphButtonAddr);
 		GlyphButtonAddr = 0;
 	}
 
@@ -192,24 +182,24 @@ int __stdcall CreateGlyphButton( const char * callbackfunc, BOOL create )
 
 
 
-int __stdcall SetGlyphButtonEnabled( BOOL enabled )
+int __stdcall SetGlyphButtonEnabled(BOOL enabled)
 {
 	GlyphButtonEnabled = enabled;
 
-	if ( GlyphButtonCreated && GlyphButtonAddr )
+	if (GlyphButtonCreated && GlyphButtonAddr)
 	{
-		int GlyphButtonItemFrame = GetFrameItemAddress( "GlyphItemButton", 0 );
-		if ( GlyphButtonItemFrame > 0 )
+		int GlyphButtonItemFrame = GetFrameItemAddress("GlyphItemButton", 0);
+		if (GlyphButtonItemFrame > 0)
 		{
-			if ( enabled )
+			if (enabled)
 			{
-				if ( !( *( UINT* )( GlyphButtonItemFrame + 0x1D4 ) & 1 ) )
-					*( UINT* )( GlyphButtonItemFrame + 0x1D4 ) += 1;
+				if (!(*(UINT*)(GlyphButtonItemFrame + 0x1D4) & 1))
+					*(UINT*)(GlyphButtonItemFrame + 0x1D4) += 1;
 			}
 			else
 			{
-				if ( ( *( UINT* )( GlyphButtonItemFrame + 0x1D4 ) & 1 ) )
-					*( UINT* )( GlyphButtonItemFrame + 0x1D4 ) -= 1;
+				if ((*(UINT*)(GlyphButtonItemFrame + 0x1D4) & 1))
+					*(UINT*)(GlyphButtonItemFrame + 0x1D4) -= 1;
 			}
 
 			//if ( !( *( UINT* )( GlyphButtonItemFrame + 0x1CC ) & 0x80 ) )
@@ -218,7 +208,7 @@ int __stdcall SetGlyphButtonEnabled( BOOL enabled )
 			//	*( UINT* )( GlyphButtonItemFrame + 0x1CC ) += 0x80;
 			//}
 
-			UpdateFrameFlags( GlyphButtonItemFrame, 0 );
+			UpdateFrameFlags(GlyphButtonItemFrame, 0);
 		}
 	}
 	return enabled;
@@ -226,9 +216,9 @@ int __stdcall SetGlyphButtonEnabled( BOOL enabled )
 
 
 
-void ProcessClickAtCustomFrames( )
+void ProcessClickAtCustomFrames()
 {
-	if ( GlyphButtonCreated && GlyphButtonAddr )
+	/*if ( GlyphButtonCreated && GlyphButtonAddr )
 	{
 		int GlyphButtonItemFrame = GetFrameItemAddress( "GlyphItemButton", 0 );
 		if ( GlyphButtonItemFrame > 0 )
@@ -239,5 +229,25 @@ void ProcessClickAtCustomFrames( )
 				ExecuteFunc( &CallBackFuncName );
 			}
 		}
+	}*/
+}
+
+pWc3ControlClickButton Wc3ControlClickButton_ptr;
+pWc3ControlClickButton Wc3ControlClickButton_org;
+
+int __fastcall Wc3ControlClickButton_my(int btnaddr, int, int unk)
+{
+	int retval = Wc3ControlClickButton_ptr(btnaddr, unk);
+	if (GlyphButtonCreated && GlyphButtonAddr)
+	{
+		int GlyphButtonItemFrame = GetFrameItemAddress("GlyphItemButton", 0);
+		if (GlyphButtonItemFrame > 0)
+		{
+			if (btnaddr == GlyphButtonItemFrame)
+			{
+				ExecuteFunc(&CallBackFuncName);
+			}
+		}
 	}
+	return retval;
 }

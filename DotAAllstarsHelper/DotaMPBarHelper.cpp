@@ -1,25 +1,22 @@
 #include "Main.h"
+#include "Storm.h"
+#pragma optimize("",off)
 
+int sub_6F334180;   // 334C00 6f334C00
+int sub_6F6061B0;   // 606860 6f606860
+int sub_6F605CC0;   // 606370 6f606370
+int sub_6F359CC0;   // 35A740 6f35A740
+int sub_6F32C880; // 32D300   6f
 
-#define ADDRESS LPVOID  // data
-#define GADDRESS LPVOID // game call
+int sub_6F2C74B0;
 
-GADDRESS sub_6F27AE90;   // 27B950 6f27B950
-GADDRESS sub_6F334180;   // 334C00 6f334C00
-GADDRESS sub_6F6061B0;   // 606860 6f606860
-GADDRESS sub_6F605CC0;   // 606370 6f606370
-GADDRESS sub_6F359CC0;   // 35A740 6f35A740
-GADDRESS sub_6F32C880; // 32D300   6f
-Storm_401 Storm_401_org = NULL; //storm 0x191 #401
-GADDRESS sub_6F2C74B0;
-
-ADDRESS a16F08C;
-ADDRESS a16F004;
-ADDRESS a16F090;
-//ADDRESS a16F06C;
-//ADDRESS a16F070;
-ADDRESS a3000AC;
-ADDRESS a3000B0;
+LPVOID a16F08C;
+LPVOID a16F004;
+LPVOID a16F090;
+//Address a16F06C;
+//Address a16F070;
+LPVOID a3000AC;
+LPVOID a3000B0;
 
 int aHPBAR;
 int aMPBAR;
@@ -32,13 +29,13 @@ BOOL SkipScaleFactor = FALSE;
 
 double a164A18 = 72; // ds:[00164A18]=72.00000000000000
 double aMPBarSizeX = 0.0005; //ds:[00164A10]=0.0005000000237487257
-double aMPBarSizeY = 0.004;
+double aMPBarSizeY = 0.0025;
 double aMPBarOffsetY = 0.006; //ds:[00164A08]=0.006000000052154064
 double a1649D4 = 0.03; //ds:[004149D4]=0.03000000
 
 double a1649CC = 0.3;
 
-double aMPBarSizeY_default = 0.004;
+double aMPBarSizeY_default = 0.0025;
 double aMPBarSizeX_default = 0.0005; //ds:[00164A10]=0.0005000000237487257
 double aMPBarOffsetY_default = 0.006; //ds:[00164A08]=0.006000000052154064
 
@@ -53,51 +50,6 @@ float mpbaroffsetUnitY[ 20 ];
 float mpbarscaleTowerX[ 20 ];
 float mpbarscaleTowerY[ 20 ];
 float mpbaroffsetTowerY[ 20 ];
-#ifdef DOTA_HELPER_LOG
-
-void __stdcall MPBARLOG1( )
-{
-	AddNewLineToDotaHelperLog( "RedrawMPBar" );
-}
-
-
-void __stdcall MPBARLOG2( )
-{
-	AddNewLineToDotaHelperLog( "f001527F0" );
-}
-
-
-void __stdcall MPBARLOG3( )
-{
-	AddNewLineToDotaHelperLog( "f00152710" );
-}
-
-void __stdcall MPBARLOG4( )
-{
-	AddNewLineToDotaHelperLog( "f152980" );
-}
-
-
-void __stdcall MPBARLOG5( )
-{
-	AddNewLineToDotaHelperLog( "f152950" );
-}
-
-
-void __stdcall MPBARLOG6( )
-{
-	AddNewLineToDotaHelperLog( "ReallocateMemoryForMPBar" );
-}
-
-
-void __stdcall MPBARLOG7( )
-{
-	AddNewLineToDotaHelperLog( "FillMemoryForMPBar" );
-}
-
-
-#endif
-
 
 void __stdcall SetMPBarXScaleForPlayer( unsigned int playerflag, float heroscale,
 	float unitscale, float towerscale )
@@ -158,33 +110,36 @@ void __stdcall SetMPBarYOffsetForPlayer( unsigned int playerflag, float herooffs
 	}
 }
 
+vector<int> MpBarUnitWhiteList;
 
+int __stdcall SetMpBarWhiteListUnitTypeID( int unitid )
+{
+	MpBarUnitWhiteList.push_back( unitid );
+	return 0;
+}
+
+int __stdcall InMPBarWhiteList( int unitaddr )
+{
+	int UnitTypeID = GetTypeId( unitaddr );
+	for ( auto & s : MpBarUnitWhiteList )
+	{
+		if ( IsClassEqual( UnitTypeID, s ) )
+		{
+			return 1;
+		}
+	}
+	return 0;
+}
 
 int __stdcall  SetMPBarConfigForPlayer( int unitaddr )
 {
 	int retval = 0;
-	__asm mov retval, eax;
-
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( "SetMPBarConfigForPlayer" );
-#endif
-
-
-	if ( unitaddr <= 0 || !IsNotBadUnit( unitaddr ) )
-		return retval;
-
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( "SetMPBarConfigForPlayer[ok]" );
-#endif
-
+	if ( !unitaddr || IsEnemy( unitaddr ) || IsUnitIllusion( unitaddr ) )
+		return 0;
 	int unitslot = GetUnitOwnerSlot( unitaddr );
 	if ( unitslot > 15 || unitslot < 0 )
-		return retval;
+		return 0;
 
-
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( "SetMPBarConfigForPlayer[ok2]" );
-#endif
 
 	aMPBarSizeX = aMPBarSizeX_default;
 	aMPBarSizeY = aMPBarSizeY_default;
@@ -213,66 +168,63 @@ int __stdcall  SetMPBarConfigForPlayer( int unitaddr )
 
 			aMPBarOffsetY = mpbaroffsetHeroY[ unitslot ];
 		}
-
+		return 1;
 	}
-	else if ( IsHero( unitaddr ) )
+	else if ( InMPBarWhiteList( unitaddr ) )
 	{
-		if ( mpbarscaleTowerX[ unitslot ] != 0.0 )
+		if ( IsTower( unitaddr ) )
 		{
-			SkipScaleFactor = TRUE;
+			if ( mpbarscaleTowerX[ unitslot ] != 0.0 )
+			{
+				SkipScaleFactor = TRUE;
 
-			aMPBarSizeX = mpbarscaleTowerX[ unitslot ];
+				aMPBarSizeX = mpbarscaleTowerX[ unitslot ];
+			}
+
+			if ( mpbarscaleTowerY[ unitslot ] != 0.0 )
+			{
+				SkipScaleFactor = TRUE;
+
+				aMPBarSizeY = mpbarscaleTowerY[ unitslot ];
+			}
+
+			if ( mpbaroffsetTowerY[ unitslot ] != 0.0 )
+			{
+				SkipScaleFactor = TRUE;
+
+				aMPBarOffsetY = mpbaroffsetTowerY[ unitslot ];
+			}
+
+		}
+		else
+		{
+			if ( mpbarscaleUnitX[ unitslot ] != 0.0 )
+			{
+				SkipScaleFactor = TRUE;
+
+				aMPBarSizeX = mpbarscaleUnitX[ unitslot ];
+			}
+
+			if ( mpbarscaleUnitY[ unitslot ] != 0.0 )
+			{
+				SkipScaleFactor = TRUE;
+
+				aMPBarSizeY = mpbarscaleUnitY[ unitslot ];
+			}
+
+			if ( mpbaroffsetUnitY[ unitslot ] != 0.0 )
+			{
+				SkipScaleFactor = TRUE;
+
+				aMPBarOffsetY = mpbaroffsetUnitY[ unitslot ];
+			}
+
 		}
 
-		if ( mpbarscaleTowerY[ unitslot ] != 0.0 )
-		{
-			SkipScaleFactor = TRUE;
-
-			aMPBarSizeY = mpbarscaleTowerY[ unitslot ];
-		}
-
-		if ( mpbaroffsetTowerY[ unitslot ] != 0.0 )
-		{
-			SkipScaleFactor = TRUE;
-
-			aMPBarOffsetY = mpbaroffsetTowerY[ unitslot ];
-		}
-
+		return 1;
 	}
-	else
-	{
-		if ( mpbarscaleUnitX[ unitslot ] != 0.0 )
-		{
-			SkipScaleFactor = TRUE;
-
-			aMPBarSizeX = mpbarscaleUnitX[ unitslot ];
-		}
-
-		if ( mpbarscaleUnitY[ unitslot ] != 0.0 )
-		{
-			SkipScaleFactor = TRUE;
-
-			aMPBarSizeY = mpbarscaleUnitY[ unitslot ];
-		}
-
-		if ( mpbaroffsetUnitY[ unitslot ] != 0.0 )
-		{
-			SkipScaleFactor = TRUE;
-
-			aMPBarOffsetY = mpbaroffsetUnitY[ unitslot ];
-		}
-
-	}
-
-#ifdef DOTA_HELPER_LOG
-	AddNewLineToDotaHelperLog( "SetMPBarConfigForPlayer[end]" );
-#endif
-
-	return retval;
+	return 0;
 }
-
-//#pragma optimize("",off)
-
 
 
 void __declspec( naked ) FillMemoryForMPBar( )
@@ -325,19 +277,20 @@ void __declspec( naked ) FillMemoryForMPBar( )
 
 void __declspec( naked ) ReallocateMemoryForMPBar( )
 {
+
 	__asm {
 		pop     a16F08C;
 		pop     eax;
 		add     eax, eax;
 		push    eax;
-		call    Storm_401_org;
+		call    Storm::AddrMemAlloc;
 		pushad;
+		pusha;
 		mov     a16F004, eax;
 		mov     esi, a16F004;
 		add     esi, 0x158;
 		call    FillMemoryForMPBar;
-
-
+		popa;
 		popad;
 		push    a16F08C;
 		retn;
@@ -403,6 +356,7 @@ void __declspec( naked ) f00152710( )
 	}
 }
 
+int MpBarCmpVal = 0;
 
 void __declspec( naked ) f001527F0( )
 {
@@ -412,22 +366,31 @@ void __declspec( naked ) f001527F0( )
 		mov     edi, a16F004;
 		cmp     a3000AC, 0;
 		je L093;
-		push edi;
-		call IsHero;
-		cmp eax, 0;
-		je L093;
-		push edi;
-		call IsEnemy;
-		cmp eax, 1;
-		je L093;
-		cmp eax, -1;
+		cmp     edi, 0;
 		je L093;
 		pushad;
+		pusha;
+		push 0;
+		push edi;
+		call IsNotBadUnit;
+		mov MpBarCmpVal, eax;
+		popa;
+		popad;
+		cmp MpBarCmpVal, 0;
+		je L093;
+		pushad;
+		pusha;
 		push edi;
 		call SetMPBarConfigForPlayer;
+		mov MpBarCmpVal, eax;
+		popa;
 		popad;
+		cmp MpBarCmpVal, 0;
+		je L093;
 		mov     eax, dword ptr[ edi + 0x50 ];
 		test    eax, eax;
+		je L093;
+		cmp    dword ptr[ eax + 0xC ], 0;
 		je L093;
 		push    ebx;
 		mov     ebx, dword ptr[ eax + 0xC ];
@@ -451,7 +414,7 @@ void __declspec( naked ) f001527F0( )
 		lea eax, BarVtableClone;
 		mov     dword ptr[ ebx ], eax;
 		pop eax;
-		call    sub_6F27AE90; // ds:[0016FF24]=6F27B950 (Game.6F27B950)
+		call    GetUnitFloatState; // ds:[0016FF24]=6F27B950 (Game.6F27B950)
 		fldz;
 		fcomp   dword ptr[ esp + 0xC ];
 		fstsw   ax;
@@ -462,7 +425,7 @@ void __declspec( naked ) f001527F0( )
 		push    ecx;
 		xor     edx, edx;
 		mov     ecx, edi;
-		call    sub_6F27AE90;     // ds:[0016FF24]=6F27B950 (Game.6F27B950)
+		call    GetUnitFloatState;     // ds:[0016FF24]=6F27B950 (Game.6F27B950)
 		fldz;
 		fcomp   dword ptr[ esp + 0xC ];
 		fstsw   ax;
@@ -556,8 +519,10 @@ void __declspec( naked ) RedrawMPBar( )
 {
 	__asm {
 		pushad;
+		pusha;
 		mov     a16F004, ecx;
 		call    f001527F0;
+		popa;
 		popad;
 		//mov     eax, GameDll    // game.dll base
 		mov     eax, sub_6F2C74B0;
@@ -566,7 +531,7 @@ void __declspec( naked ) RedrawMPBar( )
 }
 
 
-//#pragma optimize("",on)
+#pragma optimize("",on)
 
 BOOL ManabarInitialized = FALSE;
 BOOL ManabarEnabled = FALSE;
@@ -574,8 +539,8 @@ BOOL ManabarEnabled = FALSE;
 char Storm_401_org_malloc_old[ 5 ];
 char HPMP_DRAW_old[ 5 ];
 
-ADDRESS Storm_401_org_malloc;
-ADDRESS HPMP_DRAW;
+LPVOID Storm_401_org_malloc;
+LPVOID HPMP_DRAW;
 
 void Hook( )
 {
@@ -640,71 +605,44 @@ void Unhook( )
 
 }
 
+int __stdcall InitManaBar( int )
+{
+	ManaBarSwitch( TRUE );
+	return 0;
+}
 
 void ManaBarSwitch( BOOL b )
 {
 	*( int* )&a3000AC = 0;
 
-	if ( GameVersion == 0x26a )
+
+	*( int* )&sub_6F334180 = ( int )GameDll + 0x334180;  // 0x6f334CC0
+	*( int* )&sub_6F6061B0 = ( int )GameDll + 0x6061B0;  // 0x6f606950
+	*( int* )&sub_6F605CC0 = ( int )GameDll + 0x605CC0;  // 0x6f606460
+	*( int* )&sub_6F359CC0 = ( int )GameDll + 0x359CC0;  // 0x6f35A800
+	*( int* )&sub_6F32C880 = ( int )GameDll + 0x32C880;  // 0x32D3C0
+	*( int* )&sub_6F2C74B0 = ( int )GameDll + 0x2C74B0;    // 0x6f2C7FD0??
+
+	*( int* )&Storm_401_org_malloc = ( int )GameDll + 0x379AE3;  // 0x6f37A623
+	*( int* )&HPMP_DRAW = ( int )GameDll + 0x379EE8;  // 0x6F37AA28
+
+	if ( b )
+		Hook( );
+	else
 	{
-		*( int* )&sub_6F27AE90 = ( int )GameDll + 0x27AE90;  // 6F27B9B0 
-		*( int* )&sub_6F334180 = ( int )GameDll + 0x334180;  // 0x6f334CC0
-		*( int* )&sub_6F6061B0 = ( int )GameDll + 0x6061B0;  // 0x6f606950
-		*( int* )&sub_6F605CC0 = ( int )GameDll + 0x605CC0;  // 0x6f606460
-		*( int* )&sub_6F359CC0 = ( int )GameDll + 0x359CC0;  // 0x6f35A800
-		*( int* )&sub_6F32C880 = ( int )GameDll + 0x32C880;  // 0x32D3C0
-		*( int* )&sub_6F2C74B0 = ( int )GameDll + 0x2C74B0;    // 0x6f2C7FD0??
+		memset( mpbarscaleHeroX, 0, sizeof( mpbarscaleHeroX ) );
+		memset( mpbarscaleHeroY, 0, sizeof( mpbarscaleHeroY ) );
+		memset( mpbaroffsetHeroY, 0, sizeof( mpbaroffsetHeroY ) );
 
-		*( int* )&Storm_401_org_malloc = ( int )GameDll + 0x379AE3;  // 0x6f37A623
-		*( int* )&HPMP_DRAW = ( int )GameDll + 0x379EE8;  // 0x6F37AA28
+		memset( mpbarscaleUnitX, 0, sizeof( mpbarscaleUnitX ) );
+		memset( mpbarscaleUnitY, 0, sizeof( mpbarscaleUnitY ) );
+		memset( mpbaroffsetUnitY, 0, sizeof( mpbaroffsetUnitY ) );
 
-		if ( b )
-			Hook( );
-		else
-		{
-			memset( mpbarscaleHeroX, 0, sizeof( mpbarscaleHeroX ) );
-			memset( mpbarscaleHeroY, 0, sizeof( mpbarscaleHeroY ) );
-			memset( mpbaroffsetHeroY, 0, sizeof( mpbaroffsetHeroY ) );
-
-			memset( mpbarscaleUnitX, 0, sizeof( mpbarscaleUnitX ) );
-			memset( mpbarscaleUnitY, 0, sizeof( mpbarscaleUnitY ) );
-			memset( mpbaroffsetUnitY, 0, sizeof( mpbaroffsetUnitY ) );
-
-			Unhook( );
-		}
-
-		ManabarInitialized = TRUE;
+		Unhook( );
 	}
-	else if ( GameVersion == 0x27a )
-	{
-		*( int* )&sub_6F27AE90 = ( int )GameDll + 0x669B40; // 669B40
-		*( int* )&sub_6F334180 = ( int )GameDll + 0x358CF0; // 358CF0
-		*( int* )&sub_6F6061B0 = ( int )GameDll + 0x0BD830; // 0BD830
-		*( int* )&sub_6F605CC0 = ( int )GameDll + 0x0BD630; // 0BD630
-		*( int* )&sub_6F359CC0 = ( int )GameDll + 0x383F60; // 383F60
-		*( int* )&sub_6F32C880 = ( int )GameDll + 0x327020; // 327020
-		*( int* )&sub_6F2C74B0 = ( int )GameDll + 0x6374A0; // 6374A0
 
-		*( int* )&Storm_401_org_malloc = ( int )GameDll + 0x374F14; // 374F14
-		*( int* )&HPMP_DRAW = ( int )GameDll + 0x3784CA;
+	ManabarInitialized = TRUE;
 
-		if ( b )
-			Hook( );
-		else
-		{
-			memset( mpbarscaleHeroX, 0, sizeof( mpbarscaleHeroX ) );
-			memset( mpbarscaleHeroY, 0, sizeof( mpbarscaleHeroY ) );
-			memset( mpbaroffsetHeroY, 0, sizeof( mpbaroffsetHeroY ) );
-
-			memset( mpbarscaleUnitX, 0, sizeof( mpbarscaleUnitX ) );
-			memset( mpbarscaleUnitY, 0, sizeof( mpbarscaleUnitY ) );
-			memset( mpbaroffsetUnitY, 0, sizeof( mpbaroffsetUnitY ) );
-
-			Unhook( );
-		}
-
-		ManabarInitialized = TRUE;
-	}
 }
 
 
